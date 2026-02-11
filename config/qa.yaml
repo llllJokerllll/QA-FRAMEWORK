@@ -20,9 +20,18 @@ ui:
   video_on_failure: false
 
 reporting:
-  allure: true
-  html: true
-  json: false
+  allure:
+    enabled: true
+    results_dir: "allure-results"
+    report_dir: "reports/allure-report"
+    screenshots_on_failure: true
+    clean_results: true
+  html:
+    enabled: true
+    report_dir: "reports/html-report"
+  json:
+    enabled: false
+    report_dir: "reports/json-report"
   screenshots: "on_failure"  # on_failure, always, never
 
 logging:
@@ -30,3 +39,78 @@ logging:
   json_format: false
   file_logging: true
   log_file: "logs/qa-framework.log"
+
+performance:
+  tool: auto  # auto, locust, k6, ab
+  default_users: 10
+  default_duration: 60
+  default_ramp_up: 5
+  metrics:
+    collect_response_times: true
+    collect_throughput: true
+    collect_error_rates: true
+  thresholds:
+    max_avg_response_time_ms: 500
+    max_error_rate_percent: 5
+    min_throughput_rps: 10
+
+security:
+  sql_injection:
+    enabled: true
+    payloads: default  # default, extended, custom
+    max_tests_per_endpoint: 50
+  xss:
+    enabled: true
+    payloads: default
+    test_reflection: true
+  authentication:
+    enabled: true
+    test_common_credentials: true
+    test_brute_force_protection: true
+    brute_force_attempts: 10
+  rate_limiting:
+    enabled: true
+    test_requests: 100
+    test_window_seconds: 60
+  headers:
+    required:
+      - Strict-Transport-Security
+      - Content-Security-Policy
+      - X-Content-Type-Options
+      - X-Frame-Options
+      - Referrer-Policy
+
+database:
+  default_timeout: 30
+  sql_validation:
+    enabled: true
+    check_syntax: true
+    check_performance: true
+    check_security: true
+  integrity:
+    enabled: true
+    check_primary_keys: true
+    check_foreign_keys: true
+    check_unique_constraints: true
+    check_not_null: true
+    sample_size: 1000
+  migrations:
+    enabled: true
+    validate_idempotency: true
+    test_rollbacks: true
+    backup_before_migration: true
+  connections:
+    sqlite:
+      database: "test.db"
+    postgresql:
+      host: ${DB_HOST:localhost}
+      port: ${DB_PORT:5432}
+      database: ${DB_NAME:test}
+      user: ${DB_USER:postgres}
+      password: ${DB_PASSWORD:}
+    mysql:
+      host: ${DB_HOST:localhost}
+      port: ${DB_PORT:3306}
+      database: ${DB_NAME:test}
+      user: ${DB_USER:root}
+      password: ${DB_PASSWORD:}
