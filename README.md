@@ -15,7 +15,7 @@
 
 - 🏗️ **Clean Architecture** - Separation of concerns and maintainability
 - 🎯 **SOLID Principles** - Single Responsibility, Open/Closed, Liskov Substitution, Interface Segregation, Dependency Inversion
-- 🧪 **Multi-Type Testing** - API, UI, Integration, E2E, Performance, Security
+- 🧪 **Multi-Type Testing** - API, UI, Integration, E2E, Performance, Security, Database
 - 🚀 **Async Support** - Full async/await support with HTTPX and Playwright
 - 📊 **Advanced Reporting** - Allure, HTML, JSON reports with screenshots/videos
 - ⚡ **Parallel Execution** - pytest-xdist for faster test runs
@@ -23,6 +23,9 @@
 - 🧱 **Type Safety** - 100% type hints with Pydantic
 - 📝 **Comprehensive Documentation** - Docstrings and examples
 - 🔄 **CI/CD Ready** - GitHub Actions and Docker support
+- 🛡️ **Security Testing** - SQL injection, XSS, authentication, rate limiting
+- ⚡ **Performance Testing** - Load testing, benchmarks, metrics collection
+- 🗄️ **Database Testing** - Data integrity, migrations, SQL validation
 
 ---
 
@@ -34,8 +37,10 @@
 | **UI Testing** | Playwright | ✅ Supported |
 | **Integration Testing** | Pytest | ✅ Supported |
 | **E2E Testing** | Playwright | ✅ Supported |
-| **Performance Testing** | Locust | 🔄 Planned |
-| **Security Testing** | Bandit, Safety | 🔄 Planned |
+| **Performance Testing** | Locust, K6, Apache Bench | ✅ Supported |
+| **Security Testing** | SQL Injection, XSS, Auth Testing | ✅ Supported |
+| **Database Testing** | SQLite, PostgreSQL, MySQL | ✅ Supported |
+| **Reporting** | Allure, HTML, JSON | ✅ Supported |
 
 ---
 
@@ -155,8 +160,9 @@ qa-framework/
 │   │   ├── http/              # HTTPX, Requests
 │   │   ├── ui/                # Playwright, Selenium
 │   │   ├── reporting/         # Allure, HTML, JSON
-│   │   ├── performance/       # Locust
-│   │   └── security/          # Bandit, Safety
+│   │   ├── performance/       # Locust, K6, Apache Bench
+│   │   ├── security/          # SQL Injection, XSS, Auth, Rate Limit
+│   │   └── database/          # Database testing, SQL validation
 │   └── infrastructure/         # Cross-cutting concerns
 │       ├── config/           # Configuration
 │       ├── logger/           # Logging
@@ -288,6 +294,88 @@ async def test_user_login():
         # Assertions
         await page.wait_for_selector("#dashboard")
         assert await page.is_visible("#welcome-message")
+```
+
+### Performance Testing Example
+
+```python
+# tests/performance/test_load_test.py
+import pytest
+from src.adapters.performance.performance_client import PerformanceClient
+
+
+@pytest.mark.performance
+@pytest.mark.asyncio
+async def test_api_load_testing():
+    """Test API load with multiple users."""
+    client = PerformanceClient(base_url="https://jsonplaceholder.typicode.com")
+    
+    # Load test with 100 users for 30 seconds
+    result = await client.load_test(
+        endpoint="/users",
+        num_users=100,
+        duration_seconds=30
+    )
+    
+    assert result.total_requests > 0
+    assert result.p95_response_time < 1000  # P95 under 1 second
+    assert result.error_rate < 0.05  # Error rate under 5%
+```
+
+### Security Testing Example
+
+```python
+# tests/security/test_sql_injection.py
+import pytest
+from src.adapters.security.security_client import SecurityClient
+from src.adapters.security.sql_injection_tester import SQLInjectionTester
+
+
+@pytest.mark.security
+@pytest.mark.asyncio
+async def test_sql_injection_protection():
+    """Test SQL injection protection."""
+    client = SecurityClient(base_url="https://example.com/api")
+    tester = SQLInjectionTester(client)
+    
+    # Test with common SQL injection payloads
+    results = await tester.test_endpoint(
+        endpoint="/users",
+        payload_param="id",
+        payloads=["' OR '1'='1", "1; DROP TABLE users--"]
+    )
+    
+    assert all(not r.vulnerable for r in results), "SQL injection vulnerabilities detected"
+```
+
+### Database Testing Example
+
+```python
+# tests/database/test_data_integrity.py
+import pytest
+from src.adapters.database.database_client import DatabaseClient
+from src.adapters.database.data_integrity_tester import DataIntegrityTester
+
+
+@pytest.mark.database
+async def test_data_integrity():
+    """Test database data integrity constraints."""
+    client = DatabaseClient(connection_string="sqlite:///test.db")
+    tester = DataIntegrityTester(client)
+    
+    # Test primary key constraint
+    pk_result = await tester.test_primary_key(
+        table="users",
+        pk_column="id"
+    )
+    assert pk_result.passed, "Primary key constraint violated"
+    
+    # Test unique constraint
+    unique_result = await tester.test_unique_constraint(
+        table="users",
+        columns=["email"]
+    )
+    assert unique_result.passed, "Unique constraint violated"
 ```
 
 ### Configuration Example
