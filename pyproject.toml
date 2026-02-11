@@ -81,9 +81,6 @@ addopts = [
     "-v",
     "--strict-markers",
     "--tb=short",
-    "--cov=src",
-    "--cov-report=html",
-    "--cov-report=term-missing",
 ]
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
@@ -91,6 +88,9 @@ markers = [
     "e2e: marks tests as end-to-end tests",
     "api: marks tests as API tests",
     "ui: marks tests as UI tests",
+    "parallel_safe: marks tests as safe for parallel execution",
+    "serial: marks tests to run serially (not in parallel)",
+    "isolated: marks tests that require complete isolation",
 ]
 asyncio_mode = "auto"
 

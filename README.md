@@ -215,6 +215,58 @@ async def test_create_user():
     assert response.json()["name"] == "Test User"
 ```
 
+### Parallel API Testing Example
+
+```python
+# tests/api/test_parallel_api.py
+import pytest
+from typing import Dict, Any
+
+
+@pytest.mark.api
+@pytest.mark.parallel_safe
+@pytest.mark.asyncio
+async def test_parallel_api_calls(async_http_client):
+    """Test API calls run safely in parallel."""
+    response = await async_http_client.get("/users")
+    assert response.status_code == 200
+
+
+@pytest.mark.api
+@pytest.mark.parallel_safe
+def test_api_with_isolation(http_client, isolated_test_data: Dict[str, Any]):
+    """Test with isolated data per test."""
+    response = http_client.get("/users/1")
+    isolated_test_data["user"] = response.json()
+    assert response.status_code == 200
+```
+
+### Parallel UI Testing Example
+
+```python
+# tests/ui/test_parallel_ui.py
+import pytest
+from typing import Dict, Any
+
+
+@pytest.mark.ui
+@pytest.mark.parallel_safe
+@pytest.mark.asyncio
+async def test_parallel_ui_1(page):
+    """Test UI with isolated page instance."""
+    await page.goto("https://example.com")
+    assert await page.title() == "Example Domain"
+
+
+@pytest.mark.ui
+@pytest.mark.parallel_safe
+@pytest.mark.asyncio
+async def test_parallel_ui_2(page):
+    """Another UI test running in parallel."""
+    await page.goto("https://example.org")
+    assert await page.title() == "Example Domain"
+```
+
 ### UI Testing Example (Playwright)
 
 ```python
@@ -287,13 +339,133 @@ pytest tests/integration/ -m integration
 ```
 
 ### Parallel Execution
+
+QA-FRAMEWORK uses **pytest-xdist** for parallel test execution, significantly reducing test suite runtime.
+
 ```bash
-# Use all available CPU cores
+# Auto-detect number of CPU cores
 pytest -n auto
 
 # Use specific number of workers
 pytest -n 4
+
+# Use logical CPU count
+pytest -n logical
+
+# Distribute tests by scope (group related tests)
+pytest -n 4 --dist=loadscope
+
+# Distribute tests by file
+pytest -n 4 --dist=loadfile
+
+# Run with coverage in parallel
+pytest -n 4 --cov=src --cov-report=html
 ```
+
+#### Parallel Test Configuration
+
+Configure parallel execution in `config/qa.yaml`:
+
+```yaml
+test:
+  parallel_workers: 4  # Default number of workers
+  timeout: 30
+```
+
+#### Parallel Test Markers
+
+Use markers to control parallel execution:
+
+```python
+import pytest
+
+@pytest.mark.parallel_safe  # Safe to run in parallel (default)
+def test_safe_in_parallel():
+    """This test can run concurrently with others."""
+    assert True
+
+@pytest.mark.serial  # Run serially, not in parallel
+def test_must_run_serially():
+    """This test runs alone without parallelization."""
+    assert True
+
+@pytest.mark.isolated  # Complete isolation from other tests
+def test_requires_isolation():
+    """This test has complete resource isolation."""
+    assert True
+```
+
+#### Parallel Fixtures
+
+The framework provides thread-safe fixtures for parallel execution:
+
+```python
+import pytest
+from typing import Dict, Any
+
+# Worker identification
+def test_worker_info(worker_id: str, session_id: str):
+    """Access worker and session identifiers."""
+    assert worker_id.startswith("gw") or worker_id == "master"
+    assert len(session_id) == 8
+
+# Thread-safe locks
+def test_with_synchronization(resource_lock):
+    """Use locks for thread-safe operations."""
+    with resource_lock:
+        # Critical section - only one test at a time
+        modify_shared_resource()
+
+# Isolated test data
+def test_data_isolation(isolated_test_data: Dict[str, Any]):
+    """Each test gets isolated data storage."""
+    isolated_test_data["key"] = "value"
+    assert isolated_test_data["key"] == "value"
+
+# Worker-scoped resources
+def test_worker_resources(worker_resource_pool: Dict[str, Any]):
+    """Access worker-scoped resource pool."""
+    worker_resource_pool["counter"] = worker_resource_pool.get("counter", 0) + 1
+    assert worker_resource_pool["counter"] >= 1
+
+# Execution context
+def test_execution_context(execution_context: Dict[str, Any]):
+    """Access execution metadata."""
+    assert "worker_id" in execution_context
+    assert "process_id" in execution_context
+    assert "thread_id" in execution_context
+```
+
+#### Parallel Test Examples
+
+Run parallel examples:
+
+```bash
+# Basic parallel tests
+pytest tests/unit/test_parallel_basic.py -n 4 -v
+
+# Tests with isolation
+pytest tests/unit/test_parallel_isolation.py -n 4 -v
+
+# Resource sharing tests
+pytest tests/unit/test_parallel_resources.py -n 4 -v
+
+# Performance benchmarks
+pytest tests/unit/test_parallel_performance.py -n 4 -v
+
+# Run only serial tests
+pytest tests/unit/test_parallel_isolation.py -m serial -v
+```
+
+#### Parallel Test Best Practices
+
+1. **Use `@pytest.mark.parallel_safe`** for tests that can run concurrently
+2. **Use `@pytest.mark.serial`** for tests requiring exclusive access
+3. **Use `isolated_test_data`** fixture for test-specific data
+4. **Use `resource_lock`** for thread-safe access to shared resources
+5. **Avoid global state** - use fixtures for state management
+6. **Keep tests independent** - no dependencies between tests
+7. **Use worker-scoped fixtures** for expensive resources (databases, browsers)
 
 ### With Coverage
 ```bash
