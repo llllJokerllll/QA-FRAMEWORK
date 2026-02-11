@@ -1,0 +1,32 @@
+# QA-FRAMEWORK Default Configuration
+
+test:
+  environment: development
+  parallel_workers: 4
+  timeout: 30
+  retry_failed: 0
+
+api:
+  base_url: "http://localhost:8000"
+  auth:
+    type: bearer
+    token: ${API_TOKEN:}
+
+ui:
+  browser: chromium
+  headless: true
+  viewport: "1920x1080"
+  screenshot_on_failure: true
+  video_on_failure: false
+
+reporting:
+  allure: true
+  html: true
+  json: false
+  screenshots: "on_failure"  # on_failure, always, never
+
+logging:
+  level: INFO
+  json_format: false
+  file_logging: true
+  log_file: "logs/qa-framework.log"

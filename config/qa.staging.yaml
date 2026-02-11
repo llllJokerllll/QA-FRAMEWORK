@@ -1,0 +1,32 @@
+# QA-FRAMEWORK Staging Configuration
+
+test:
+  environment: staging
+  parallel_workers: 4
+  timeout: 30
+  retry_failed: 0
+
+api:
+  base_url: "https://staging-api.example.com"
+  auth:
+    type: bearer
+    token: ${STAGING_API_TOKEN:}
+
+ui:
+  browser: chromium
+  headless: true
+  viewport: "1920x1080"
+  screenshot_on_failure: true
+  video_on_failure: false
+
+reporting:
+  allure: true
+  html: true
+  json: true
+  screenshots: "on_failure"
+
+logging:
+  level: INFO
+  json_format: true
+  file_logging: true
+  log_file: "logs/qa-framework-staging.log"

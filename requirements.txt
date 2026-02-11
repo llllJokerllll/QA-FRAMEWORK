@@ -1,0 +1,50 @@
+# QA-FRAMEWORK - Dependencies
+# Core Testing Framework
+pytest==7.4.4
+pytest-asyncio==0.23.3
+pytest-xdist==3.5.0
+pytest-cov==4.1.0
+pytest-allure==2.13.8
+pytest-html==4.1.1
+
+# HTTP Clients
+httpx==0.26.0
+requests==2.31.0
+
+# UI Testing
+playwright==1.41.0
+selenium==4.16.0
+
+# Data Generation
+faker==23.2.0
+factory-boy==3.3.0
+
+# Validation & Configuration
+pydantic==2.6.1
+pydantic-settings==2.1.0
+pyyaml==6.0.1
+python-dotenv==1.0.0
+pydantic-extra-types==2.6.0
+
+# Reporting
+allure-pytest==2.13.2
+allure-python-commons==2.13.2
+
+# Performance Testing
+locust==2.22.0
+
+# Security Testing
+bandit==1.7.6
+safety==3.0.1
+
+# Code Quality
+black==24.1.1
+ruff==0.2.1
+mypy==1.8.0
+pre-commit==3.6.0
+isort==5.13.2
+
+# Type Checking
+types-PyYAML==6.0.12.12
+types-requests==2.31.0.20240106
+types-urllib3==1.26.25.14

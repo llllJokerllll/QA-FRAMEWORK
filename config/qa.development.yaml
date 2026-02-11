@@ -1,0 +1,31 @@
+# QA-FRAMEWORK Development Configuration
+
+test:
+  environment: development
+  parallel_workers: 2
+  timeout: 60
+  retry_failed: 1
+
+api:
+  base_url: "http://localhost:8000"
+  auth:
+    type: none
+
+ui:
+  browser: chromium
+  headless: false
+  viewport: "1920x1080"
+  screenshot_on_failure: true
+  video_on_failure: true
+
+reporting:
+  allure: true
+  html: true
+  json: true
+  screenshots: "always"
+
+logging:
+  level: DEBUG
+  json_format: false
+  file_logging: true
+  log_file: "logs/qa-framework-dev.log"
