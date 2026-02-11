@@ -31,11 +31,11 @@
 | Type | Tools | Status |
 |------|-------|--------|
 | **API Testing** | HTTPX, Requests | ✅ Supported |
-| **UI Testing** | Playwright, Selenium | ✅ Supported |
+| **UI Testing** | Playwright | ✅ Supported |
 | **Integration Testing** | Pytest | ✅ Supported |
 | **E2E Testing** | Playwright | ✅ Supported |
-| **Performance Testing** | Locust | ✅ Supported |
-| **Security Testing** | Bandit, Safety | ✅ Supported |
+| **Performance Testing** | Locust | 🔄 Planned |
+| **Security Testing** | Bandit, Safety | 🔄 Planned |
 
 ---
 
@@ -81,6 +81,62 @@ async def test_get_users():
 Run the test:
 ```bash
 pytest tests/api/test_users_api.py -v
+```
+
+---
+
+## 💡 Usage Examples
+
+### API Testing Example
+
+```python
+# tests/api/test_users_api.py
+import pytest
+from src.adapters.http.httpx_client import HTTPXClient
+
+
+@pytest.mark.api
+@pytest.mark.asyncio
+async def test_get_users():
+    """Test getting users from API."""
+    client = HTTPXClient(
+        base_url="https://jsonplaceholder.typicode.com",
+        timeout=30
+    )
+    
+    response = await client.get("/users")
+    
+    assert response.status_code == 200
+    assert len(response.json()) > 0
+    assert isinstance(response.json(), list)
+```
+
+Run test:
+```bash
+pytest tests/api/test_users_api.py -v
+```
+
+### UI Testing Example (Playwright)
+
+```python
+# tests/ui/test_login_page.py
+import pytest
+from src.adapters.ui.playwright_page import PlaywrightPage
+
+
+@pytest.mark.ui
+@pytest.mark.asyncio
+async def test_user_login():
+    """Test user login flow."""
+    async with PlaywrightPage("chromium", headless=True) as page:
+        await page.goto("https://example.com/login")
+        await page.fill("#username", "testuser")
+        await page.fill("#password", "testpass")
+        await page.click("#login-button")
+        
+        # Assertions
+        await page.wait_for_selector("#dashboard")
+        assert await page.is_visible("#welcome-message")
 ```
 
 ---
@@ -171,18 +227,15 @@ from src.adapters.ui.playwright_page import PlaywrightPage
 @pytest.mark.asyncio
 async def test_user_login():
     """Test user login flow."""
-    page = PlaywrightPage("chromium", headless=True)
-    
-    await page.goto("https://example.com/login")
-    await page.fill("#username", "testuser")
-    await page.fill("#password", "testpass")
-    await page.click("#login-button")
-    
-    # Assertions
-    await page.expect_page_to_have_title("Dashboard")
-    await page.expect_element_to_be_visible("#welcome-message")
-    
-    await page.close()
+    async with PlaywrightPage("chromium", headless=True) as page:
+        await page.goto("https://example.com/login")
+        await page.fill("#username", "testuser")
+        await page.fill("#password", "testpass")
+        await page.click("#login-button")
+        
+        # Assertions
+        await page.wait_for_selector("#dashboard")
+        assert await page.is_visible("#welcome-message")
 ```
 
 ### Configuration Example
