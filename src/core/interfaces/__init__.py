@@ -54,26 +54,94 @@ class IHTTPClient(ABC):
 
 
 class IUIPage(ABC):
-    """Interface for UI page objects (Single Responsibility Principle)"""
+    """
+    Interface for UI page objects (Single Responsibility Principle).
+    
+    This interface defines the contract for all UI page adapters,
+    following the Interface Segregation Principle (ISP) from SOLID.
+    """
     
     @abstractmethod
     async def goto(self, url: str) -> None:
-        """Navigate to URL"""
+        """
+        Navigate to a URL.
+        
+        Args:
+            url: URL to navigate to
+        """
         pass
     
     @abstractmethod
     async def click(self, selector: str) -> None:
-        """Click element"""
+        """
+        Click on an element.
+        
+        Args:
+            selector: CSS selector for the element
+        """
         pass
     
     @abstractmethod
     async def fill(self, selector: str, value: str) -> None:
-        """Fill input field"""
+        """
+        Fill an input field with a value.
+        
+        Args:
+            selector: CSS selector for the input
+            value: Value to fill
+        """
         pass
     
     @abstractmethod
-    async def expect_visible(self, selector: str) -> bool:
-        """Expect element to be visible"""
+    async def wait_for_selector(self, selector: str, timeout: int = 30000) -> None:
+        """
+        Wait for an element to appear.
+        
+        Args:
+            selector: CSS selector for the element
+            timeout: Timeout in milliseconds (default: 30000)
+        """
+        pass
+    
+    @abstractmethod
+    async def get_text(self, selector: str) -> str:
+        """
+        Get text content of an element.
+        
+        Args:
+            selector: CSS selector for the element
+            
+        Returns:
+            Text content of the element
+        """
+        pass
+    
+    @abstractmethod
+    async def is_visible(self, selector: str) -> bool:
+        """
+        Check if an element is visible.
+        
+        Args:
+            selector: CSS selector for the element
+            
+        Returns:
+            True if visible, False otherwise
+        """
+        pass
+    
+    @abstractmethod
+    async def screenshot(self, path: str) -> None:
+        """
+        Take a screenshot of the current page.
+        
+        Args:
+            path: Path to save the screenshot
+        """
+        pass
+    
+    @abstractmethod
+    async def close(self) -> None:
+        """Close the browser/page."""
         pass
 
 
