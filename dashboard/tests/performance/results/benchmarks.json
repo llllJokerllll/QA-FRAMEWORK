@@ -1,0 +1,66 @@
+{
+  "timestamp": "2026-02-14T04:34:01.675644",
+  "note": "Default benchmarks - run tests to generate actual results",
+  "total_requests": 0,
+  "total_failures": 0,
+  "error_rate": 0.0,
+  "avg_response_time_ms": 0.0,
+  "expected_performance": [
+    {
+      "endpoint": "GET /api/v1/dashboard/stats",
+      "p50": 120,
+      "p95": 350,
+      "p99": 650,
+      "rps": 25
+    },
+    {
+      "endpoint": "GET /api/v1/dashboard/trends",
+      "p50": 150,
+      "p95": 400,
+      "p99": 800,
+      "rps": 20
+    },
+    {
+      "endpoint": "GET /api/v1/suites",
+      "p50": 100,
+      "p95": 300,
+      "p99": 550,
+      "rps": 30
+    },
+    {
+      "endpoint": "POST /api/v1/suites",
+      "p50": 180,
+      "p95": 500,
+      "p99": 900,
+      "rps": 15
+    },
+    {
+      "endpoint": "GET /api/v1/cases",
+      "p50": 110,
+      "p95": 320,
+      "p99": 600,
+      "rps": 28
+    },
+    {
+      "endpoint": "POST /api/v1/cases",
+      "p50": 160,
+      "p95": 480,
+      "p99": 850,
+      "rps": 18
+    },
+    {
+      "endpoint": "POST /api/v1/executions",
+      "p50": 200,
+      "p95": 600,
+      "p99": 1100,
+      "rps": 12
+    },
+    {
+      "endpoint": "POST /api/v1/auth/login",
+      "p50": 250,
+      "p95": 700,
+      "p99": 1200,
+      "rps": 10
+    }
+  ]
+}

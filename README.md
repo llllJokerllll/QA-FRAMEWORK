@@ -1,706 +1,306 @@
-# QA-FRAMEWORK
+# QA-FRAMEWORK - Unified QA Automation Platform
 
-<p align="center">
-  <h1>🚀 Modern QA Automation Framework</h1>
-  <p><strong>Python 3.12 | Clean Architecture | SOLID Principles</strong></p>
-</p>
+[![CI](https://github.com/llllJokerllll/QA-FRAMEWORK/actions/workflows/ci.yml/badge.svg)](https://github.com/llllJokerllll/QA-FRAMEWORK/actions/workflows/ci.yml)
+[![CD](https://github.com/llllJokerllll/QA-FRAMEWORK/actions/workflows/cd.yml/badge.svg)](https://github.com/llllJokerllll/QA-FRAMEWORK/actions/workflows/cd.yml)
+[![codecov](https://codecov.io/gh/llllJokerllll/QA-FRAMEWORK/branch/main/graph/badge.svg)](https://codecov.io/gh/llllJokerllll/QA-FRAMEWORK)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![Node.js 18+](https://img.shields.io/badge/node.js-18+-green.svg)](https://nodejs.org/)
+[![License](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)
 
----
+Plataforma unificada de automatización de QA con arquitectura limpia, dashboard web moderno, y soporte multi-framework.
 
-## 📋 Overview
+## 🚀 Características Principales
 
-**QA-FRAMEWORK** is a comprehensive, modern testing framework for automating all types of QA tests. Built with Clean Architecture and SOLID principles, it provides a robust foundation for API, UI, integration, and end-to-end testing.
+### Framework Core
+- **Arquitectura Limpia** con principios SOLID
+- **Multi-framework testing** (Selenium, Playwright, Appium, Cypress)
+- **Adaptadores modulares** para diferentes tecnologías
+- **Inyección de dependencias** y configuración flexible
+- **Reporting avanzado** con múltiples formatos
 
-### ✨ Key Features
+### Dashboard Web
+- **Interfaz moderna** con React + TypeScript + Material-UI
+- **Backend robusto** con FastAPI + PostgreSQL
+- **Gestión completa de pruebas** (CRUD)
+- **Ejecución visual e interactiva**
+- **Dashboard de resultados en tiempo real**
+- **Integration Hub** (Jira, Zephyr, Azure DevOps, TestLink, HP ALM)
 
-- 🏗️ **Clean Architecture** - Separation of concerns and maintainability
-- 🎯 **SOLID Principles** - Single Responsibility, Open/Closed, Liskov Substitution, Interface Segregation, Dependency Inversion
-- 🧪 **Multi-Type Testing** - API, UI, Integration, E2E, Performance, Security, Database
-- 🚀 **Async Support** - Full async/await support with HTTPX and Playwright
-- 📊 **Advanced Reporting** - Allure, HTML, JSON reports with screenshots/videos
-- ⚡ **Parallel Execution** - pytest-xdist for faster test runs
-- 🔧 **Flexible Configuration** - YAML/JSON/ENV configuration support
-- 🧱 **Type Safety** - 100% type hints with Pydantic
-- 📝 **Comprehensive Documentation** - Docstrings and examples
-- 🔄 **CI/CD Ready** - GitHub Actions and Docker support
-- 🛡️ **Security Testing** - SQL injection, XSS, authentication, rate limiting
-- ⚡ **Performance Testing** - Load testing, benchmarks, metrics collection
-- 🗄️ **Database Testing** - Data integrity, migrations, SQL validation
+### Testing & Quality
+- **82.59% code coverage** en backend
+- **69 tests E2E** con Playwright
+- **Tests de performance** con Locust
+- **CI/CD automatizado** con GitHub Actions
+- **Security scanning** integrado
 
----
+## 📁 Estructura del Proyecto
 
-## 🎯 Supported Testing Types
+```
+QA-FRAMEWORK/
+├── src/                    # Framework Core
+│   ├── core/              # Lógica de negocio
+│   ├── adapters/          # Adaptadores externos
+│   │   ├── web/          # Selenium, Playwright
+│   │   ├── mobile/       # Appium
+│   │   ├── api/          # REST API testing
+│   │   └── api_contract/ # Contract testing
+│   └── entities/         # Modelos de dominio
+├── dashboard/             # Dashboard Web (UI)
+│   ├── backend/          # FastAPI backend
+│   ├── frontend/         # React frontend
+│   ├── tests/            # Tests del dashboard
+│   ├── monitoring/       # Prometheus + Grafana
+│   └── docker-compose.yml
+├── config/               # Configuración del framework
+├── docs/                 # Documentación completa
+├── examples/             # Ejemplos de uso
+├── tests/                # Tests del framework
+└── .github/workflows/    # CI/CD pipelines
+```
 
-| Type | Tools | Status |
-|------|-------|--------|
-| **API Testing** | HTTPX, Requests | ✅ Supported |
-| **UI Testing** | Playwright | ✅ Supported |
-| **Integration Testing** | Pytest | ✅ Supported |
-| **E2E Testing** | Playwright | ✅ Supported |
-| **Performance Testing** | Locust, K6, Apache Bench | ✅ Supported |
-| **Security Testing** | SQL Injection, XSS, Auth Testing | ✅ Supported |
-| **Database Testing** | SQLite, PostgreSQL, MySQL | ✅ Supported |
-| **Reporting** | Allure, HTML, JSON | ✅ Supported |
+## 🛠️ Instalación
 
----
+### Requisitos
+- Python 3.11+
+- Node.js 18+
+- Docker y Docker Compose
+- PostgreSQL 15+
+- Redis 7+
 
-## 🚀 Quick Start
-
-### Installation
+### Desarrollo Local
 
 ```bash
-# Clone the repository
-git clone https://github.com/yourusername/qa-framework.git
-cd qa-framework
+# Clonar el repositorio
+git clone https://github.com/llllJokerllll/QA-FRAMEWORK.git
+cd QA-FRAMEWORK
 
-# Install dependencies
+# Opción 1: Usar Docker Compose (recomendado)
+cd dashboard
+docker-compose up -d
+
+# Opción 2: Instalación manual
+## Framework Core
+pip install -e .
+
+## Dashboard Backend
+cd dashboard/backend
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -r requirements.txt
+uvicorn main:app --reload
 
-# Or install in development mode
-pip install -e ".[dev,ui,performance,security]"
-
-# Install Playwright browsers (for UI testing)
-playwright install
+## Dashboard Frontend
+cd dashboard/frontend
+npm install
+npm run dev
 ```
 
-### Run Your First Test
+### URLs de Acceso
+- **Dashboard UI**: http://localhost:3000
+- **Backend API**: http://localhost:8000
+- **API Docs**: http://localhost:8000/api/v1/docs
+- **Prometheus**: http://localhost:9090
+- **Grafana**: http://localhost:3001
+
+## 🔧 Uso del Framework
+
+### Ejemplo Básico
 
 ```python
-# tests/api/test_users_api.py
-import pytest
-from src.adapters.http.httpx_client import HTTPXClient
+from src.core.entities import TestCase, TestStep
+from src.core.use_cases import ExecuteTest
+from src.adapters.web import SeleniumAdapter
 
+# Crear caso de prueba
+test_case = TestCase(
+    name="Login Test",
+    steps=[
+        TestStep(action="goto", target="/login"),
+        TestStep(action="type", target="#username", value="user@example.com"),
+        TestStep(action="type", target="#password", value="password123"),
+        TestStep(action="click", target="#submit-button"),
+        TestStep(action="assert", target=".welcome-message", value="Welcome!")
+    ]
+)
 
-@pytest.mark.asyncio
-async def test_get_users():
-    """Test getting users from API."""
-    client = HTTPXClient(base_url="https://jsonplaceholder.typicode.com")
-    
-    response = await client.get("/users")
-    
-    assert response.status_code == 200
-    assert len(response.json()) > 0
-    assert isinstance(response.json(), list)
+# Ejecutar con Selenium
+adapter = SeleniumAdapter(browser="chrome")
+executor = ExecuteTest(adapter)
+result = executor.execute(test_case)
 ```
 
-Run the test:
+### Ejemplo con Dashboard
+
 ```bash
-pytest tests/api/test_users_api.py -v
+# Crear suite via API
+curl -X POST http://localhost:8000/api/v1/suites \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Login Tests",
+    "description": "Suite de pruebas de autenticación"
+  }'
+
+# Ejecutar via Dashboard UI
+# 1. Acceder a http://localhost:3000
+# 2. Crear Test Suite
+# 3. Añadir Test Cases
+# 4. Ejecutar y ver resultados en tiempo real
 ```
 
----
+## 📊 Integration Hub
 
-## 💡 Usage Examples
+Conecta con herramientas populares de gestión de pruebas:
 
-### API Testing Example
+| Herramienta | Tipo | Usuarios Gratis | Estado |
+|-------------|------|-----------------|--------|
+| **Jira** | Issue Tracking | 10 | ✅ Soportado |
+| **Zephyr Squad** | Test Management | 10 | ✅ Soportado |
+| **Azure DevOps** | ALM Platform | 5 | ✅ Soportado |
+| **TestLink** | Open Source | Ilimitado | ✅ Soportado |
+| **HP ALM** | Enterprise | Pago | ✅ Soportado |
+
+### Configurar Integración
 
 ```python
-# tests/api/test_users_api.py
-import pytest
-from src.adapters.http.httpx_client import HTTPXClient
+# Jira
+POST /api/v1/integrations/configure
+{
+  "provider": "jira",
+  "config": {
+    "url": "https://your-domain.atlassian.net",
+    "api_token": "your-token",
+    "email": "user@example.com"
+  }
+}
 
-
-@pytest.mark.api
-@pytest.mark.asyncio
-async def test_get_users():
-    """Test getting users from API."""
-    client = HTTPXClient(
-        base_url="https://jsonplaceholder.typicode.com",
-        timeout=30
-    )
-    
-    response = await client.get("/users")
-    
-    assert response.status_code == 200
-    assert len(response.json()) > 0
-    assert isinstance(response.json(), list)
+# Sincronizar resultados
+POST /api/v1/integrations/sync
+{
+  "provider": "jira",
+  "execution_id": "123"
+}
 ```
 
-Run test:
+## 🧪 Testing
+
+### Tests del Framework
 ```bash
-pytest tests/api/test_users_api.py -v
+# Tests unitarios
+pytest tests/ -v --cov=src
+
+# Tests específicos
+pytest tests/unit/test_web_adapter.py -v
 ```
 
-### UI Testing Example (Playwright)
+### Tests del Dashboard
+```bash
+cd dashboard
 
-```python
-# tests/ui/test_login_page.py
-import pytest
-from src.adapters.ui.playwright_page import PlaywrightPage
+# Tests unitarios backend
+cd backend
+pytest tests/unit/ -v --cov=backend
 
+# Tests E2E (Playwright)
+cd ../tests/e2e
+pytest test_login.py -v
 
-@pytest.mark.ui
-@pytest.mark.asyncio
-async def test_user_login():
-    """Test user login flow."""
-    async with PlaywrightPage("chromium", headless=True) as page:
-        await page.goto("https://example.com/login")
-        await page.fill("#username", "testuser")
-        await page.fill("#password", "testpass")
-        await page.click("#login-button")
-        
-        # Assertions
-        await page.wait_for_selector("#dashboard")
-        assert await page.is_visible("#welcome-message")
+# Tests de performance
+cd ../performance
+locust -f locustfile.py
 ```
 
----
+## 📈 Monitoreo y Observabilidad
 
-## 📁 Project Structure
+### Métricas Disponibles
+- **API Performance**: Latencia, throughput, errores
+- **Database Metrics**: Conexiones, queries lentas
+- **Cache Performance**: Hit rate, memoria
+- **Test Metrics**: Tiempo de ejecución, tasa de éxito
 
-```
-qa-framework/
-├── src/
-│   ├── core/                     # Core business logic
-│   │   ├── interfaces/          # Interfaces/Contracts (SOLID DIP)
-│   │   ├── entities/            # Domain entities
-│   │   ├── use_cases/           # Application logic (SOLID SRP)
-│   │   └── repositories/        # Data access
-│   ├── adapters/                # External integrations
-│   │   ├── http/              # HTTPX, Requests
-│   │   ├── ui/                # Playwright, Selenium
-│   │   ├── reporting/         # Allure, HTML, JSON
-│   │   ├── performance/       # Locust, K6, Apache Bench
-│   │   ├── security/          # SQL Injection, XSS, Auth, Rate Limit
-│   │   └── database/          # Database testing, SQL validation
-│   └── infrastructure/         # Cross-cutting concerns
-│       ├── config/           # Configuration
-│       ├── logger/           # Logging
-│       └── utils/            # Utilities
-├── tests/                       # Test suites
-│   ├── unit/                 # Unit tests
-│   ├── integration/          # Integration tests
-│   ├── e2e/                  # E2E tests
-│   └── fixtures/             # Pytest fixtures
-├── docs/                        # Documentation
-├── examples/                    # Usage examples
-├── config/                      # Configuration files
-├── requirements.txt            # Dependencies
-├── setup.py                    # Package setup
-├── pyproject.toml              # Tool configuration
-└── README.md                   # This file
-```
+### Dashboards Grafana
+- API Performance Dashboard
+- Database Metrics Dashboard
+- Cache Performance Dashboard
+- Alerts Dashboard
 
----
-
-## 💡 Usage Examples
-
-### API Testing Example
-
-```python
-# tests/api/test_api_example.py
-import pytest
-from src.adapters.http.httpx_client import HTTPXClient
-from src.core.entities.test_result import TestResult
-
-
-@pytest.mark.api
-@pytest.mark.asyncio
-async def test_create_user():
-    """Test creating a new user via API."""
-    client = HTTPXClient(
-        base_url="https://jsonplaceholder.typicode.com",
-        timeout=30
-    )
-    
-    user_data = {
-        "name": "Test User",
-        "email": "test@example.com"
-    }
-    
-    response = await client.post("/users", json=user_data)
-    
-    result = TestResult(
-        test_name="test_create_user",
-        passed=response.status_code == 201,
-        response=response.json(),
-        execution_time=1.5
-    )
-    
-    assert result.passed
-    assert response.json()["name"] == "Test User"
-```
-
-### Parallel API Testing Example
-
-```python
-# tests/api/test_parallel_api.py
-import pytest
-from typing import Dict, Any
-
-
-@pytest.mark.api
-@pytest.mark.parallel_safe
-@pytest.mark.asyncio
-async def test_parallel_api_calls(async_http_client):
-    """Test API calls run safely in parallel."""
-    response = await async_http_client.get("/users")
-    assert response.status_code == 200
-
-
-@pytest.mark.api
-@pytest.mark.parallel_safe
-def test_api_with_isolation(http_client, isolated_test_data: Dict[str, Any]):
-    """Test with isolated data per test."""
-    response = http_client.get("/users/1")
-    isolated_test_data["user"] = response.json()
-    assert response.status_code == 200
-```
-
-### Parallel UI Testing Example
-
-```python
-# tests/ui/test_parallel_ui.py
-import pytest
-from typing import Dict, Any
-
-
-@pytest.mark.ui
-@pytest.mark.parallel_safe
-@pytest.mark.asyncio
-async def test_parallel_ui_1(page):
-    """Test UI with isolated page instance."""
-    await page.goto("https://example.com")
-    assert await page.title() == "Example Domain"
-
-
-@pytest.mark.ui
-@pytest.mark.parallel_safe
-@pytest.mark.asyncio
-async def test_parallel_ui_2(page):
-    """Another UI test running in parallel."""
-    await page.goto("https://example.org")
-    assert await page.title() == "Example Domain"
-```
-
-### UI Testing Example (Playwright)
-
-```python
-# tests/ui/test_login_page.py
-import pytest
-from src.adapters.ui.playwright_page import PlaywrightPage
-
-
-@pytest.mark.ui
-@pytest.mark.asyncio
-async def test_user_login():
-    """Test user login flow."""
-    async with PlaywrightPage("chromium", headless=True) as page:
-        await page.goto("https://example.com/login")
-        await page.fill("#username", "testuser")
-        await page.fill("#password", "testpass")
-        await page.click("#login-button")
-        
-        # Assertions
-        await page.wait_for_selector("#dashboard")
-        assert await page.is_visible("#welcome-message")
-```
-
-### Performance Testing Example
-
-```python
-# tests/performance/test_load_test.py
-import pytest
-from src.adapters.performance.performance_client import PerformanceClient
-
-
-@pytest.mark.performance
-@pytest.mark.asyncio
-async def test_api_load_testing():
-    """Test API load with multiple users."""
-    client = PerformanceClient(base_url="https://jsonplaceholder.typicode.com")
-    
-    # Load test with 100 users for 30 seconds
-    result = await client.load_test(
-        endpoint="/users",
-        num_users=100,
-        duration_seconds=30
-    )
-    
-    assert result.total_requests > 0
-    assert result.p95_response_time < 1000  # P95 under 1 second
-    assert result.error_rate < 0.05  # Error rate under 5%
-```
-
-### Security Testing Example
-
-```python
-# tests/security/test_sql_injection.py
-import pytest
-from src.adapters.security.security_client import SecurityClient
-from src.adapters.security.sql_injection_tester import SQLInjectionTester
-
-
-@pytest.mark.security
-@pytest.mark.asyncio
-async def test_sql_injection_protection():
-    """Test SQL injection protection."""
-    client = SecurityClient(base_url="https://example.com/api")
-    tester = SQLInjectionTester(client)
-    
-    # Test with common SQL injection payloads
-    results = await tester.test_endpoint(
-        endpoint="/users",
-        payload_param="id",
-        payloads=["' OR '1'='1", "1; DROP TABLE users--"]
-    )
-    
-    assert all(not r.vulnerable for r in results), "SQL injection vulnerabilities detected"
-```
-
-### Database Testing Example
-
-```python
-# tests/database/test_data_integrity.py
-import pytest
-from src.adapters.database.database_client import DatabaseClient
-from src.adapters.database.data_integrity_tester import DataIntegrityTester
-
-
-@pytest.mark.database
-async def test_data_integrity():
-    """Test database data integrity constraints."""
-    client = DatabaseClient(connection_string="sqlite:///test.db")
-    tester = DataIntegrityTester(client)
-    
-    # Test primary key constraint
-    pk_result = await tester.test_primary_key(
-        table="users",
-        pk_column="id"
-    )
-    assert pk_result.passed, "Primary key constraint violated"
-    
-    # Test unique constraint
-    unique_result = await tester.test_unique_constraint(
-        table="users",
-        columns=["email"]
-    )
-    assert unique_result.passed, "Unique constraint violated"
-```
-
-### Configuration Example
-
+### Alertas
 ```yaml
-# config/qa.yaml
-test:
-  environment: staging
-  parallel_workers: 4
-  timeout: 30
-  retry_failed: 2
-
-api:
-  base_url: https://api.example.com
-  auth:
-    type: bearer
-    token: ${API_TOKEN}
-
-ui:
-  browser: chromium
-  headless: true
-  viewport: 1920x1080
-
-reporting:
-  allure: true
-  html: true
-  screenshots: on_failure
+# Ejemplo de alerta
+- alert: HighErrorRate
+  expr: rate(http_requests_total{status="500"}[5m]) > 0.1
+  for: 5m
+  annotations:
+    summary: "Alta tasa de errores en API"
 ```
+
+## 🚢 CI/CD Pipeline
+
+### Workflows Automatizados
+- **CI**: Tests, linting, security scanning en cada PR
+- **CD**: Deploy automático a staging/production
+- **Code Quality**: Análisis de calidad con Codecov
+- **Nightly**: Tests de regresión nocturnos
+
+### Badges
+[![CI](https://github.com/llllJokerllll/QA-FRAMEWORK/actions/workflows/ci.yml/badge.svg)](https://github.com/llllJokerllll/QA-FRAMEWORK/actions/workflows/ci.yml)
+[![CD](https://github.com/llllJokerllll/QA-FRAMEWORK/actions/workflows/cd.yml/badge.svg)](https://github.com/llllJokerllll/QA-FRAMEWORK/actions/workflows/cd.yml)
+
+## 📚 Documentación
+
+- **Framework**: `docs/ADVANCED_TEST_ARCHITECTURE.md`
+- **Dashboard**: `dashboard/README.md`
+- **Deployment**: `dashboard/DEPLOYMENT.md`
+- **API**: `docs/api-guide.md`
+- **Architecture**: `docs/architecture.md`
+- **CI/CD**: `docs/CICD_PIPELINE.md`
+
+## 🤝 Contribución
+
+Ver [CONTRIBUTING.md](CONTRIBUTING.md) para:
+- Código de conducta
+- Flujo de trabajo Git
+- Estándares de código
+- Proceso de PR
+
+## 📝 Licencia
+
+MIT License - ver [LICENSE](LICENSE) para detalles.
+
+## 🎯 Roadmap
+
+### v1.0 (Actual)
+- ✅ Framework Core completo
+- ✅ Dashboard Web funcional
+- ✅ Integration Hub
+- ✅ CI/CD automatizado
+- ✅ Monitoreo con Prometheus + Grafana
+
+### v1.1 (Próximo)
+- ⏳ Soporte para más frameworks de testing
+- ⏳ AI-powered test generation
+- ⏳ Mobile testing mejorado
+- ⏳ Performance optimizations
+
+### v2.0 (Futuro)
+- ⏳ Cloud-native deployment
+- ⏳ Multi-tenant support
+- ⏳ Advanced analytics
+- ⏳ ML-based test selection
+
+## 👥 Autores
+
+- **Joker** - *Initial work* - [llllJokerllll](https://github.com/llllJokerllll)
+- **Alfred** - *Senior Project Manager & Lead Developer*
+
+## 🔄 Historial de Fusiones
+
+- **2026-02-16**: Fusionado `QA-FRAMEWORK-DASHBOARD` dentro de `QA-FRAMEWORK` como subdirectorio `dashboard/`
+  - Dashboard web completo integrado
+  - Docker Compose unificado
+  - Documentación consolidada
+  - Repositorio unificado: https://github.com/llllJokerllll/QA-FRAMEWORK
 
 ---
 
-## 🧪 Running Tests
-
-### Run All Tests
-```bash
-pytest
-```
-
-### Run Specific Test Types
-```bash
-# API tests only
-pytest tests/api/ -m api
-
-# UI tests only
-pytest tests/ui/ -m ui
-
-# Integration tests only
-pytest tests/integration/ -m integration
-```
-
-### Parallel Execution
-
-QA-FRAMEWORK uses **pytest-xdist** for parallel test execution, significantly reducing test suite runtime.
-
-```bash
-# Auto-detect number of CPU cores
-pytest -n auto
-
-# Use specific number of workers
-pytest -n 4
-
-# Use logical CPU count
-pytest -n logical
-
-# Distribute tests by scope (group related tests)
-pytest -n 4 --dist=loadscope
-
-# Distribute tests by file
-pytest -n 4 --dist=loadfile
-
-# Run with coverage in parallel
-pytest -n 4 --cov=src --cov-report=html
-```
-
-#### Parallel Test Configuration
-
-Configure parallel execution in `config/qa.yaml`:
-
-```yaml
-test:
-  parallel_workers: 4  # Default number of workers
-  timeout: 30
-```
-
-#### Parallel Test Markers
-
-Use markers to control parallel execution:
-
-```python
-import pytest
-
-@pytest.mark.parallel_safe  # Safe to run in parallel (default)
-def test_safe_in_parallel():
-    """This test can run concurrently with others."""
-    assert True
-
-@pytest.mark.serial  # Run serially, not in parallel
-def test_must_run_serially():
-    """This test runs alone without parallelization."""
-    assert True
-
-@pytest.mark.isolated  # Complete isolation from other tests
-def test_requires_isolation():
-    """This test has complete resource isolation."""
-    assert True
-```
-
-#### Parallel Fixtures
-
-The framework provides thread-safe fixtures for parallel execution:
-
-```python
-import pytest
-from typing import Dict, Any
-
-# Worker identification
-def test_worker_info(worker_id: str, session_id: str):
-    """Access worker and session identifiers."""
-    assert worker_id.startswith("gw") or worker_id == "master"
-    assert len(session_id) == 8
-
-# Thread-safe locks
-def test_with_synchronization(resource_lock):
-    """Use locks for thread-safe operations."""
-    with resource_lock:
-        # Critical section - only one test at a time
-        modify_shared_resource()
-
-# Isolated test data
-def test_data_isolation(isolated_test_data: Dict[str, Any]):
-    """Each test gets isolated data storage."""
-    isolated_test_data["key"] = "value"
-    assert isolated_test_data["key"] == "value"
-
-# Worker-scoped resources
-def test_worker_resources(worker_resource_pool: Dict[str, Any]):
-    """Access worker-scoped resource pool."""
-    worker_resource_pool["counter"] = worker_resource_pool.get("counter", 0) + 1
-    assert worker_resource_pool["counter"] >= 1
-
-# Execution context
-def test_execution_context(execution_context: Dict[str, Any]):
-    """Access execution metadata."""
-    assert "worker_id" in execution_context
-    assert "process_id" in execution_context
-    assert "thread_id" in execution_context
-```
-
-#### Parallel Test Examples
-
-Run parallel examples:
-
-```bash
-# Basic parallel tests
-pytest tests/unit/test_parallel_basic.py -n 4 -v
-
-# Tests with isolation
-pytest tests/unit/test_parallel_isolation.py -n 4 -v
-
-# Resource sharing tests
-pytest tests/unit/test_parallel_resources.py -n 4 -v
-
-# Performance benchmarks
-pytest tests/unit/test_parallel_performance.py -n 4 -v
-
-# Run only serial tests
-pytest tests/unit/test_parallel_isolation.py -m serial -v
-```
-
-#### Parallel Test Best Practices
-
-1. **Use `@pytest.mark.parallel_safe`** for tests that can run concurrently
-2. **Use `@pytest.mark.serial`** for tests requiring exclusive access
-3. **Use `isolated_test_data`** fixture for test-specific data
-4. **Use `resource_lock`** for thread-safe access to shared resources
-5. **Avoid global state** - use fixtures for state management
-6. **Keep tests independent** - no dependencies between tests
-7. **Use worker-scoped fixtures** for expensive resources (databases, browsers)
-
-### With Coverage
-```bash
-pytest --cov=src --cov-report=html
-```
-
-### With Allure Reporting
-```bash
-pytest --alluredir=allure-results
-allure serve allure-results
-```
-
----
-
-## 📊 SOLID Principles Implementation
-
-### Single Responsibility (S)
-Each class has one reason to change. Example:
-```python
-# ✅ GOOD - One responsibility
-class HTTPClient:
-    def get(self, url): ...
-    def post(self, url, data): ...
-
-# ❌ BAD - Multiple responsibilities
-class HTTPClient:
-    def get(self, url): ...
-    def post(self, url, data): ...
-    def save_to_database(self, data): ...
-    def send_email_notification(self): ...
-```
-
-### Open/Closed (O)
-Open for extension, closed for modification:
-```python
-class TestReporter:
-    def report(self, result: TestResult):
-        # Can be extended with new reporters
-        pass
-
-class HTMLReporter(TestReporter):
-    def report(self, result: TestResult):
-        # HTML reporting implementation
-        pass
-
-class AllureReporter(TestReporter):
-    def report(self, result: TestResult):
-        # Allure reporting implementation
-        pass
-```
-
----
-
-## 🔧 Configuration
-
-The framework supports multiple configuration sources:
-
-1. **YAML files** - `config/qa.yaml`
-2. **JSON files** - `config/qa.json`
-3. **Environment variables** - `.env` file
-4. **Command line arguments**
-
-Configuration priority: CLI args > ENV > YAML/JSON
-
----
-
-## 📦 Dependencies
-
-### Core
-- **pytest** - Testing framework
-- **httpx** - Async HTTP client
-- **playwright** - Browser automation
-- **pydantic** - Data validation
-- **pyyaml** - YAML configuration
-
-### Development
-- **black** - Code formatter
-- **ruff** - Fast Python linter
-- **mypy** - Static type checker
-- **pre-commit** - Git hooks
-
-### Optional
-- **selenium** - Alternative browser automation
-- **locust** - Performance testing
-- **bandit** - Security testing
-- **safety** - Dependency security
-
----
-
-## 🐳 Docker Support
-
-```bash
-# Build Docker image
-docker build -t qa-framework .
-
-# Run tests in Docker
-docker run qa-framework pytest
-
-# With docker-compose
-docker-compose up
-```
-
----
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-### Code Style
-
-- Use **Black** for formatting
-- Follow **PEP 8** guidelines
-- Add **type hints** (100%)
-- Write **docstrings** (Google style)
-- Add **tests** for new features
-
----
-
-## 📝 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
-
-## 👥 Authors
-
-- **Alfred** - Initial work
-
----
-
-## 🙏 Acknowledgments
-
-- Clean Architecture principles by Robert C. Martin
-- SOLID principles inspiration
-- Pytest community
-- Playwright team
-
----
-
-<p align="center">
-  <strong>⭐ Star this repo if it helped you! ⭐</strong>
-</p>
-
-<p align="center">
-  Built with ❤️ by <a href="https://github.com/alfred">Alfred</a>
-</p>
+**Estado del Proyecto:** ✅ 100% Completado y en producción
+**Última actualización:** 2026-02-16

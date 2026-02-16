@@ -1,0 +1,20 @@
+{
+  "name": "qa-framework-dashboard",
+  "version": "0.1.0",
+  "description": "Dashboard unificada para QA-FRAMEWORK",
+  "main": "backend/main.py",
+  "scripts": {
+    "dev": "cd backend && uvicorn main:app --reload --host 0.0.0.0 --port 8000",
+    "start": "cd backend && uvicorn main:app --host 0.0.0.0 --port 8000",
+    "test": "pytest tests/",
+    "migrate": "cd backend && alembic upgrade head"
+  },
+  "keywords": [
+    "testing",
+    "dashboard",
+    "qa",
+    "automation"
+  ],
+  "author": "Alfred",
+  "license": "MIT"
+}

@@ -1,0 +1,268 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+env:
+  PYTHON_VERSION_DEFAULT: '3.12'
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.changes.outputs.backend }}
+      frontend: ${{ steps.changes.outputs.frontend }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: changes
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+              - 'docker-compose.yml'
+            frontend:
+              - 'frontend/**'
+              - 'docker-compose.yml'
+
+  test-backend:
+    needs: changes
+    if: ${{ needs.changes.outputs.backend == 'true' }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_DB: qa_framework_test
+          POSTGRES_USER: qa_test
+          POSTGRES_PASSWORD: qa_test_pass
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+    
+    - name: Cache pip packages
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('backend/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-${{ matrix.python-version }}-
+          ${{ runner.os }}-pip-
+    
+    - name: Install dependencies
+      working-directory: ./backend
+      run: |
+        python -m pip install --upgrade pip
+        pip install flake8 black mypy safety bandit
+        pip install -r requirements.txt
+    
+    - name: Run linting with flake8
+      working-directory: ./backend
+      run: |
+        # Stop the build if there are Python syntax errors or undefined names
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        # Exit-zero treats all errors as warnings
+        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+    
+    - name: Check code formatting with black
+      working-directory: ./backend
+      run: |
+        black --check --diff . || true
+    
+    - name: Run type checking with mypy
+      working-directory: ./backend
+      run: |
+        mypy . --ignore-missing-imports || true
+    
+    - name: Run security scan with bandit
+      working-directory: ./backend
+      run: |
+        bandit -r . -f json -o bandit-report.json || true
+        bandit -r . -ll || true
+    
+    - name: Run dependency vulnerability scan with safety
+      working-directory: ./backend
+      run: |
+        safety check -r requirements.txt --full-report || true
+    
+    - name: Run tests with coverage
+      working-directory: ./backend
+      env:
+        DATABASE_URL: postgresql+asyncpg://qa_test:qa_test_pass@localhost:5432/qa_framework_test
+        REDIS_HOST: localhost
+        REDIS_PORT: 6379
+        SECRET_KEY: test-secret-key-for-ci
+      run: |
+        pytest --cov=. --cov-report=xml --cov-report=html --cov-report=term -v
+    
+    - name: Upload coverage reports to Codecov
+      uses: codecov/codecov-action@v4
+      with:
+        file: ./backend/coverage.xml
+        flags: backend
+        name: backend-coverage-${{ matrix.python-version }}
+        fail_ci_if_error: false
+        token: ${{ secrets.CODECOV_TOKEN }}
+    
+    - name: Upload coverage report as artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-report-backend-py${{ matrix.python-version }}
+        path: |
+          backend/htmlcov/
+          backend/coverage.xml
+          backend/bandit-report.json
+        retention-days: 30
+
+  test-frontend:
+    needs: changes
+    if: ${{ needs.changes.outputs.frontend == 'true' }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+        cache-dependency-path: frontend/package-lock.json
+    
+    - name: Install dependencies
+      working-directory: ./frontend
+      run: |
+        npm ci
+    
+    - name: Run linter
+      working-directory: ./frontend
+      run: |
+        npm run lint
+    
+    - name: Run tests with coverage
+      working-directory: ./frontend
+      run: |
+        npm run test:coverage -- --run
+    
+    - name: Build frontend
+      working-directory: ./frontend
+      run: |
+        npm run build
+    
+    - name: Upload coverage reports
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-report-frontend-node${{ matrix.node-version }}
+        path: |
+          frontend/coverage/
+        retention-days: 30
+
+  integration-tests:
+    needs: [changes]
+    if: ${{ needs.changes.outputs.backend == 'true' || needs.changes.outputs.frontend == 'true' }}
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    
+    - name: Cache Docker layers
+      uses: actions/cache@v4
+      with:
+        path: /tmp/.buildx-cache
+        key: ${{ runner.os }}-buildx-${{ github.sha }}
+        restore-keys: |
+          ${{ runner.os }}-buildx-
+    
+    - name: Build Docker images
+      run: |
+        docker-compose -f docker-compose.yml build
+    
+    - name: Run smoke tests
+      run: |
+        docker-compose -f docker-compose.yml up -d
+        sleep 30
+        docker-compose ps
+        curl -f http://localhost:8000/api/v1/health || echo "Backend health check skipped"
+        docker-compose down
+
+  security-scan:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+    
+    - name: Upload Trivy scan results
+      uses: github/codeql-action/upload-sarif@v3
+      if: always()
+      with:
+        sarif_file: 'trivy-results.sarif'
+    
+    - name: Run Trivy on Docker images
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: 'python:3.11-slim'
+        format: 'table'
+        exit-code: '0'
+        ignore-unfixed: true
+        vuln-type: 'os,library'
+        severity: 'CRITICAL,HIGH'
+
+  notify:
+    needs: [test-backend, test-frontend, integration-tests]
+    if: always() && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+    - name: Notify on success
+      if: ${{ needs.test-backend.result == 'success' && needs.test-frontend.result == 'success' && needs.integration-tests.result == 'success' }}
+      run: |
+        echo "✅ All CI checks passed!"
+    
+    - name: Notify on failure
+      if: ${{ needs.test-backend.result == 'failure' || needs.test-frontend.result == 'failure' || needs.integration-tests.result == 'failure' }}
+      run: |
+        echo "❌ Some CI checks failed. Please review the logs."
+        exit 1

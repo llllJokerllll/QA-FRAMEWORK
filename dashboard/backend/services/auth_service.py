@@ -1,0 +1,147 @@
+"""
+Authentication Service
+
+Provides JWT token generation and validation, password hashing, and user authentication.
+"""
+
+from datetime import datetime, timedelta
+from typing import Optional
+from fastapi import Depends, HTTPException, status
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from jose import JWTError, jwt
+from passlib.context import CryptContext
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
+
+from config import settings
+from models import User
+from schemas import UserCreate, UserResponse, LoginRequest, TokenResponse
+from database import get_db_session
+from core.logging_config import get_logger, set_request_id
+
+# Initialize logger
+logger = get_logger(__name__)
+
+# Password hashing
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+# Security scheme
+security = HTTPBearer()
+
+
+def hash_password(password: str) -> str:
+    """Hash a password"""
+    logger.debug("Hashing password")
+    hashed = pwd_context.hash(password)
+    logger.debug("Password hashed successfully")
+    return hashed
+
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    """Verify a password against a hash"""
+    return pwd_context.verify(plain_password, hashed_password)
+
+
+def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
+    """Create JWT access token"""
+    to_encode = data.copy()
+    if expires_delta:
+        expire = datetime.utcnow() + expires_delta
+    else:
+        expire = datetime.utcnow() + timedelta(
+            minutes=settings.access_token_expire_minutes
+        )
+
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(
+        to_encode, settings.secret_key, algorithm=settings.algorithm
+    )
+    return encoded_jwt
+
+
+async def authenticate_user(
+    db: AsyncSession, username: str, password: str
+) -> Optional[User]:
+    """Authenticate a user"""
+    logger.info("Authenticating user", username=username)
+
+    result = await db.execute(select(User).where(User.username == username))
+    user = result.scalar_one_or_none()
+
+    if not user:
+        logger.warning("Authentication failed - user not found", username=username)
+        return None
+
+    if not verify_password(password, user.hashed_password):
+        logger.warning(
+            "Authentication failed - invalid password",
+            username=username,
+            user_id=user.id,
+        )
+        return None
+
+    logger.info("User authenticated successfully", username=username, user_id=user.id)
+    return user
+
+
+async def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db: AsyncSession = Depends(get_db_session),
+) -> User:
+    """Get current authenticated user from JWT token"""
+    logger.debug("Validating JWT token")
+
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+
+    try:
+        payload = jwt.decode(
+            credentials.credentials,
+            settings.secret_key,
+            algorithms=[settings.algorithm],
+        )
+        username: str = payload.get("sub")
+        if username is None:
+            logger.warning("JWT validation failed - no subject claim")
+            raise credentials_exception
+    except JWTError as e:
+        logger.warning("JWT validation failed", error=str(e))
+        raise credentials_exception
+
+    result = await db.execute(select(User).where(User.username == username))
+    user = result.scalar_one_or_none()
+
+    if user is None:
+        logger.warning("JWT validation failed - user not found", username=username)
+        raise credentials_exception
+
+    logger.debug("JWT token validated successfully", username=username, user_id=user.id)
+    return user
+
+
+async def login_for_access_token(
+    auth_request: LoginRequest, db: AsyncSession
+) -> TokenResponse:
+    """Login and return access token"""
+    logger.info("Login attempt", username=auth_request.username)
+
+    user = await authenticate_user(db, auth_request.username, auth_request.password)
+    if not user:
+        logger.warning(
+            "Login failed - invalid credentials", username=auth_request.username
+        )
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    access_token = create_access_token(data={"sub": user.username})
+    logger.info(
+        "Login successful - token generated", username=user.username, user_id=user.id
+    )
+
+    return TokenResponse(access_token=access_token, token_type="bearer")

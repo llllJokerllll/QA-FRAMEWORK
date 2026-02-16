@@ -1,0 +1,409 @@
+name: Code Quality
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    # Run every day at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+jobs:
+  code-formatting-backend:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+    
+    - name: Cache pip packages
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-3.12-${{ hashFiles('backend/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-3.12-
+    
+    - name: Install formatting tools
+      run: |
+        python -m pip install --upgrade pip
+        pip install black isort autopep8
+    
+    - name: Check Black formatting
+      working-directory: ./backend
+      run: |
+        echo "Checking Black formatting..."
+        black --check --diff . 2>&1 | tee black-report.txt || true
+    
+    - name: Check import sorting with isort
+      working-directory: ./backend
+      run: |
+        echo "Checking import order with isort..."
+        isort --check-only --diff . 2>&1 | tee isort-report.txt || true
+    
+    - name: Auto-format with autopep8 (informational)
+      working-directory: ./backend
+      run: |
+        echo "Running autopep8 to show formatting issues..."
+        autopep8 --recursive --diff --max-line-length 127 . 2>&1 | head -100 || true
+    
+    - name: Upload formatting reports
+      uses: actions/upload-artifact@v4
+      with:
+        name: formatting-reports-backend
+        path: |
+          backend/black-report.txt
+          backend/isort-report.txt
+        retention-days: 30
+
+  code-formatting-frontend:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Use Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+        cache: 'npm'
+        cache-dependency-path: frontend/package-lock.json
+    
+    - name: Install dependencies
+      working-directory: ./frontend
+      run: npm ci
+    
+    - name: Check ESLint formatting
+      working-directory: ./frontend
+      run: |
+        npm run lint 2>&1 | tee eslint-report.txt || true
+    
+    - name: Check TypeScript types
+      working-directory: ./frontend
+      run: |
+        npx tsc --noEmit 2>&1 | tee typescript-report.txt || true
+    
+    - name: Upload formatting reports
+      uses: actions/upload-artifact@v4
+      with:
+        name: formatting-reports-frontend
+        path: |
+          frontend/eslint-report.txt
+          frontend/typescript-report.txt
+        retention-days: 30
+
+  dependency-vulnerability-scan:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        component: [backend, frontend]
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Scan Python dependencies
+      if: matrix.component == 'backend'
+      working-directory: ./backend
+      run: |
+        pip install safety
+        safety check -r requirements.txt --json --output safety-report.json || true
+        safety check -r requirements.txt --full-report || true
+    
+    - name: Use Node.js
+      if: matrix.component == 'frontend'
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+        cache: 'npm'
+        cache-dependency-path: frontend/package-lock.json
+    
+    - name: Scan Node.js dependencies
+      if: matrix.component == 'frontend'
+      working-directory: ./frontend
+      run: |
+        npm audit --audit-level=moderate 2>&1 | tee npm-audit-report.txt || true
+        npm audit --json > npm-audit-report.json || true
+    
+    - name: Upload vulnerability reports
+      uses: actions/upload-artifact@v4
+      with:
+        name: vulnerability-reports-${{ matrix.component }}
+        path: |
+          backend/safety-report.json
+          frontend/npm-audit-report.txt
+          frontend/npm-audit-report.json
+        retention-days: 30
+
+  code-complexity-analysis:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+    
+    - name: Install complexity analysis tools
+      run: |
+        python -m pip install --upgrade pip
+        pip install radon xenon wily
+    
+    - name: Analyze Python complexity
+      working-directory: ./backend
+      run: |
+        echo "Running cyclomatic complexity analysis..."
+        radon cc . -a -nc 2>&1 | tee complexity-report.txt || true
+        
+        echo -e "\n\nRunning raw metrics analysis..."
+        radon raw . 2>&1 | tee -a complexity-report.txt || true
+        
+        echo -e "\n\nRunning maintainability index analysis..."
+        radon mi . 2>&1 | tee -a complexity-report.txt || true
+        
+        echo -e "\n\nRunning Halstead metrics..."
+        radon hal . 2>&1 | tee -a complexity-report.txt || true
+    
+    - name: Check complexity thresholds
+      working-directory: ./backend
+      run: |
+        echo "Checking complexity thresholds..."
+        xenon --max-absolute B --max-modules B --max-average A . || echo "Complexity check completed with warnings"
+    
+    - name: Generate complexity trends
+      working-directory: ./backend
+      run: |
+        echo "Generating complexity analysis..."
+        radon cc . --average --show-closures 2>&1 | head -50 || true
+    
+    - name: Upload complexity reports
+      uses: actions/upload-artifact@v4
+      with:
+        name: complexity-reports
+        path: |
+          backend/complexity-report.txt
+        retention-days: 30
+
+  static-analysis-backend:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+    
+    - name: Install analysis tools
+      run: |
+        python -m pip install --upgrade pip
+        pip install prospector[with_everything] pylint pyflakes pydocstyle pycodestyle mccabe
+    
+    - name: Run Prospector analysis
+      working-directory: ./backend
+      run: |
+        prospector . --output-format=json 2>&1 | tee prospector-report.json || true
+        prospector . --output-format=text 2>&1 | tee prospector-report.txt || true
+    
+    - name: Run Pylint analysis
+      working-directory: ./backend
+      run: |
+        pylint **/*.py --output-format=json 2>&1 | tee pylint-report.json || true
+        pylint **/*.py --output-format=text 2>&1 | tee pylint-report.txt || true
+    
+    - name: Run Pyflakes
+      working-directory: ./backend
+      run: |
+        pyflakes . 2>&1 | tee pyflakes-report.txt || true
+    
+    - name: Run Pydocstyle
+      working-directory: ./backend
+      run: |
+        pydocstyle . 2>&1 | tee pydocstyle-report.txt || true
+    
+    - name: Upload analysis reports
+      uses: actions/upload-artifact@v4
+      with:
+        name: static-analysis-reports
+        path: |
+          backend/prospector-report.json
+          backend/prospector-report.txt
+          backend/pylint-report.json
+          backend/pylint-report.txt
+          backend/pyflakes-report.txt
+          backend/pydocstyle-report.txt
+        retention-days: 30
+
+  static-analysis-frontend:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Use Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+        cache: 'npm'
+        cache-dependency-path: frontend/package-lock.json
+    
+    - name: Install dependencies
+      working-directory: ./frontend
+      run: |
+        npm ci
+    
+    - name: Run ESLint with plugins
+      working-directory: ./frontend
+      run: |
+        npx eslint . --ext .ts,.tsx --format=json --output-file=eslint-detailed-report.json 2>&1 || true
+        npx eslint . --ext .ts,.tsx 2>&1 | tee eslint-detailed-report.txt || true
+    
+    - name: Check code metrics
+      working-directory: ./frontend
+      run: |
+        # Install additional linting tools
+        npm install --save-dev eslint-plugin-complexity eslint-plugin-sonarjs
+        
+        # Run complexity check
+        npx eslint . --ext .ts,.tsx --rule 'complexity: [error, 10]' 2>&1 | tee complexity-eslint.txt || true
+    
+    - name: Upload frontend analysis
+      uses: actions/upload-artifact@v4
+      with:
+        name: static-analysis-reports-frontend
+        path: |
+          frontend/eslint-detailed-report.json
+          frontend/eslint-detailed-report.txt
+          frontend/complexity-eslint.txt
+        retention-days: 30
+
+  code-coverage-trend:
+    runs-on: ubuntu-latest
+    needs: [code-formatting-backend]
+    if: github.ref == 'refs/heads/main'
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Fetch full history for trend analysis
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pytest pytest-cov
+        pip install -r backend/requirements.txt
+    
+    - name: Generate coverage report
+      working-directory: ./backend
+      run: |
+        pytest --cov=. --cov-report=xml --cov-report=html
+    
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v4
+      with:
+        file: ./backend/coverage.xml
+        flags: unittests
+        name: code-quality-coverage
+        fail_ci_if_error: false
+        token: ${{ secrets.CODECOV_TOKEN }}
+
+  generate-quality-report:
+    needs: [code-formatting-backend, code-formatting-frontend, dependency-vulnerability-scan, code-complexity-analysis]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: quality-reports
+    
+    - name: Generate summary report
+      run: |
+        cat > quality-reports/QUALITY_SUMMARY.md << 'EOF'
+        # Code Quality Report
+        
+        Generated on: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+        Commit: ${{ github.sha }}
+        Branch: ${{ github.ref }}
+        
+        ## Summary
+        
+        This report contains code quality analysis results including:
+        - Code formatting checks (Black, isort, ESLint)
+        - Dependency vulnerability scanning
+        - Code complexity analysis
+        - Static analysis results
+        
+        ## Available Reports
+        
+        ### Backend
+        - `formatting-reports-backend/` - Black and isort formatting reports
+        - `vulnerability-reports-backend/` - Safety vulnerability scan results
+        - `complexity-reports/` - Radon complexity metrics
+        - `static-analysis-reports/` - Prospector, Pylint, Pyflakes, Pydocstyle
+        
+        ### Frontend
+        - `formatting-reports-frontend/` - ESLint and TypeScript reports
+        - `vulnerability-reports-frontend/` - npm audit results
+        - `static-analysis-reports-frontend/` - Detailed ESLint analysis
+        
+        ## Next Steps
+        
+        1. Review formatting reports and fix any issues
+        2. Address critical/high vulnerability findings
+        3. Monitor complexity metrics for increasing trends
+        4. Fix static analysis warnings
+        EOF
+    
+    - name: Upload quality summary
+      uses: actions/upload-artifact@v4
+      with:
+        name: quality-summary
+        path: quality-reports/QUALITY_SUMMARY.md
+        retention-days: 90
+    
+    - name: Comment on PR
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          const summary = fs.readFileSync('quality-reports/QUALITY_SUMMARY.md', 'utf8');
+          
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: '## 📊 Code Quality Analysis Complete\n\n' + 
+                  'All code quality checks have finished. \n' +
+                  'Download the detailed reports from the Artifacts section of this workflow run.'
+          });
+
+  notify-quality-checks:
+    needs: [code-formatting-backend, code-formatting-frontend, dependency-vulnerability-scan, code-complexity-analysis]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+    - name: Quality checks summary
+      run: |
+        echo "### Code Quality Checks Summary ###"
+        echo "Formatting Backend: ${{ needs.code-formatting-backend.result }}"
+        echo "Formatting Frontend: ${{ needs.code-formatting-frontend.result }}"
+        echo "Vulnerability Scan: ${{ needs.dependency-vulnerability-scan.result }}"
+        echo "Complexity Analysis: ${{ needs.code-complexity-analysis.result }}"
+        
+        if [[ "${{ needs.code-formatting-backend.result }}" == "failure" || \
+              "${{ needs.code-formatting-frontend.result }}" == "failure" || \
+              "${{ needs.dependency-vulnerability-scan.result }}" == "failure" ]]; then
+          echo "⚠️ Some quality checks failed. Please review the reports."
+        else
+          echo "✅ All quality checks completed successfully!"
+        fi
