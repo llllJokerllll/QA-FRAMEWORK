@@ -6,6 +6,7 @@ This module provides:
 2. Worker-scoped fixtures for resource isolation
 3. Hooks for pytest-xdist parallelization
 4. Configuration integration with QA-FRAMEWORK config files
+5. Advanced test patterns (AAA, BDD, Factories, Builders)
 
 Usage:
     pytest -n auto              # Auto-detect number of workers
@@ -38,6 +39,12 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from src.infrastructure.config.config_manager import ConfigManager, QAConfig
 from src.infrastructure.logger.logger import Logger
+
+# Import advanced fixtures
+pytest_plugins = [
+    "tests.fixtures.advanced_fixtures",
+    "tests.fixtures.adapters",
+]
 
 # =============================================================================
 # GLOBAL STATE FOR PARALLEL EXECUTION

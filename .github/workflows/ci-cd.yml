@@ -1,0 +1,601 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop, feature/* ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    # Run tests daily at 2 AM UTC
+    - cron: '0 2 * * *'
+
+env:
+  PYTHON_VERSION: "3.12"
+  POETRY_VERSION: "1.7.1"
+  CACHE_VERSION: v1
+
+jobs:
+  # =============================================================================
+  # STAGE 1: Code Quality & Security
+  # =============================================================================
+  code-quality:
+    name: Code Quality Checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Cache pip packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ env.CACHE_VERSION }}-${{ runner.os }}-pip-${{ hashFiles('**/requirements*.txt') }}
+          restore-keys: |
+            ${{ env.CACHE_VERSION }}-${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install black ruff mypy bandit safety
+
+      - name: Run Black (formatting check)
+        run: black --check --diff --line-length 100 src tests
+
+      - name: Run Ruff (linting)
+        run: ruff check src tests --output-format=github
+
+      - name: Run isort (import sorting check)
+        run: isort --check-only --diff src tests
+
+      - name: Run MyPy (type checking)
+        run: mypy src --strict --ignore-missing-imports --show-error-codes
+
+      - name: Run Bandit (security linting)
+        run: bandit -r src -f json -o bandit-report.json || true
+
+      - name: Run Safety (dependency vulnerability check)
+        run: safety check --json --output safety-report.json || true
+
+      - name: Upload security reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: security-reports
+          path: |
+            bandit-report.json
+            safety-report.json
+
+  # =============================================================================
+  # STAGE 2: Unit Tests
+  # =============================================================================
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    needs: code-quality
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Cache pip packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ env.CACHE_VERSION }}-${{ runner.os }}-${{ matrix.python-version }}-pip-${{ hashFiles('**/requirements*.txt') }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-cov pytest-xdist pytest-asyncio
+
+      - name: Run unit tests
+        run: |
+          pytest tests/unit -v \
+            -m "not integration and not e2e and not performance and not security" \
+            --cov=src \
+            --cov-report=xml \
+            --cov-report=html \
+            --junitxml=junit-unit.xml \
+            -n auto
+
+      - name: Upload unit test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: unit-test-results-${{ matrix.python-version }}
+          path: |
+            junit-unit.xml
+            htmlcov/
+            coverage.xml
+
+  # =============================================================================
+  # STAGE 3: Integration Tests
+  # =============================================================================
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: unit-tests
+    services:
+      # Add services needed for integration tests
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: testdb
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Cache pip packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ env.CACHE_VERSION }}-${{ runner.os }}-pip-${{ hashFiles('**/requirements*.txt') }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-cov pytest-asyncio psycopg2-binary redis
+
+      - name: Wait for services
+        run: |
+          sleep 10
+          # Verify services are up
+          pg_isready -h localhost -p 5432
+          redis-cli -h localhost -p 6379 ping
+
+      - name: Run integration tests
+        run: |
+          pytest tests/integration -v \
+            -m integration \
+            --cov=src \
+            --cov-append \
+            --cov-report=xml \
+            --junitxml=junit-integration.xml
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/testdb
+          REDIS_URL: redis://localhost:6379/0
+
+      - name: Upload integration test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: integration-test-results
+          path: |
+            junit-integration.xml
+            coverage.xml
+
+  # =============================================================================
+  # STAGE 4: E2E Tests
+  # =============================================================================
+  e2e-tests:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    needs: integration-tests
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Playwright dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgbm-dev libwoff1 libopus0 libwebp6 libwebpdemux2 libenchant-2-2 libsecret-1-0 libhyphen0 libgdk-pixbuf2.0-0 libegl1 libgles2 libx264-155
+
+      - name: Cache pip packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ env.CACHE_VERSION }}-${{ runner.os }}-pip-${{ hashFiles('**/requirements*.txt') }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install playwright pytest-playwright
+          playwright install chromium
+
+      - name: Run E2E tests
+        run: |
+          pytest tests/e2e -v \
+            -m e2e \
+            --browser chromium \
+            --headed=false \
+            --junitxml=junit-e2e.xml
+
+      - name: Upload E2E test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: e2e-test-results
+          path: |
+            junit-e2e.xml
+            test-results/
+
+  # =============================================================================
+  # STAGE 5: Performance Tests
+  # =============================================================================
+  performance-tests:
+    name: Performance Tests
+    runs-on: ubuntu-latest
+    needs: unit-tests
+    if: github.event_name == 'schedule' || contains(github.event.head_commit.message, '[perf]')
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Cache pip packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ env.CACHE_VERSION }}-${{ runner.os }}-pip-${{ hashFiles('**/requirements*.txt') }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install locust pytest-benchmark
+
+      - name: Run performance tests
+        run: |
+          pytest tests/performance -v \
+            -m performance \
+            --benchmark-only \
+            --benchmark-json=benchmark-results.json \
+            --junitxml=junit-performance.xml
+
+      - name: Upload performance results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: performance-test-results
+          path: |
+            junit-performance.xml
+            benchmark-results.json
+
+  # =============================================================================
+  # STAGE 6: Security Tests
+  # =============================================================================
+  security-tests:
+    name: Security Tests
+    runs-on: ubuntu-latest
+    needs: code-quality
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Cache pip packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ env.CACHE_VERSION }}-${{ runner.os }}-pip-${{ hashFiles('**/requirements*.txt') }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install bandit safety semgrep
+
+      - name: Run SAST (Static Application Security Testing)
+        run: |
+          bandit -r src -f json -o sast-report.json || true
+          semgrep --config=auto src --json --output=semgrep-report.json || true
+
+      - name: Run dependency scan
+        run: safety check --json --output dependency-scan.json || true
+
+      - name: Upload security test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: security-test-results
+          path: |
+            sast-report.json
+            semgrep-report.json
+            dependency-scan.json
+
+  # =============================================================================
+  # STAGE 7: Coverage Analysis
+  # =============================================================================
+  coverage-analysis:
+    name: Coverage Analysis
+    runs-on: ubuntu-latest
+    needs: [unit-tests, integration-tests]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Download all coverage reports
+        uses: actions/download-artifact@v4
+        with:
+          pattern: '*-test-results*'
+          merge-multiple: true
+
+      - name: Install coverage tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install coverage codecov
+
+      - name: Combine coverage reports
+        run: |
+          coverage combine --keep coverage.xml || true
+          coverage html -d coverage-report
+          coverage report --fail-under=80 || true
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./coverage.xml
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage-report/
+
+  # =============================================================================
+  # STAGE 8: Documentation Build
+  # =============================================================================
+  documentation:
+    name: Build Documentation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install documentation tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install mkdocs mkdocs-material mkdocstrings[python]
+
+      - name: Build documentation
+        run: |
+          mkdocs build --strict
+
+      - name: Upload documentation
+        uses: actions/upload-artifact@v4
+        with:
+          name: documentation
+          path: site/
+
+  # =============================================================================
+  # STAGE 9: Build Package
+  # =============================================================================
+  build-package:
+    name: Build Package
+    runs-on: ubuntu-latest
+    needs: [unit-tests, code-quality]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install build tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install build twine
+
+      - name: Build package
+        run: python -m build
+
+      - name: Check package
+        run: twine check dist/*
+
+      - name: Upload package
+        uses: actions/upload-artifact@v4
+        with:
+          name: package
+          path: dist/
+
+  # =============================================================================
+  # STAGE 10: Notify Results
+  # =============================================================================
+  notify:
+    name: Notify Results
+    runs-on: ubuntu-latest
+    needs: [unit-tests, integration-tests, e2e-tests, security-tests, coverage-analysis]
+    if: always()
+    steps:
+      - name: Download all test results
+        uses: actions/download-artifact@v4
+        with:
+          pattern: '*-test-results*'
+          merge-multiple: true
+
+      - name: Summarize test results
+        run: |
+          echo "## Test Results Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # Unit tests
+          if [ -f junit-unit.xml ]; then
+            UNIT_TESTS=$(grep -o 'tests="[0-9]*"' junit-unit.xml | head -1 | grep -o '[0-9]*')
+            UNIT_FAILURES=$(grep -o 'failures="[0-9]*"' junit-unit.xml | head -1 | grep -o '[0-9]*')
+            UNIT_ERRORS=$(grep -o 'errors="[0-9]*"' junit-unit.xml | head -1 | grep -o '[0-9]*')
+            echo "### Unit Tests" >> $GITHUB_STEP_SUMMARY
+            echo "- Total: $UNIT_TESTS" >> $GITHUB_STEP_SUMMARY
+            echo "- Failures: $UNIT_FAILURES" >> $GITHUB_STEP_SUMMARY
+            echo "- Errors: $UNIT_ERRORS" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          # Integration tests
+          if [ -f junit-integration.xml ]; then
+            INT_TESTS=$(grep -o 'tests="[0-9]*"' junit-integration.xml | head -1 | grep -o '[0-9]*')
+            INT_FAILURES=$(grep -o 'failures="[0-9]*"' junit-integration.xml | head -1 | grep -o '[0-9]*')
+            echo "### Integration Tests" >> $GITHUB_STEP_SUMMARY
+            echo "- Total: $INT_TESTS" >> $GITHUB_STEP_SUMMARY
+            echo "- Failures: $INT_FAILURES" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          # E2E tests
+          if [ -f junit-e2e.xml ]; then
+            E2E_TESTS=$(grep -o 'tests="[0-9]*"' junit-e2e.xml | head -1 | grep -o '[0-9]*')
+            E2E_FAILURES=$(grep -o 'failures="[0-9]*"' junit-e2e.xml | head -1 | grep -o '[0-9]*')
+            echo "### E2E Tests" >> $GITHUB_STEP_SUMMARY
+            echo "- Total: $E2E_TESTS" >> $GITHUB_STEP_SUMMARY
+            echo "- Failures: $E2E_FAILURES" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Notify Slack on Failure
+        if: failure() && github.ref == 'refs/heads/main'
+        uses: slackapi/slack-github-action@v1
+        with:
+          payload: |
+            {
+              "text": "❌ CI/CD Pipeline Failed for ${{ github.repository }}",
+              "blocks": [
+                {
+                  "type": "header",
+                  "text": {
+                    "type": "plain_text",
+                    "text": "CI/CD Pipeline Failed"
+                  }
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Repository:*\n${{ github.repository }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Branch:*\n${{ github.ref_name }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Commit:*\n${{ github.sha }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Author:*\n${{ github.actor }}"
+                    }
+                  ]
+                },
+                {
+                  "type": "actions",
+                  "elements": [
+                    {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": "View Run"
+                      },
+                      "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                    }
+                  ]
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+      - name: Notify Slack on Success
+        if: success() && github.ref == 'refs/heads/main'
+        uses: slackapi/slack-github-action@v1
+        with:
+          payload: |
+            {
+              "text": "✅ CI/CD Pipeline Succeeded for ${{ github.repository }}",
+              "blocks": [
+                {
+                  "type": "header",
+                  "text": {
+                    "type": "plain_text",
+                    "text": "CI/CD Pipeline Succeeded"
+                  }
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Repository:*\n${{ github.repository }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Branch:*\n${{ github.ref_name }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Commit:*\n${{ github.sha }}"
+                    }
+                  ]
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
