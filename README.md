@@ -67,6 +67,26 @@ QA-FRAMEWORK/
 - PostgreSQL 15+
 - Redis 7+
 
+### Configuración de Seguridad (IMPORTANTE)
+
+**Antes de desplegar, genera keys seguras:**
+
+```bash
+# Generar JWT secret key
+openssl rand -hex 32
+
+# Crear archivo .env en dashboard/
+cp dashboard/.env.example dashboard/.env
+
+# Editar .env y añadir las keys generadas
+nano dashboard/.env
+```
+
+**Variables críticas:**
+- `JWT_SECRET_KEY` - Key para firmar tokens JWT
+- `SECRET_KEY` - Key general de la aplicación
+- `DATABASE_URL` - Conexión a PostgreSQL
+
 ### Desarrollo Local
 
 ```bash

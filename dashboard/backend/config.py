@@ -1,3 +1,4 @@
+import os
 from pydantic_settings import BaseSettings
 from typing import Optional
 
@@ -12,7 +13,7 @@ class Settings(BaseSettings):
     redis_password: Optional[str] = None
     
     # JWT
-    secret_key: str = "your-secret-key-change-in-production"
+    secret_key: str = os.getenv("JWT_SECRET_KEY", "dev-key-change-in-production")
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 30
     
