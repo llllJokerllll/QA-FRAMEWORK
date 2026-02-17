@@ -1,0 +1,21 @@
+site_name: QA-Framework Documentation
+site_description: Modern QA Automation Framework with Clean Architecture
+site_author: Joker
+
+theme:
+  name: material
+  palette:
+    primary: blue
+    accent: orange
+
+nav:
+  - Home: index.md
+  - Architecture: architecture.md
+  - Getting Started: getting-started.md
+  - API Reference: api.md
+  - Contributing: contributing.md
+
+markdown_extensions:
+  - pymdownx.highlight
+  - pymdownx.superfences
+  - admonition
