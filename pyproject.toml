@@ -91,6 +91,12 @@ markers = [
     "parallel_safe: marks tests as safe for parallel execution",
     "serial: marks tests to run serially (not in parallel)",
     "isolated: marks tests that require complete isolation",
+    "database: marks tests as requiring database",
+    "redis: marks tests as requiring Redis",
+    "websocket: marks tests as requiring WebSocket",
+    "concurrent: marks tests as testing concurrent operations",
+    "framework: marks tests as framework-related",
+    "dashboard: marks tests as dashboard-related",
 ]
 asyncio_mode = "auto"
 
