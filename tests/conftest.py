@@ -38,7 +38,7 @@ import pytest
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from src.infrastructure.config.config_manager import ConfigManager, QAConfig
-from src.infrastructure.logger.logger import Logger
+from src.infrastructure.logger.logger import QALogger
 
 # Import advanced fixtures
 pytest_plugins = [
