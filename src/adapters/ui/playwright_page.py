@@ -1,7 +1,7 @@
 """UI Page Interface and Implementation with Playwright"""
 
 from abc import ABC, abstractmethod
-from typing import Optional
+from typing import Optional, Any
 from playwright.async_api import async_playwright, Browser, Page, BrowserContext
 
 
