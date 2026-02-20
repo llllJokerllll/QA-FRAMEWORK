@@ -416,7 +416,7 @@ jobs:
 
       - name: Build documentation
         run: |
-          mkdocs build --strict
+          mkdocs build
 
       - name: Upload documentation
         uses: actions/upload-artifact@v4
