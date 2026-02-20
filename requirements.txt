@@ -26,9 +26,8 @@ pyyaml==6.0.1
 python-dotenv==1.0.0
 pydantic-extra-types==2.6.0
 
-# Reporting
-allure-pytest==2.13.2
-allure-python-commons==2.13.2
+# Reporting (allure-pytest already listed above)
+allure-python-commons==2.13.5
 
 # Performance Testing
 locust==2.22.0
