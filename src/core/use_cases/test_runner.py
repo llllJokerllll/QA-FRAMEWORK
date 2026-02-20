@@ -2,7 +2,7 @@
 
 import time
 import traceback
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Optional, Coroutine
 from src.core.interfaces import ITestRunner
 from src.core.entities.test_result import TestResult, TestStatus
 
@@ -25,7 +25,7 @@ class TestRunner(ITestRunner):
         self.max_retries = max_retries
         self._results: list[TestResult] = []
     
-    async def run_test(self, test_func: Callable, *args, **kwargs) -> TestResult:
+    async def run_test(self, test_func: Callable[..., Any], *args: Any, **kwargs: Any) -> TestResult:
         """
         Run a test function with error handling and retry logic.
         
@@ -89,7 +89,11 @@ class TestRunner(ITestRunner):
                 
                 self._results.append(test_result)
                 return test_result
-    
+
+        # This should never be reached, but satisfies mypy
+        # The loop always executes at least once (max_retries + 1 >= 1)
+        raise RuntimeError("Test execution failed to return a result")
+
     async def cleanup(self) -> None:
         """Cleanup resources after test execution"""
         self._results.clear()

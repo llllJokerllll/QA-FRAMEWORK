@@ -36,11 +36,11 @@ class MigrationResult:
     status: MigrationStatus
     execution_time: float
     error_message: Optional[str] = None
-    warnings: List[str] = None
-    changes_applied: List[str] = None
+    warnings: Optional[List[str]] = None
+    changes_applied: Optional[List[str]] = None
     rollback_successful: Optional[bool] = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if self.warnings is None:
             self.warnings = []
         if self.changes_applied is None:
@@ -197,6 +197,9 @@ class MigrationTester:
         for i, migration_config in enumerate(migrations):
             migration_script = migration_config.get("migration")
             rollback_script = migration_config.get("rollback")
+
+            if not migration_script:
+                continue  # Skip if no migration script provided
 
             result = await self.test_migration(
                 migration_script=migration_script, rollback_script=rollback_script
@@ -448,6 +451,6 @@ class MigrationTester:
             "failed": len(failed),
             "success_rate": len(successful) / len(self._results),
             "average_execution_time": round(total_time / len(self._results), 3),
-            "total_warnings": sum(len(r.warnings) for r in self._results),
-            "total_changes": sum(len(r.changes_applied) for r in self._results),
+            "total_warnings": sum(len(r.warnings) if r.warnings else 0 for r in self._results),
+            "total_changes": sum(len(r.changes_applied) if r.changes_applied else 0 for r in self._results),
         }

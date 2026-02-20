@@ -205,7 +205,11 @@ class OpenAPIParser:
     def get_schemas(self) -> Dict[str, Any]:
         """Get all schemas defined in components."""
         spec = self.parse()
-        return spec.get('components', {}).get('schemas', {})
+        components = spec.get('components', {})
+        if isinstance(components, dict):
+            schemas = components.get('schemas', {})
+            return schemas if isinstance(schemas, dict) else {}
+        return {}
     
     def get_schema(self, schema_name: str) -> Optional[Dict[str, Any]]:
         """Get specific schema by name."""
@@ -320,8 +324,8 @@ class ContractValidator:
                                status_code: int, response_body: Any) -> None:
         """Validate response body against schema."""
         status_str = str(status_code)
-        response_spec = contract.responses.get(status_code)
-        
+        response_spec = contract.responses.get(status_str)
+
         if not response_spec:
             # Try wildcard
             status_prefix = status_str[0] + 'XX'
@@ -367,8 +371,8 @@ class ContractValidator:
                          status_code: int, headers: Dict[str, str]) -> None:
         """Validate response headers."""
         status_str = str(status_code)
-        response_spec = contract.responses.get(status_code, {})
-        
+        response_spec = contract.responses.get(status_str, {})
+
         if not response_spec:
             status_prefix = status_str[0] + 'XX'
             response_spec = contract.responses.get(status_prefix, {})
@@ -421,6 +425,9 @@ class ContractValidator:
     def _validate_request_body(self, contract: EndpointContract,
                               request_body: Any) -> None:
         """Validate request body against schema."""
+        if not contract.request_body:
+            return
+
         content = contract.request_body.get('content', {})
         json_content = content.get('application/json', {})
         schema = json_content.get('schema', {})
@@ -496,8 +503,7 @@ class ContractCoverageChecker:
         tested = self.tested_endpoints
         untested = all_contracts - tested
         
-        coverage_percentage = (len(tested) / len(all_contracts) * 100) 
-                            if all_contracts else 0
+        coverage_percentage = (len(tested) / len(all_contracts) * 100) if all_contracts else 0
         
         return {
             'total_endpoints': len(all_contracts),
@@ -550,12 +556,12 @@ class ContractTestDecorator:
             pass
     """
     
-    def __init__(self, path: str, method: str, spec_path: Optional[str] = None):
+    def __init__(self, path: str, method: str, spec_path: Optional[str] = None) -> None:
         self.path = path
         self.method = method
         self.spec_path = spec_path
-    
-    def __call__(self, func):
+
+    def __call__(self, func: Any) -> Any:
         """Apply decorator to test function."""
         func._contract_path = self.path
         func._contract_method = self.method
@@ -563,7 +569,7 @@ class ContractTestDecorator:
         return func
 
 
-def contract_test(path: str, method: str, spec_path: Optional[str] = None):
+def contract_test(path: str, method: str, spec_path: Optional[str] = None) -> ContractTestDecorator:
     """Factory function for contract test decorator."""
     return ContractTestDecorator(path, method, spec_path)
 

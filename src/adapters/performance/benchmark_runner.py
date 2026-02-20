@@ -68,7 +68,7 @@ class BenchmarkRunner:
         print(result.avg_time)
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize benchmark runner."""
         self._collector = MetricsCollector()
 

@@ -42,22 +42,22 @@ class HTTPXClient(IHTTPClient):
             )
         return self._client
     
-    async def get(self, url: str, **kwargs) -> Any:
+    async def get(self, url: str, **kwargs: Any) -> Any:
         """
         Perform GET request.
-        
+
         Args:
             url: Endpoint URL (relative to base_url)
             **kwargs: Additional httpx arguments
-            
+
         Returns:
             Response object with status_code, json() method
         """
         client = await self._get_client()
         response = await client.get(url, **kwargs)
         return response
-    
-    async def post(self, url: str, data: Optional[Dict] = None, **kwargs) -> Any:
+
+    async def post(self, url: str, data: Optional[Dict[str, Any]] = None, **kwargs: Any) -> Any:
         """
         Perform POST request.
         
@@ -73,7 +73,7 @@ class HTTPXClient(IHTTPClient):
         response = await client.post(url, json=data, **kwargs)
         return response
     
-    async def put(self, url: str, data: Optional[Dict] = None, **kwargs) -> Any:
+    async def put(self, url: str, data: Optional[Dict[str, Any]] = None, **kwargs: Any) -> Any:
         """
         Perform PUT request.
         
@@ -89,31 +89,31 @@ class HTTPXClient(IHTTPClient):
         response = await client.put(url, json=data, **kwargs)
         return response
     
-    async def delete(self, url: str, **kwargs) -> Any:
+    async def delete(self, url: str, **kwargs: Any) -> Any:
         """
         Perform DELETE request.
-        
+
         Args:
             url: Endpoint URL
             **kwargs: Additional httpx arguments
-            
+
         Returns:
             Response object
         """
         client = await self._get_client()
         response = await client.delete(url, **kwargs)
         return response
-    
+
     async def close(self) -> None:
         """Close HTTPX client"""
         if self._client:
             await self._client.aclose()
             self._client = None
-    
-    async def __aenter__(self):
+
+    async def __aenter__(self) -> "HTTPXClient":
         """Async context manager entry"""
         return self
-    
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
+
+    async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
         """Async context manager exit"""
         await self.close()

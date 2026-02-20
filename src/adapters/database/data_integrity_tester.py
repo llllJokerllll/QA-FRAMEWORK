@@ -400,7 +400,7 @@ class DataIntegrityTester:
             result = await self.db.execute_query(f"SELECT COUNT(*) FROM {table}")
             if result:
                 row = next(iter(result))
-                return row[0] if isinstance(row, (list, tuple)) else row.get("count", 0)
+                return int(row[0]) if isinstance(row, (list, tuple)) else int(row.get("count", 0))
             return 0
         except Exception:
             return 0

@@ -309,7 +309,7 @@ class SecurityClient(ISecurityClient):
         Returns:
             Dictionary with complete security scan results
         """
-        results = {
+        results: Dict[str, Any] = {
             "target_url": target_url,
             "scan_timestamp": None,  # Would be datetime.now()
             "tests": {},
@@ -395,10 +395,10 @@ class SecurityClient(ISecurityClient):
         if self.http_client and hasattr(self.http_client, "close"):
             await self.http_client.close()
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> "SecurityClient":
         """Async context manager entry."""
         return self
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
+    async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
         """Async context manager exit."""
         await self.close()

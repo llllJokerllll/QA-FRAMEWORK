@@ -129,14 +129,15 @@ class MobileConfigManager:
     def _apply_env_overrides(self) -> None:
         """Apply environment variable overrides."""
         if self._config:
-            if os.getenv("APPIUM_SERVER_URL"):
-                self._config.appium_server_url = os.getenv("APPIUM_SERVER_URL")
-            if os.getenv("MOBILE_IMPLICIT_WAIT"):
-                self._config.implicit_wait = int(os.getenv("MOBILE_IMPLICIT_WAIT"))
-            if os.getenv("MOBILE_SCREENSHOT_ON_FAILURE"):
-                self._config.screenshot_on_failure = (
-                    os.getenv("MOBILE_SCREENSHOT_ON_FAILURE").lower() == "true"
-                )
+            appium_url = os.getenv("APPIUM_SERVER_URL")
+            if appium_url:
+                self._config.appium_server_url = appium_url
+            implicit_wait = os.getenv("MOBILE_IMPLICIT_WAIT")
+            if implicit_wait:
+                self._config.implicit_wait = int(implicit_wait)
+            screenshot_on_failure = os.getenv("MOBILE_SCREENSHOT_ON_FAILURE")
+            if screenshot_on_failure:
+                self._config.screenshot_on_failure = screenshot_on_failure.lower() == "true"
 
     def get_device_profile(self, name: Optional[str] = None) -> Optional[DeviceProfile]:
         """Get device profile by name or default."""
@@ -163,7 +164,7 @@ class MobileConfigManager:
         # Ensure directory exists
         os.makedirs(os.path.dirname(save_path), exist_ok=True)
 
-        data = {
+        data: Dict[str, Any] = {
             "appium_server_url": self._config.appium_server_url,
             "implicit_wait": self._config.implicit_wait,
             "explicit_wait": self._config.explicit_wait,

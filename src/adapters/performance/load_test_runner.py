@@ -279,9 +279,11 @@ export default function() {{
         """Load k6 summary JSON if available."""
         try:
             import json
+            from typing import cast
 
             with open("/tmp/k6_summary.json", "r") as f:
-                return json.load(f)
+                data = json.load(f)
+                return cast(Dict[str, Any], data)
         except (FileNotFoundError, json.JSONDecodeError):
             return {}
 
@@ -293,7 +295,7 @@ class ApacheBenchAdapter(LoadTestRunner):
     ab is a simple command-line tool for benchmarking HTTP servers.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize Apache Bench adapter."""
         self._collector = MetricsCollector()
 

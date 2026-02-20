@@ -136,7 +136,7 @@ class MetricsCollector(IMetricsCollector):
         metrics = collector.get_metrics()
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize metrics collector."""
         self._metrics = PerformanceMetrics()
         self._collecting = False

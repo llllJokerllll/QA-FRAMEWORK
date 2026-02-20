@@ -5,7 +5,7 @@ Simple JSON test report generator.
 """
 
 from pathlib import Path
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 from datetime import datetime
 import json
 
@@ -13,21 +13,21 @@ import json
 class JSONReporter:
     """
     JSON report generator for test results.
-    
+
     Generates JSON reports with test results data.
     """
-    
-    def __init__(self, config=None):
+
+    def __init__(self, config: Optional[Any] = None) -> None:
         """
         Initialize JSON reporter.
-        
+
         Args:
             config: Optional configuration (not used in basic implementation)
         """
         self.config = config
-        self.results = []
-    
-    def report(self, result, output_dir: str) -> str:
+        self.results: List[Any] = []
+
+    def report(self, result: Any, output_dir: str) -> str:
         """
         Generate JSON report for a test result.
         
@@ -51,18 +51,18 @@ class JSONReporter:
         
         return str(report_file)
     
-    def _generate_json(self, result) -> Dict[str, Any]:
+    def _generate_json(self, result: Any) -> Dict[str, Any]:
         """
         Generate JSON data for the report.
-        
+
         Args:
             result: Test result object
-            
+
         Returns:
             Dictionary with report data
         """
         # Extract common attributes from result object
-        report_data = {
+        report_data: Dict[str, Any] = {
             "report_type": "qa-framework-test",
             "generated_at": datetime.now().isoformat(),
             "test": {

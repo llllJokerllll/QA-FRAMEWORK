@@ -129,7 +129,7 @@ class PerformanceClient(IPerformanceClient):
             target_url=target_url, users=users, duration=duration, ramp_up=ramp_up
         )
 
-    async def benchmark(self, target_url: str, requests: int) -> BenchmarkResult:
+    async def benchmark(self, target_url: str, requests: int) -> Dict[str, Any]:
         """
         Execute a benchmark test with fixed number of requests.
 
@@ -138,7 +138,7 @@ class PerformanceClient(IPerformanceClient):
             requests: Number of requests to send
 
         Returns:
-            BenchmarkResult with timing statistics
+            Dictionary with benchmark results
         """
         if self._closed:
             raise RuntimeError("Performance client is closed")
@@ -148,9 +148,10 @@ class PerformanceClient(IPerformanceClient):
                 "HTTP client required for benchmark. Provide http_client in constructor."
             )
 
-        return await self._benchmark_runner.benchmark_endpoint(
+        result = await self._benchmark_runner.benchmark_endpoint(
             client=self.http_client, method="GET", url=target_url, iterations=requests
         )
+        return result.to_dict()
 
     async def stress_test(
         self, target_url: str, start_users: int, max_users: int, step_users: int, step_duration: int
@@ -266,10 +267,10 @@ class PerformanceClient(IPerformanceClient):
         if self.http_client and hasattr(self.http_client, "close"):
             await self.http_client.close()
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> "PerformanceClient":
         """Async context manager entry."""
         return self
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
+    async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
         """Async context manager exit."""
         await self.close()

@@ -248,20 +248,20 @@ class AllureReporter(IReporter):
         else:
             raise ValueError(f"Unsupported report format: {report_format}")
 
-    def capture_failure_screenshot(self, screenshot_func: Any, *args, **kwargs) -> Optional[str]:
+    def capture_failure_screenshot(self, screenshot_func: Any, *args: Any, **kwargs: Any) -> Optional[str]:
         """
-                Capture screenshot on test failure.
+        Capture screenshot on test failure.
 
-                This method should be called in exception handlers to automatically
+        This method should be called in exception handlers to automatically
         capture and attach screenshots when tests fail.
 
-                Args:
-                    screenshot_func: Function that captures and saves screenshot
-                    *args: Arguments for screenshot function
-                    **kwargs: Keyword arguments for screenshot function
+        Args:
+            screenshot_func: Function that captures and saves screenshot
+            *args: Arguments for screenshot function
+            **kwargs: Keyword arguments for screenshot function
 
-                Returns:
-                    Path to saved screenshot or None if capture failed
+        Returns:
+            Path to saved screenshot or None if capture failed
         """
         if not self.screenshots_on_failure:
             return None
@@ -270,7 +270,7 @@ class AllureReporter(IReporter):
             screenshot_path = screenshot_func(*args, **kwargs)
             if screenshot_path and Path(screenshot_path).exists():
                 self.attach_screenshot(screenshot_path, name="failure_screenshot")
-                return screenshot_path
+                return str(screenshot_path)
         except Exception:
             # Silently fail if screenshot capture fails
             pass
@@ -570,10 +570,10 @@ class AllureReporter(IReporter):
 
         return str(report_file.absolute())
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> "AllureReporter":
         """Async context manager entry."""
         return self
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
+    async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
         """Async context manager exit."""
         self.cleanup()

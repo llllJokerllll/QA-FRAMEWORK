@@ -1,7 +1,7 @@
 """Interfaces - Contracts for core components (SOLID DIP)"""
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 from src.core.entities.test_result import TestResult
 
 
@@ -9,7 +9,7 @@ class ITestRunner(ABC):
     """Interface for test runner (Dependency Inversion Principle)"""
 
     @abstractmethod
-    async def run_test(self, test_func: Any, *args, **kwargs) -> TestResult:
+    async def run_test(self, test_func: Any, *args: Any, **kwargs: Any) -> TestResult:
         """
         Run a test function.
 
@@ -33,22 +33,22 @@ class IHTTPClient(ABC):
     """Interface for HTTP client adapters"""
 
     @abstractmethod
-    async def get(self, url: str, **kwargs) -> Any:
+    async def get(self, url: str, **kwargs: Any) -> Any:
         """Perform GET request"""
         pass
 
     @abstractmethod
-    async def post(self, url: str, data: Optional[Dict] = None, **kwargs) -> Any:
+    async def post(self, url: str, data: Optional[Dict[str, Any]] = None, **kwargs: Any) -> Any:
         """Perform POST request"""
         pass
 
     @abstractmethod
-    async def put(self, url: str, data: Optional[Dict] = None, **kwargs) -> Any:
+    async def put(self, url: str, data: Optional[Dict[str, Any]] = None, **kwargs: Any) -> Any:
         """Perform PUT request"""
         pass
 
     @abstractmethod
-    async def delete(self, url: str, **kwargs) -> Any:
+    async def delete(self, url: str, **kwargs: Any) -> Any:
         """Perform DELETE request"""
         pass
 
@@ -547,13 +547,13 @@ class IDatabaseClient(ABC):
         pass
 
     @abstractmethod
-    async def test_data_integrity(self, table: str, constraints: Dict[str, Any]) -> Dict[str, Any]:
+    async def test_data_integrity(self, table: str, constraints: List[Any]) -> Dict[str, Any]:
         """
         Test data integrity constraints.
 
         Args:
             table: Table name to test
-            constraints: Dictionary of constraints to validate
+            constraints: List of constraints to validate
 
         Returns:
             Dictionary with integrity test results

@@ -267,12 +267,12 @@ class DatabaseClient(IDatabaseClient):
         """
         return self._connected
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> "DatabaseClient":
         """Async context manager entry."""
         await self.connect()
         return self
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
+    async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
         """Async context manager exit."""
         await self.disconnect()
 
@@ -357,7 +357,7 @@ class SQLiteClient(DatabaseClient):
         )
         tables = [row[0] for row in tables_result]
 
-        schema = {"tables": tables, "columns": {}, "indexes": {}}
+        schema: Dict[str, Any] = {"tables": tables, "columns": {}, "indexes": {}}
 
         # Get columns for each table
         for table in tables:

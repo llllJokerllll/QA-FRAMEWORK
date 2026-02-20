@@ -84,7 +84,7 @@ class AuthTester:
         {"username": "", "password": "admin"},
     ]
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize authentication tester."""
         self._results: List[Dict[str, Any]] = []
 

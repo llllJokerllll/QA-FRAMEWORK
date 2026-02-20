@@ -57,7 +57,7 @@ class RateLimitTester:
             print("Rate limiting needs improvement")
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize rate limit tester."""
         self._results: List[RateLimitResult] = []
 
@@ -144,7 +144,7 @@ class RateLimitTester:
             for i in range(burst_size)
         ]
 
-        self._results = await asyncio.gather(*tasks, return_exceptions=True)
+        self._results = await asyncio.gather(*tasks, return_exceptions=True)  # type: ignore
 
         # Filter out exceptions
         valid_results = [r for r in self._results if isinstance(r, RateLimitResult)]

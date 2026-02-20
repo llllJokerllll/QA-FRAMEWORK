@@ -127,13 +127,17 @@ class ConfigManager:
         Returns:
             Dictionary with configuration data
         """
+        from typing import cast
+
         with open(file_path, "r") as f:
             if file_path.suffix in [".yaml", ".yml"]:
-                return yaml.safe_load(f) or {}
+                data = yaml.safe_load(f) or {}
+                return cast(Dict[str, Any], data)
             elif file_path.suffix == ".json":
                 import json
 
-                return json.load(f)
+                data = json.load(f)
+                return cast(Dict[str, Any], data)
             else:
                 raise ValueError(f"Unsupported config file format: {file_path.suffix}")
 

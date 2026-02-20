@@ -253,11 +253,11 @@ class PlaywrightPage(IUIPage):
         self._playwright = None
         self._page = None
     
-    async def __aenter__(self):
+    async def __aenter__(self) -> "PlaywrightPage":
         """Async context manager entry."""
         await self._init_browser()
         return self
-    
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
+
+    async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
         """Async context manager exit."""
         await self.close()

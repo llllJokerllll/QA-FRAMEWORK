@@ -107,7 +107,7 @@ class SQLValidator:
         (r"--.*|\/\*.*\*\/", "Comments in SQL, potential SQL injection vector"),
     ]
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize SQL validator."""
         self._issues: List[SQLIssue] = []
         self._warnings: List[SQLIssue] = []
@@ -343,7 +343,7 @@ class SQLValidator:
         Returns:
             Dictionary with query plan analysis
         """
-        analysis = {
+        analysis: Dict[str, Any] = {
             "query_type": None,
             "tables": [],
             "columns": [],

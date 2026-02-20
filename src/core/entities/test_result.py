@@ -35,7 +35,7 @@ class TestResult:
     metadata: Optional[Dict[str, Any]] = None
     timestamp: Optional[datetime] = None
     
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Initialize default values"""
         if self.metadata is None:
             self.metadata = {}

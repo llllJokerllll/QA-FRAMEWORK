@@ -5,28 +5,28 @@ Simple HTML test report generator.
 """
 
 from pathlib import Path
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 from datetime import datetime
 
 
 class HTMLReporter:
     """
     HTML report generator for test results.
-    
+
     Generates simple HTML reports with test results summary.
     """
-    
-    def __init__(self, config=None):
+
+    def __init__(self, config: Optional[Any] = None) -> None:
         """
         Initialize HTML reporter.
-        
+
         Args:
             config: Optional configuration (not used in basic implementation)
         """
         self.config = config
-        self.results = []
-    
-    def report(self, result, output_dir: str) -> str:
+        self.results: List[Any] = []
+
+    def report(self, result: Any, output_dir: str) -> str:
         """
         Generate HTML report for a test result.
         
@@ -50,7 +50,7 @@ class HTMLReporter:
         
         return str(report_file)
     
-    def _generate_html(self, result) -> str:
+    def _generate_html(self, result: Any) -> str:
         """
         Generate HTML content for the report.
         
