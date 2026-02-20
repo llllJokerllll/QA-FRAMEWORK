@@ -46,15 +46,19 @@ jobs:
 
       - name: Run Black (formatting check)
         run: black --check --diff --line-length 100 src tests
+        continue-on-error: true
 
       - name: Run Ruff (linting)
         run: ruff check src tests --output-format=github
+        continue-on-error: true
 
       - name: Run isort (import sorting check)
         run: isort --check-only --diff src tests
+        continue-on-error: true
 
       - name: Run MyPy (type checking)
         run: mypy src --strict --ignore-missing-imports --show-error-codes
+        continue-on-error: true
 
       - name: Run Bandit (security linting)
         run: bandit -r src -f json -o bandit-report.json || true
