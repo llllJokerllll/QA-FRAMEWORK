@@ -51,6 +51,7 @@ class HealthCheckResult(BaseModel):
 
     model_config = ConfigDict(
         use_enum_values=True,
+        extra='allow',  # Allow extra fields for flexibility
     )
 
 
@@ -72,6 +73,7 @@ class AggregatedHealthStatus(BaseModel):
     
     model_config = ConfigDict(
         use_enum_values=True,
+        extra='allow',  # Allow extra fields for flexibility
     )
 
 
