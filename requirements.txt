@@ -34,7 +34,7 @@ locust==2.22.0
 
 # Security Testing
 bandit==1.7.6
-safety==3.0.1
+safety>=3.0.0
 
 # Code Quality
 black==24.1.1
