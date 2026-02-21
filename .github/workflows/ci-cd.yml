@@ -110,7 +110,7 @@ jobs:
             ${{ env.CACHE_VERSION }}-${{ runner.os }}-${{ matrix.python-version }}-poetry-
 
       - name: Install dependencies
-        run: poetry install --no-interaction --no-root
+        run: poetry install --no-interaction
 
       - name: Run unit tests
         continue-on-error: true
@@ -189,7 +189,7 @@ jobs:
             ${{ env.CACHE_VERSION }}-${{ runner.os }}-poetry-
 
       - name: Install dependencies
-        run: poetry install --no-interaction --no-root
+        run: poetry install --no-interaction
 
       - name: Install redis-tools
         run: sudo apt-get install -y redis-tools
