@@ -121,7 +121,7 @@ class MigrationTester:
             changes_applied = self._parse_migration_changes(migration_sql)
 
             # Create backup point for rollback testing
-            backup_created = await self._create_backup_point()
+            await self._create_backup_point()
 
             # Execute migration
             await self._execute_sql(migration_sql)

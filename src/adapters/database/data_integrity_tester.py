@@ -429,10 +429,10 @@ class DataIntegrityTester:
                 )
             elif constraint.constraint_type == ConstraintType.UNIQUE:
                 recommendations.append(
-                    f"  → Remove duplicate values or add composite unique constraint"
+                    "  → Remove duplicate values or add composite unique constraint"
                 )
             elif constraint.constraint_type == ConstraintType.NOT_NULL:
-                recommendations.append(f"  → Update NULL values or modify constraint")
+                recommendations.append("  → Update NULL values or modify constraint")
 
         recommendations.extend(
             [

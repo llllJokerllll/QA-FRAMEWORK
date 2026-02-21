@@ -1,7 +1,7 @@
 """SQL query validation module"""
 
 import re
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 from dataclasses import dataclass
 from enum import Enum
 
@@ -210,7 +210,6 @@ class SQLValidator:
         self._reset()
 
         query_upper = query.upper()
-        lines = query.split("\n")
 
         # Check performance patterns
         for pattern, message in self.PERFORMANCE_PATTERNS:

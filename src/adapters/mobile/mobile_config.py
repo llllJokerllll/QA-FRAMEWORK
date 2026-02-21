@@ -8,7 +8,6 @@ for mobile testing across different platforms.
 import os
 from dataclasses import dataclass, field
 from enum import Enum
-from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import yaml

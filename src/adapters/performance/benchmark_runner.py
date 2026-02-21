@@ -1,10 +1,9 @@
 """Benchmark runner for performance testing"""
 
-import asyncio
 import time
 from typing import Any, Callable, Dict, List, Optional
 from dataclasses import dataclass, field
-from src.adapters.performance.metrics_collector import MetricsCollector, PerformanceMetrics
+from src.adapters.performance.metrics_collector import MetricsCollector
 
 
 @dataclass
