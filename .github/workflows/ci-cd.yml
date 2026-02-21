@@ -175,17 +175,24 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      - name: Cache pip packages
+      - name: Install Poetry
+        uses: abatilo/actions-poetry@v2
+        with:
+          poetry-version: ${{ env.POETRY_VERSION }}
+
+      - name: Cache Poetry packages
         uses: actions/cache@v4
         with:
-          path: ~/.cache/pip
-          key: ${{ env.CACHE_VERSION }}-${{ runner.os }}-pip-${{ hashFiles('**/requirements*.txt') }}
+          path: ~/.cache/pypoetry
+          key: ${{ env.CACHE_VERSION }}-${{ runner.os }}-poetry-${{ hashFiles('**/pyproject.toml') }}
+          restore-keys: |
+            ${{ env.CACHE_VERSION }}-${{ runner.os }}-poetry-
 
       - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install pytest pytest-cov pytest-asyncio psycopg2-binary redis
+        run: poetry install --no-interaction --no-root
+
+      - name: Install redis-tools
+        run: sudo apt-get install -y redis-tools
 
       - name: Wait for services
         run: |
@@ -196,7 +203,7 @@ jobs:
 
       - name: Run integration tests
         run: |
-          pytest tests/integration -v \
+          poetry run pytest tests/integration -v \
             -m integration \
             --cov=src \
             --cov-append \
