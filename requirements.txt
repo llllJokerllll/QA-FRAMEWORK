@@ -54,3 +54,7 @@ aiomysql==0.2.0          # MySQL async driver
 aiosqlite==0.19.0        # SQLite async driver
 redis==5.0.1             # Redis client
 psutil==5.9.8            # System monitoring
+
+# Database ORM & Migration
+sqlalchemy==2.0.25       # ORM for database operations
+alembic==1.13.1          # Database migrations

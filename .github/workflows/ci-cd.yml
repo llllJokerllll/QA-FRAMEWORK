@@ -577,6 +577,7 @@ jobs:
       - name: Notify Slack on Success
         if: success() && github.ref == 'refs/heads/main'
         uses: slackapi/slack-github-action@v1
+        continue-on-error: true
         with:
           payload: |
             {

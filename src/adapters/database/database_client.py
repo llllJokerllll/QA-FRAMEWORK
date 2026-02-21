@@ -1,10 +1,10 @@
 """Main database testing client"""
 
 from typing import Any, Dict, List, Optional
-from src.core.interfaces import IDatabaseClient, ISQLValidator
-from src.adapters.database.sql_validator import SQLValidator, SQLValidationResult
+from src.core.interfaces import IDatabaseClient
+from src.adapters.database.sql_validator import SQLValidator
 from src.adapters.database.data_integrity_tester import DataIntegrityTester, IntegrityConstraint
-from src.adapters.database.migration_tester import MigrationTester, MigrationResult
+from src.adapters.database.migration_tester import MigrationTester
 
 
 class DatabaseClient(IDatabaseClient):

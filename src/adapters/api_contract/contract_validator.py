@@ -16,13 +16,11 @@ SOLID Principles:
 """
 
 import json
-import re
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple, Union
-from urllib.parse import parse_qs, urlparse
 
 import yaml
 

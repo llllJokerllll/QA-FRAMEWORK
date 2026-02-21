@@ -373,10 +373,10 @@ class DataIntegrityTester:
 
         try:
             result = await self.db.execute_query(query)
-            count = 0
+            _ = 0  # count result not used for DEFAULT constraints
             if result:
                 row = next(iter(result))
-                count = row[0] if isinstance(row, (list, tuple)) else row.get("count", 0)
+                _ = row[0] if isinstance(row, (list, tuple)) else row.get("count", 0)
 
             return IntegrityTestResult(
                 constraint=constraint,
