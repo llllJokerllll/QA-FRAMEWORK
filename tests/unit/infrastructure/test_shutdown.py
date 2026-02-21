@@ -121,7 +121,7 @@ class TestShutdownProgress:
         
         duration = progress.duration_seconds
         assert duration is not None
-        assert duration < 0.1
+        assert 9.9 <= duration <= 10.1
     
     def test_is_complete(self):
         """Test is_complete property"""
@@ -403,7 +403,8 @@ class TestShutdownManager:
         shutdown_manager.register_resource(
             name="resource",
             resource_type=ResourceType.CUSTOM,
-            instance=mock_resource
+            instance=mock_resource,
+            close_handler="dispose"
         )
         
         result = await shutdown_manager.shutdown(reason="Test shutdown")

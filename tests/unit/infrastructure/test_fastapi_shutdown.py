@@ -119,7 +119,7 @@ class TestSetupFastapiShutdown:
         
         # Check that middleware was added
         assert any(
-            isinstance(m, ShutdownMiddleware)
+            hasattr(m, 'cls') and m.cls == ShutdownMiddleware
             for m in app.user_middleware
         )
     
@@ -130,9 +130,9 @@ class TestSetupFastapiShutdown:
         setup_fastapi_shutdown(app, manager=shutdown_manager, setup_signal_handlers=False)
         
         # Check that events are registered
-        # FastAPI stores these in router.on_event
-        assert len(app.router.on_event["startup"]) > 0
-        assert len(app.router.on_event["shutdown"]) > 0
+        # FastAPI stores these in router.on_startup and router.on_shutdown
+        assert len(app.router.on_startup) > 0
+        assert len(app.router.on_shutdown) > 0
     
     @pytest.mark.asyncio
     async def test_shutdown_event_triggers_manager(self, shutdown_manager):
@@ -142,7 +142,7 @@ class TestSetupFastapiShutdown:
         setup_fastapi_shutdown(app, manager=shutdown_manager, setup_signal_handlers=False)
         
         # Trigger shutdown event
-        for handler in app.router.on_event["shutdown"]:
+        for handler in app.router.on_shutdown:
             await handler()
         
         assert shutdown_manager.is_shutting_down()
@@ -284,7 +284,7 @@ class TestFastAPIIntegration:
         assert response.status_code == 200
         
         # Trigger shutdown via event
-        for handler in app.router.on_event["shutdown"]:
+        for handler in app.router.on_shutdown:
             await handler()
         
         # Verify resources were closed

@@ -19,24 +19,22 @@ class TestAllureReporter:
         """Test that AllureReporter can be initialized"""
         from src.infrastructure.config.config_manager import ConfigManager
         
-        config = ConfigManager()
-        reporter = AllureReporter(config)
+        reporter = AllureReporter(results_dir="allure-results")
         
         assert reporter is not None
-        assert reporter.allure_dir == "allure-results"
+        assert reporter.results_dir == "allure-results"
     
     def test_allure_report_report(self):
         """Test that AllureReporter can generate a report"""
         from src.core.entities.test_result import TestResult
         from src.infrastructure.config.config_manager import ConfigManager
         
-        config = ConfigManager()
-        reporter = AllureReporter(config)
+        reporter = AllureReporter(results_dir="allure-results")
         
         result = TestResult(
             test_name="test_allure",
             status=TestStatus.PASSED,
-            execution_time=1.5
+            execution_time=1.5,
             metadata={"feature": "reporting"}
         )
         
@@ -56,8 +54,7 @@ class TestHTMLReporter:
         """Test that HTMLReporter can be initialized"""
         from src.infrastructure.config.config_manager import ConfigManager
         
-        config = ConfigManager()
-        reporter = HTMLReporter(config)
+        reporter = HTMLReporter()
         
         assert reporter is not None
         assert reporter.output_dir == "html-results"
@@ -67,8 +64,7 @@ class TestHTMLReporter:
         from src.core.entities.test_result import TestResult
         from src.infrastructure.config.config_manager import ConfigManager
         
-        config = ConfigManager()
-        reporter = HTMLReporter(config)
+        reporter = HTMLReporter()
         
         result = TestResult(
             test_name="test_html",
@@ -93,8 +89,7 @@ class TestJSONReporter:
         """Test that JSONReporter can be initialized"""
         from src.infrastructure.config.config_manager import ConfigManager
         
-        config = ConfigManager()
-        reporter = JSONReporter(config)
+        reporter = JSONReporter()
         
         assert reporter is not None
         assert reporter.output_dir == "json-results"
@@ -104,8 +99,7 @@ class TestJSONReporter:
         from src.core.entities.test_result import TestResult
         from src.infrastructure.config.config_manager import ConfigManager
         
-        config = ConfigManager()
-        reporter = JSONReporter(config)
+        reporter = JSONReporter()
         
         result = TestResult(
             test_name="test_json",
@@ -131,9 +125,8 @@ class TestReportingIntegration:
         from src.core.entities.test_result import TestResult
         from src.infrastructure.config.config_manager import ConfigManager
         
-        config = ConfigManager()
-        allure_reporter = AllureReporter(config)
-        html_reporter = HTMLReporter(config)
+        allure_reporter = AllureReporter(results_dir="allure-results")
+        html_reporter = HTMLReporter()
         
         result = TestResult(
             test_name="test_allure_html_integration",
@@ -161,7 +154,6 @@ class TestReportingIntegration:
         from src.core.entities.test_result import TestResult
         from src.infrastructure.config.config_manager import ConfigManager
         
-        config = ConfigManager()
         reporters = {
             "allure": AllureReporter(config),
             "html": HTMLReporter(config),

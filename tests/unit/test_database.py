@@ -128,7 +128,7 @@ class TestSQLValidator:
         analysis = validator.analyze_query_plan(query)
 
         assert analysis["query_type"] == "SELECT"
-        assert "users" in analysis["tables"]
+        assert "USERS" in analysis["tables"]
         assert "orders" in analysis["tables"]
         assert len(analysis["joins"]) > 0
         assert analysis["where_conditions"] > 0

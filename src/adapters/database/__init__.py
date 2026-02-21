@@ -2,7 +2,7 @@
 
 from .sql_validator import SQLValidator, SQLValidationResult
 from .data_integrity_tester import DataIntegrityTester, IntegrityConstraint
-from .migration_tester import MigrationTester, MigrationResult
+from .migration_tester import MigrationTester, MigrationResult, MigrationStatus
 from .database_client import DatabaseClient, SQLiteClient
 
 __all__ = [
@@ -12,6 +12,7 @@ __all__ = [
     "IntegrityConstraint",
     "MigrationTester",
     "MigrationResult",
+    "MigrationStatus",
     "DatabaseClient",
     "SQLiteClient",
 ]
