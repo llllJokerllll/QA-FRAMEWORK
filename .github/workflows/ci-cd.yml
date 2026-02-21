@@ -259,10 +259,11 @@ jobs:
 
       - name: Run E2E tests
         run: |
-          pytest tests/e2e -v \
+          poetry run pytest tests/integration -v \
             -m e2e \
-            --browser chromium \
-            --headless \
+            --cov=src \
+            --cov-append \
+            --cov-report=xml \
             --junitxml=junit-e2e.xml
 
       - name: Upload E2E test results
