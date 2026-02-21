@@ -242,7 +242,7 @@ jobs:
       - name: Install Playwright dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libgbm-dev libwoff1 libopus0 libwebp6 libwebpdemux2 libenchant-2-2 libsecret-1-0 libhyphen0 libgdk-pixbuf2.0-0 libegl1 libgles2 libx264-155
+          sudo apt-get install -y libgbm-dev libwoff1 libopus0 libwebpdemux2 libenchant-2-2 libsecret-1-0 libhyphen0 libgdk-pixbuf2.0-0 libegl1 libgles2
 
       - name: Cache pip packages
         uses: actions/cache@v4
@@ -258,7 +258,6 @@ jobs:
           playwright install chromium
 
       - name: Run E2E tests
-        continue-on-error: true
         run: |
           pytest tests/e2e -v \
             -m e2e \
