@@ -80,17 +80,17 @@ class ReportingConfig(BaseModel):
 
 class QAConfig(BaseSettings):
     """Main QA Framework configuration"""
-    model_config = ConfigDict(extra='allow')
+    model_config = ConfigDict(
+        extra='allow',
+        env_file=".env",
+        env_file_encoding="utf-8",
+        case_sensitive=False
+    )
 
     test: TestConfig = Field(default_factory=TestConfig)
     api: APIConfig = Field(default_factory=APIConfig)
     ui: UIConfig = Field(default_factory=UIConfig)
     reporting: ReportingConfig = Field(default_factory=ReportingConfig)
-
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
-        case_sensitive = False
 
 
 class ConfigManager:
