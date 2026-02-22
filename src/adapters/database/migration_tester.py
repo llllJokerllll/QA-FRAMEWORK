@@ -159,6 +159,7 @@ class MigrationTester:
             execution_time = time.time() - start_time
 
             # Try to rollback on failure
+            rollback_successful = None
             if rollback_script:
                 try:
                     await self._test_rollback(rollback_script)

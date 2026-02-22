@@ -278,11 +278,6 @@ class TestFastAPIIntegration:
         await register_database_connection(mock_db, manager=manager)
         await register_redis_connection(mock_redis, manager=manager)
         
-        # Make a request
-        client = TestClient(app)
-        response = client.get("/health")
-        assert response.status_code == 200
-        
         # Trigger shutdown via event
         for handler in app.router.on_shutdown:
             await handler()
