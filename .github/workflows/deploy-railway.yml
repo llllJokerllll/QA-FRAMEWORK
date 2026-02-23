@@ -1,0 +1,140 @@
+# ========================================
+# QA-FRAMEWORK SaaS - Railway Deploy Workflow
+# Automatically deploy to Railway on merge to main
+# ========================================
+
+name: Deploy to Railway
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'dashboard/**'
+      - '.github/workflows/deploy-railway.yml'
+  workflow_dispatch:
+
+env:
+  RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+
+jobs:
+  # ========================================
+  # Job 1: Run Tests
+  # ========================================
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          cd dashboard/backend
+          pip install -r requirements.txt
+          pip install pytest pytest-cov pytest-asyncio
+
+      - name: Run tests
+        run: |
+          cd dashboard/backend
+          pytest tests/ -v --cov=src --cov-report=xml --cov-report=html
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./dashboard/backend/coverage.xml
+          flags: backend
+          fail_ci_if_error: false
+
+  # ========================================
+  # Job 2: Deploy to Railway
+  # ========================================
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+
+      - name: Deploy to Railway
+        run: |
+          railway login --token $RAILWAY_TOKEN
+          railway up --service qa-framework-backend
+
+      - name: Health Check
+        run: |
+          echo "Waiting for deployment to be ready..."
+          sleep 30
+
+          # Get Railway service URL (you'll need to set this in Railway variables)
+          SERVICE_URL=${{ secrets.RAILWAY_SERVICE_URL }}
+
+          # Check health endpoint
+          curl -f $SERVICE_URL/health || exit 1
+
+          echo "✅ Deployment successful and healthy!"
+
+      - name: Notify on success
+        if: success()
+        run: |
+          echo "🎉 Deployed successfully to Railway!"
+          echo "URL: ${{ secrets.RAILWAY_SERVICE_URL }}"
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "❌ Deployment failed!"
+          # You can add Slack/Discord notification here
+
+  # ========================================
+  # Job 3: Run Migrations (if needed)
+  # ========================================
+  migrate:
+    needs: deploy
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          cd dashboard/backend
+          pip install -r requirements.txt
+          pip install alembic
+
+      - name: Run Alembic migrations
+        run: |
+          cd dashboard/backend
+          alembic upgrade head
+        env:
+          DATABASE_URL: ${{ secrets.RAILWAY_DATABASE_URL }}
+
+# ========================================
+# Required GitHub Secrets
+# ========================================
+# You need to set these secrets in your GitHub repo:
+#
+# 1. RAILWAY_TOKEN - Get from Railway dashboard: Settings > API Tokens
+# 2. RAILWAY_SERVICE_URL - Your Railway service URL (e.g., https://qa-framework-backend.railway.app)
+# 3. RAILWAY_DATABASE_URL - Your Railway PostgreSQL connection string
+#
+# To set secrets:
+# GitHub repo > Settings > Secrets and variables > Actions > New repository secret

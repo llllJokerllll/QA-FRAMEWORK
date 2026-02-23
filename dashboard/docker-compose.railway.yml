@@ -1,0 +1,105 @@
+# ========================================
+# QA-FRAMEWORK - Railway Production Config
+# Lightweight version for cloud deployment
+# ========================================
+
+version: '3.8'
+
+services:
+  # ========================================
+  # Backend API
+  # ========================================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.prod
+    restart: unless-stopped
+    ports:
+      - "${PORT:-8000}:8000"
+    environment:
+      # Database (Railway provides DATABASE_URL)
+      - DATABASE_URL=${DATABASE_URL}
+
+      # Redis (Railway provides REDIS_URL)
+      - REDIS_URL=${REDIS_URL}
+
+      # Security (set in Railway dashboard)
+      - SECRET_KEY=${SECRET_KEY}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+
+      # App config
+      - ENVIRONMENT=production
+      - DEBUG=false
+      - LOG_LEVEL=info
+
+      # CORS (update with your frontend URL)
+      - CORS_ORIGINS=${CORS_ORIGINS:-https://qaframework.io}
+
+      # AI Provider (optional, for AI features)
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - ZHIPUAI_API_KEY=${ZHIPUAI_API_KEY:-}
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+    # Railway handles resource limits
+    # deploy:
+    #   resources:
+    #     limits:
+    #       cpus: '1'
+    #       memory: 512M
+
+  # ========================================
+  # Background Worker (for async tasks)
+  # ========================================
+  worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.prod
+    restart: unless-stopped
+    command: celery -A core.celery_app worker --loglevel=info --concurrency=2
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_URL}
+      - SECRET_KEY=${SECRET_KEY}
+      - ENVIRONMENT=production
+    depends_on:
+      - backend
+
+  # ========================================
+  # Redis (if not using Railway Redis)
+  # Uncomment if Railway doesn't provide Redis
+  # ========================================
+  # redis:
+  #   image: redis:7-alpine
+  #   restart: unless-stopped
+  #   command: redis-server --appendonly yes
+  #   volumes:
+  #     - redis_data:/data
+  #   healthcheck:
+  #     test: ["CMD", "redis-cli", "ping"]
+  #     interval: 10s
+  #     timeout: 3s
+  #     retries: 3
+
+# ========================================
+# Volumes (only if using local Redis)
+# ========================================
+# volumes:
+#   redis_data:
+
+# ========================================
+# Notes for Railway Deployment
+# ========================================
+# 1. Create PostgreSQL database in Railway
+# 2. Create Redis instance in Railway (or use external)
+# 3. Set environment variables in Railway dashboard:
+#    - SECRET_KEY (generate with: openssl rand -hex 32)
+#    - JWT_SECRET_KEY (generate with: openssl rand -hex 32)
+#    - CORS_ORIGINS (your frontend URL)
+# 4. Connect GitHub repo to Railway
+# 5. Deploy!
