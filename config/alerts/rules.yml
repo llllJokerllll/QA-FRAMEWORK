@@ -1,0 +1,196 @@
+# ========================================
+# QA-FRAMEWORK - Alert Rules
+# ========================================
+# Last Updated: 2026-02-23
+# Purpose: Define alert conditions for SaaS deployment
+
+groups:
+  # ========================================
+  # Service Health Alerts
+  # ========================================
+  - name: service_health
+    interval: 30s
+    rules:
+      # Service Down
+      - alert: ServiceDown
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+          category: availability
+        annotations:
+          summary: "Service {{ $labels.instance }} is down"
+          description: "Service {{ $labels.job }} at {{ $labels.instance }} has been down for more than 1 minute."
+          details: "Check service logs and restart if necessary."
+
+      # High Memory Usage
+      - alert: HighMemoryUsage
+        expr: (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes > 0.8
+        for: 5m
+        labels:
+          severity: high
+          category: resources
+        annotations:
+          summary: "High memory usage on {{ $labels.instance }}"
+          description: "Memory usage is above 80% (current: {{ $value | humanizePercentage }})"
+          details: "Consider scaling up or optimizing memory usage."
+
+      # High CPU Usage
+      - alert: HighCPUUsage
+        expr: 100 - (avg by(instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+          category: resources
+        annotations:
+          summary: "High CPU usage on {{ $labels.instance }}"
+          description: "CPU usage is above 80% (current: {{ $value | humanize }}%)"
+          details: "Consider scaling up or optimizing CPU-intensive operations."
+
+  # ========================================
+  # Application Performance Alerts
+  # ========================================
+  - name: application_performance
+    interval: 30s
+    rules:
+      # High Error Rate (>5%)
+      - alert: HighErrorRate
+        expr: |
+          sum(rate(http_requests_total{status=~"5.."}[5m])) /
+          sum(rate(http_requests_total[5m])) > 0.05
+        for: 2m
+        labels:
+          severity: high
+          category: errors
+        annotations:
+          summary: "High error rate detected"
+          description: "Error rate is above 5% (current: {{ $value | humanizePercentage }})"
+          details: "Check application logs for errors and investigate root cause."
+
+      # High Latency (>500ms p99)
+      - alert: HighLatency
+        expr: |
+          histogram_quantile(0.99,
+            sum(rate(http_request_duration_seconds_bucket[5m])) by (le)
+          ) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+          category: performance
+        annotations:
+          summary: "High API latency detected"
+          description: "P99 latency is above 500ms (current: {{ $value | humanizeDuration }})"
+          details: "Investigate slow queries, cache misses, or resource bottlenecks."
+
+      # Slow Database Queries
+      - alert: SlowDatabaseQueries
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(db_query_duration_seconds_bucket[5m])) by (le)
+          ) > 1
+        for: 5m
+        labels:
+          severity: warning
+          category: database
+        annotations:
+          summary: "Slow database queries detected"
+          description: "P95 query latency is above 1s (current: {{ $value | humanizeDuration }})"
+          details: "Review slow query logs and consider adding indexes."
+
+  # ========================================
+  # QA Framework Specific Alerts
+  # ========================================
+  - name: qa_framework
+    interval: 60s
+    rules:
+      # High Test Failure Rate
+      - alert: HighTestFailureRate
+        expr: |
+          sum(rate(qa_tests_failed_total[5m])) /
+          sum(rate(qa_tests_executed_total[5m])) > 0.1
+        for: 5m
+        labels:
+          severity: high
+          category: tests
+        annotations:
+          summary: "High test failure rate"
+          description: "Test failure rate is above 10% (current: {{ $value | humanizePercentage }})"
+          details: "Review recent test failures and identify patterns."
+
+      # Low Test Coverage
+      - alert: LowTestCoverage
+        expr: qa_test_coverage_ratio < 0.7
+        for: 1h
+        labels:
+          severity: info
+          category: tests
+        annotations:
+          summary: "Low test coverage detected"
+          description: "Test coverage is below 70% (current: {{ $value | humanizePercentage }})"
+          details: "Consider adding more tests to improve coverage."
+
+      # Stale Test Results
+      - alert: StaleTestResults
+        expr: time() - qa_tests_last_run_timestamp_seconds > 3600
+        for: 10m
+        labels:
+          severity: warning
+          category: tests
+        annotations:
+          summary: "No recent test runs"
+          description: "No tests have been run in the last hour"
+          details: "Check if scheduled tests are running correctly."
+
+  # ========================================
+  # Infrastructure Alerts
+  # ========================================
+  - name: infrastructure
+    interval: 30s
+    rules:
+      # Redis Connection Issues
+      - alert: RedisConnectionIssues
+        expr: redis_up == 0
+        for: 1m
+        labels:
+          severity: critical
+          category: infrastructure
+        annotations:
+          summary: "Redis is unavailable"
+          description: "Redis instance {{ $labels.instance }} is not responding"
+          details: "Check Redis container status and restart if necessary."
+
+      # PostgreSQL Connection Issues
+      - alert: PostgreSQLConnectionIssues
+        expr: pg_up == 0
+        for: 1m
+        labels:
+          severity: critical
+          category: infrastructure
+        annotations:
+          summary: "PostgreSQL is unavailable"
+          description: "PostgreSQL instance {{ $labels.instance }} is not responding"
+          details: "Check PostgreSQL container status and logs."
+
+      # Disk Space Warning
+      - alert: DiskSpaceWarning
+        expr: (node_filesystem_avail_bytes / node_filesystem_size_bytes) < 0.2
+        for: 5m
+        labels:
+          severity: warning
+          category: storage
+        annotations:
+          summary: "Low disk space on {{ $labels.instance }}"
+          description: "Available disk space is below 20% (current: {{ $value | humanizePercentage }} free)"
+          details: "Clean up old files or expand storage."
+
+      # Disk Space Critical
+      - alert: DiskSpaceCritical
+        expr: (node_filesystem_avail_bytes / node_filesystem_size_bytes) < 0.1
+        for: 1m
+        labels:
+          severity: critical
+          category: storage
+        annotations:
+          summary: "Critical disk space on {{ $labels.instance }}"
+          description: "Available disk space is below 10% (current: {{ $value | humanizePercentage }} free)"
+          details: "Immediate action required to free up disk space."

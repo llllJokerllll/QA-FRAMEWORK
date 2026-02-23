@@ -46,12 +46,22 @@ services:
       retries: 3
       start_period: 10s
 
-    # Railway handles resource limits
-    # deploy:
-    #   resources:
-    #     limits:
-    #       cpus: '1'
-    #       memory: 512M
+    # Resource Limits (Kubernetes/Docker Swarm compatible)
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+
+    # Logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   # ========================================
   # Background Worker (for async tasks)
@@ -69,6 +79,22 @@ services:
       - ENVIRONMENT=production
     depends_on:
       - backend
+
+    # Resource Limits for Worker
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   # ========================================
   # Redis (if not using Railway Redis)
