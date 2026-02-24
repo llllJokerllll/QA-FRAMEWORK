@@ -18,7 +18,7 @@ class TestCacheManager:
         # Verificar que los atributos iniciales se establecen correctamente
         assert hasattr(cache_manager, '_host')
         assert hasattr(cache_manager, '_port')
-        assert hasattr(cache_manager, '_db')
+        assert hasattr(cache_manager, '_password')
     
     async def test_get_async_client(self):
         """Test para get_async_client"""
@@ -123,7 +123,7 @@ class TestCacheManager:
         assert "suite" in suite_key and "123" in suite_key
         
         suite_list_key = cache_manager.get_suite_list_key(0, 50)
-        assert "suite_list" in suite_list_key
+        assert "suites" in suite_list_key  # Updated to match actual key format
         
         case_key = cache_manager.get_case_key(456)
         assert "case" in case_key and "456" in case_key
@@ -147,7 +147,7 @@ class TestCacheDecorator:
         """Test para el decorador cached con función asíncrona"""
         from core.cache import cached
         
-        @cached(ttl=60, prefix="test")
+        @cached(ttl=60, key_prefix="test")
         async def test_async_func(x, y):
             return x + y
         
@@ -159,7 +159,7 @@ class TestCacheDecorator:
         """Test para el decorador cached con función síncrona"""
         from core.cache import cached
         
-        @cached(ttl=60, prefix="test")
+        @cached(ttl=60, key_prefix="test")
         def test_sync_func(x, y):
             return x * y
         

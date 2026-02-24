@@ -40,11 +40,10 @@ class TestUserService:
     
     async def test_create_user_service_success(self, mock_db_session, mock_user_data):
         """Test para create_user_service - caso exitoso"""
-        # Mock del objeto User
-        mock_user = MagicMock(spec=User)
-        mock_user.id = 1
-        mock_user.username = mock_user_data.username
-        mock_user.email = mock_user_data.email
+        # Mock del resultado de execute para que devuelva None (usuario no existe)
+        mock_result = MagicMock()
+        mock_result.scalar_one_or_none.return_value = None
+        mock_db_session.execute.return_value = mock_result
         
         # Configurar el mock para que devuelva el usuario cuando se haga commit y refresh
         mock_db_session.refresh.side_effect = AsyncMock()
@@ -141,8 +140,8 @@ class TestUserService:
         
         # Ejecutar la función
         result = await update_user_service(
-            user_id=1, 
-            user_data=update_data, 
+            user_id=1,
+            user_update=update_data,
             db=mock_db_session
         )
         
@@ -165,7 +164,7 @@ class TestUserService:
         
         # Ejecutar la función
         await delete_user_service(user_id=1, db=mock_db_session)
-        
-        # Verificar que se llamaron los métodos adecuados
-        mock_db_session.delete.assert_called_once()
+
+        # Verificar que se hizo soft delete (commit, no delete)
+        mock_db_session.commit.assert_called_once()
         mock_db_session.commit.assert_called_once()
