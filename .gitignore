@@ -32,6 +32,7 @@ allure-report/
 
 # Virtual Environment
 venv/
+venv312/
 ENV/
 env/
 .venv/

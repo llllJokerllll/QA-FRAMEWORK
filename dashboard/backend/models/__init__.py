@@ -14,13 +14,40 @@ class User(Base):
     username = Column(String, unique=True, index=True, nullable=False)
     email = Column(String, unique=True, index=True, nullable=False)
     hashed_password = Column(String, nullable=False)
+    full_name = Column(String, nullable=True)
     is_active = Column(Boolean, default=True)
     is_superuser = Column(Boolean, default=False)
+    
+    # Multi-tenant
+    tenant_id = Column(String, ForeignKey("tenants.id"), nullable=True)
+    
+    # OAuth
+    oauth_provider = Column(String, nullable=True)
+    oauth_provider_id = Column(String, nullable=True)
+    
     created_at = Column(DateTime, default=func.now())
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
 
     # Relationships
     test_executions = relationship("TestExecution", back_populates="user")
+    api_keys = relationship("ApiKey", back_populates="user")
+
+
+class ApiKey(Base):
+    __tablename__ = "api_keys"
+
+    id = Column(String, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    name = Column(String, nullable=False)
+    hashed_key = Column(String, unique=True, nullable=False)
+    scopes = Column(JSON, default=list)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=func.now())
+    expires_at = Column(DateTime, nullable=True)
+    last_used_at = Column(DateTime, nullable=True)
+
+    # Relationships
+    user = relationship("User", back_populates="api_keys")
 
 
 class TestSuite(Base):

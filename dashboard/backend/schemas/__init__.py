@@ -277,3 +277,41 @@ class ApiResponse(BaseModel):
     message: str
     data: Optional[Dict[str, Any]] = None
     error: Optional[str] = None
+
+
+# OAuth Schemas
+class OAuthProvider(str, Enum):
+    google = "google"
+    github = "github"
+
+
+class OAuthLoginRequest(BaseModel):
+    provider: OAuthProvider
+    code: str
+    state: Optional[str] = None
+
+
+class OAuthUrlResponse(BaseModel):
+    provider: OAuthProvider
+    authorization_url: str
+    state: str
+
+
+# API Key Schemas
+class ApiKeyCreate(BaseModel):
+    name: str = Field(..., min_length=1, max_length=100)
+    scopes: Optional[List[str]] = ["read"]
+    expires_at: Optional[datetime] = None
+
+
+class ApiKeyResponse(BaseModel):
+    id: str
+    name: str
+    key: str
+    scopes: List[str]
+    created_at: datetime
+    expires_at: Optional[datetime] = None
+    last_used_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True

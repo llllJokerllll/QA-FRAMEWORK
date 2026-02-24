@@ -28,6 +28,13 @@ from schemas import (
     UserResponse,
     UserUpdate,
     LoginRequest,
+    OAuthLoginRequest,
+    OAuthUrlResponse,
+    ApiKeyCreate,
+    ApiKeyResponse,
+)
+from services.auth_service import get_current_user, login_for_access_token
+from api.v1 import auth_routes
     TokenResponse,
 )
 from services.auth_service import get_current_user, login_for_access_token
@@ -64,7 +71,9 @@ from core.logging_config import get_logger, set_request_id, clear_request_id
 # Initialize logger
 logger = get_logger(__name__)
 
+# Include auth routes
 router = APIRouter(prefix="/api/v1", tags=["v1"])
+router.include_router(auth_routes.router)
 
 
 @router.middleware("http")
