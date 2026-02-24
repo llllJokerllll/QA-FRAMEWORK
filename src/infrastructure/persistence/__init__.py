@@ -5,9 +5,17 @@ from .tenant_repository import (
     SQLAlchemyTenantRepository,
     InMemoryTenantRepository
 )
+from .role_repository import (
+    RoleRepositoryInterface,
+    SQLAlchemyRoleRepository,
+    InMemoryRoleRepository
+)
 
 __all__ = [
     "TenantRepositoryInterface",
     "SQLAlchemyTenantRepository",
-    "InMemoryTenantRepository"
+    "InMemoryTenantRepository",
+    "RoleRepositoryInterface",
+    "SQLAlchemyRoleRepository",
+    "InMemoryRoleRepository"
 ]
