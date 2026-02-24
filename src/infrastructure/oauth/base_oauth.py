@@ -1,224 +1,236 @@
-"""Base OAuth provider implementation."""
-
+"""Base OAuth Provider Implementation."""
 from abc import abstractmethod
-from dataclasses import dataclass
-from typing import Optional
-import secrets
+from datetime import datetime, timedelta
+from typing import Optional, Dict, Any
+import os
+import httpx
 
-from src.domain.auth import OAuthProvider as OAuthProviderInterface
-from src.domain.auth import Token, OAuthUser
-from src.domain.auth.value_objects import AuthProvider
+from domain.auth.interfaces import OAuthProvider
+from domain.auth.entities import OAuthUser, Token
 
 
-@dataclass
-class OAuthConfig:
-    """OAuth provider configuration."""
+class OAuthError(Exception):
+    """Base exception for OAuth errors."""
+    pass
+
+
+class OAuthConfigurationError(OAuthError):
+    """Raised when OAuth provider is not properly configured."""
+    pass
+
+
+class OAuthExchangeError(OAuthError):
+    """Raised when code exchange fails."""
+    pass
+
+
+class OAuthUserInfoError(OAuthError):
+    """Raised when fetching user info fails."""
+    pass
+
+
+class OAuthRefreshError(OAuthError):
+    """Raised when token refresh fails."""
+    pass
+
+
+class BaseOAuthProvider(OAuthProvider):
+    """Base implementation for OAuth 2.0 providers.
     
-    client_id: str
-    client_secret: str
-    authorization_url: str
-    token_url: str
-    user_info_url: str
-    scopes: list[str]
+    Provides common functionality for OAuth 2.0 authorization code flow.
+    Subclasses must implement provider-specific methods.
+    """
     
-    # Optional settings
-    redirect_uri: Optional[str] = None
-    additional_params: dict = None
-    
-    def __post_init__(self):
-        if self.additional_params is None:
-            self.additional_params = {}
-
-
-class BaseOAuthProvider(OAuthProviderInterface):
-    """Base implementation for OAuth providers."""
-    
-    def __init__(self, config: OAuthConfig):
-        self.config = config
-        self._http_client = None
+    def __init__(
+        self,
+        client_id: Optional[str] = None,
+        client_secret: Optional[str] = None,
+        redirect_uri: Optional[str] = None,
+    ):
+        """Initialize OAuth provider.
+        
+        Args:
+            client_id: OAuth client ID (falls back to env var)
+            client_secret: OAuth client secret (falls back to env var)
+            redirect_uri: OAuth redirect URI (falls back to env var)
+        """
+        self._client_id = client_id
+        self._client_secret = client_secret
+        self._redirect_uri = redirect_uri
+        self._http_client: Optional[httpx.AsyncClient] = None
     
     @property
-    @abstractmethod
-    def provider_name(self) -> AuthProvider:
-        """Get the provider name."""
-        pass
+    def client_id(self) -> str:
+        """Get client ID from config or environment."""
+        return self._client_id or os.getenv(f"{self.name.upper()}_CLIENT_ID", "")
     
-    def _get_http_client(self):
+    @property
+    def client_secret(self) -> str:
+        """Get client secret from config or environment."""
+        return self._client_secret or os.getenv(f"{self.name.upper()}_CLIENT_SECRET", "")
+    
+    @property
+    def redirect_uri(self) -> str:
+        """Get redirect URI from config or environment."""
+        default = f"http://localhost:3000/auth/{self.name}/callback"
+        return self._redirect_uri or os.getenv(f"{self.name.upper()}_REDIRECT_URI", default)
+    
+    def is_configured(self) -> bool:
+        """Check if provider has valid credentials."""
+        return bool(self.client_id and self.client_secret)
+    
+    def _get_http_client(self) -> httpx.AsyncClient:
         """Get or create HTTP client."""
         if self._http_client is None:
-            import httpx
-            self._http_client = httpx.AsyncClient(timeout=30.0)
+            self._http_client = httpx.AsyncClient(
+                timeout=30.0,
+                follow_redirects=True
+            )
         return self._http_client
     
-    async def close(self):
-        """Close HTTP client."""
-        if self._http_client:
-            await self._http_client.aclose()
-            self._http_client = None
+    async def _make_request(
+        self,
+        method: str,
+        url: str,
+        headers: Optional[Dict[str, str]] = None,
+        data: Optional[Dict[str, Any]] = None,
+        json_data: Optional[Dict[str, Any]] = None,
+    ) -> httpx.Response:
+        """Make HTTP request with error handling.
+        
+        Args:
+            method: HTTP method (GET, POST, etc.)
+            url: Request URL
+            headers: Optional request headers
+            data: Optional form data
+            json_data: Optional JSON data
+            
+        Returns:
+            HTTP response
+        """
+        client = self._get_http_client()
+        
+        try:
+            if method == "GET":
+                response = await client.get(url, headers=headers)
+            elif method == "POST":
+                if json_data:
+                    response = await client.post(url, headers=headers, json=json_data)
+                else:
+                    response = await client.post(url, headers=headers, data=data)
+            else:
+                raise ValueError(f"Unsupported HTTP method: {method}")
+            
+            return response
+        except httpx.RequestError as e:
+            raise OAuthError(f"HTTP request failed: {e}") from e
     
-    def generate_state(self) -> str:
-        """Generate a secure state parameter for CSRF protection."""
-        return secrets.token_urlsafe(32)
+    def _build_url(self, base_url: str, params: Dict[str, str]) -> str:
+        """Build URL with query parameters.
+        
+        Args:
+            base_url: Base URL
+            params: Query parameters
+            
+        Returns:
+            Complete URL with query string
+        """
+        from urllib.parse import urlencode
+        query = urlencode(params)
+        separator = "&" if "?" in base_url else "?"
+        return f"{base_url}{separator}{query}
+    
+    def _parse_token_response(self, data: Dict[str, Any]) -> Token:
+        """Parse OAuth token response.
+        
+        Args:
+            data: Token response data
+            
+        Returns:
+            Token entity
+        """
+        expires_in = data.get("expires_in")
+        expires_at = None
+        if expires_in:
+            expires_at = datetime.utcnow() + timedelta(seconds=expires_in)
+        
+        return Token(
+            access_token=data["access_token"],
+            refresh_token=data.get("refresh_token"),
+            expires_at=expires_at,
+            token_type=data.get("token_type", "Bearer").title(),
+        )
     
     async def get_authorization_url(
         self,
         state: str,
-        redirect_uri: str,
-        scope: Optional[str] = None,
+        redirect_uri: Optional[str] = None,
     ) -> str:
-        """
-        Generate authorization URL for OAuth flow.
+        """Get OAuth authorization URL.
         
         Args:
-            state: CSRF protection state parameter
-            redirect_uri: Where to redirect after auth
-            scope: Optional space-separated scopes
+            state: CSRF protection state
+            redirect_uri: Optional redirect URI override
             
         Returns:
-            Authorization URL to redirect user to
+            Authorization URL
         """
-        from urllib.parse import urlencode, urlparse, urlunparse
+        if not self.is_configured():
+            raise OAuthConfigurationError(f"{self.name} OAuth provider not configured")
         
-        # Use provided scope or default from config
-        scope_str = scope or " ".join(self.config.scopes)
-        
-        # Build query parameters
-        params = {
-            "client_id": self.config.client_id,
-            "redirect_uri": redirect_uri,
-            "response_type": "code",
-            "scope": scope_str,
-            "state": state,
-        }
-        
-        # Add any additional parameters
-        params.update(self.config.additional_params)
-        
-        # Build full URL
-        parsed = urlparse(self.config.authorization_url)
-        query = urlencode(params)
-        
-        return urlunparse((
-            parsed.scheme,
-            parsed.netloc,
-            parsed.path,
-            parsed.params,
-            query,
-            parsed.fragment,
-        ))
+        uri = redirect_uri or self.redirect_uri
+        params = self._get_authorization_params(state, uri)
+        return self._build_url(self._authorization_url, params)
     
     async def exchange_code(
         self,
         code: str,
-        redirect_uri: str,
+        redirect_uri: Optional[str] = None,
     ) -> Token:
-        """
-        Exchange authorization code for access token.
+        """Exchange authorization code for token.
         
         Args:
-            code: Authorization code from callback
-            redirect_uri: Same redirect URI used in authorization
+            code: Authorization code
+            redirect_uri: Optional redirect URI override
             
         Returns:
-            Token entity with access and refresh tokens
+            Token entity
         """
-        client = self._get_http_client()
+        if not self.is_configured():
+            raise OAuthConfigurationError(f"{self.name} OAuth provider not configured")
         
-        data = {
-            "client_id": self.config.client_id,
-            "client_secret": self.config.client_secret,
-            "code": code,
-            "redirect_uri": redirect_uri,
-            "grant_type": "authorization_code",
-        }
+        uri = redirect_uri or self.redirect_uri
         
-        headers = {
-            "Accept": "application/json",
-        }
-        
-        response = await client.post(
-            self.config.token_url,
-            data=data,
-            headers=headers,
-        )
-        
-        response.raise_for_status()
-        token_data = response.json()
-        
-        return self._parse_token_response(token_data)
-    
-    @abstractmethod
-    async def get_user_info(self, token: Token) -> OAuthUser:
-        """
-        Get user information from OAuth provider.
-        
-        Args:
-            token: Valid access token
+        try:
+            response = await self._exchange_code_impl(code, uri)
+            data = response.json()
             
-        Returns:
-            OAuthUser entity with user information
-        """
-        pass
+            if response.status_code != 200:
+                error = data.get("error", "unknown_error")
+                error_desc = data.get("error_description", "No description")
+                raise OAuthExchangeError(f"Token exchange failed: {error} - {error_desc}")
+            
+            return self._parse_token_response(data)
+            
+        except httpx.RequestError as e:
+            raise OAuthExchangeError(f"Token exchange request failed: {e}") from e
     
     async def refresh_token(self, refresh_token: str) -> Token:
-        """
-        Refresh an expired access token.
+        """Refresh access token.
         
         Args:
-            refresh_token: Valid refresh token
+            refresh_token: Refresh token
             
         Returns:
-            New Token entity
+            New token
         """
-        client = self._get_http_client()
+        if not self.is_configured():
+            raise OAuthConfigurationError(f"{self.name} OAuth provider not configured")
         
-        data = {
-            "client_id": self.config.client_id,
-            "client_secret": self.config.client_secret,
-            "refresh_token": refresh_token,
-            "grant_type": "refresh_token",
-        }
-        
-        response = await client.post(
-            self.config.token_url,
-            data=data,
-        )
-        
-        response.raise_for_status()
-        token_data = response.json()
-        
-        return self._parse_token_response(token_data, refresh_token)
-    
-    async def revoke_token(self, token: str) -> bool:
-        """
-        Revoke an access token.
-        
-        Args:
-            token: Token to revoke
+        try:
+            response = await self._refresh_token_impl(refresh_token)
+            data = response.json()
             
-        Returns:
-            True if revocation successful
-        """
-        # Default implementation - providers may override
-        # Most providers have a revocation endpoint
-        return True
-    
-    def _parse_token_response(
-        self,
-        data: dict,
-        refresh_token: Optional[str] = None,
-    ) -> Token:
-        """Parse token response from provider."""
-        from datetime import datetime, timedelta
-        
-        # Calculate expiration time
-        expires_in = data.get("expires_in", 3600)
-        expires_at = datetime.utcnow() + timedelta(seconds=expires_in)
-        
-        return Token(
-            access_token=data.get("access_token", ""),
-            refresh_token=data.get("refresh_token", refresh_token),
-            token_type=data.get("token_type", "Bearer"),
-            expires_at=expires_at,
-            scope=data.get("scope", ""),
-        )
+            if response.status_code != 200:
+                error = data.get("error", "unknown_error")
+                raise OAuthRefreshError(f
