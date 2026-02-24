@@ -49,7 +49,7 @@ class TestDashboardService:
         mock_slowest_result.scalar_one_or_none.return_value = mock_slowest_mock
         
         # Mock de las llamadas a execute
-        side_effects = [mock_avg_result, mock_count_result, mock_fastest_result, mock_slowest_result]
+        side_effects = [mock_avg_result, mock_count_result, mock_fastest_result, mock_slowest_result, mock_count_result, mock_count_result]
         mock_db_session.execute.side_effect = side_effects
         
         # Ejecutar la función
@@ -81,7 +81,7 @@ class TestDashboardService:
         mock_slowest_result.scalar_one_or_none.return_value = None
         
         # Mock de las llamadas a execute
-        side_effects = [mock_avg_result, mock_count_result, mock_fastest_result, mock_slowest_result]
+        side_effects = [mock_avg_result, mock_count_result, mock_fastest_result, mock_slowest_result, mock_count_result, mock_count_result]
         mock_db_session.execute.side_effect = side_effects
         
         # Ejecutar la función
@@ -137,7 +137,7 @@ class TestDashboardService:
         assert isinstance(result, list)
         if len(result) > 0:
             assert "id" in result[0]
-            assert "name" in result[0]
+            assert "suite_name" in result[0]  # Updated from "name" to "suite_name"
             assert "status" in result[0]
     
     async def test_get_test_types_distribution_success(self, mock_db_session):
