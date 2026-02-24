@@ -1,122 +1,106 @@
-"""Google OAuth provider implementation."""
+"""Google OAuth Provider Implementation."""
+from typing import Dict, Any
+import httpx
 
-from datetime import datetime
-from typing import Optional
-import os
-
-from .base_oauth import BaseOAuthProvider, OAuthConfig
-from src.domain.auth import Token, OAuthUser
-from src.domain.auth.value_objects import AuthProvider
+from domain.auth.entities import OAuthUser, Token
+from .base_oauth import BaseOAuthProvider, OAuthUserInfoError
 
 
 class GoogleOAuthProvider(BaseOAuthProvider):
     """Google OAuth 2.0 provider implementation."""
     
-    # Google OAuth endpoints
     GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
     GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
-    GOOGLE_USER_INFO_URL = "https://www.googleapis.com/oauth2/v2/userinfo"
-    
-    # Default scopes for Google OAuth
-    DEFAULT_SCOPES = [
-        "openid",
-        "email",
-        "profile",
-    ]
+    GOOGLE_USERINFO_URL = "https://www.googleapis.com/oauth2/v2/userinfo"
     
     @property
-    def provider_name(self) -> AuthProvider:
-        """Get the provider name."""
-        return AuthProvider.GOOGLE
+    def name(self) -> str:
+        return "google"
     
-    @classmethod
-    def from_env(cls) -> "GoogleOAuthProvider":
-        """Create provider from environment variables."""
-        config = OAuthConfig(
-            client_id=os.getenv("GOOGLE_CLIENT_ID", ""),
-            client_secret=os.getenv("GOOGLE_CLIENT_SECRET", ""),
-            authorization_url=cls.GOOGLE_AUTH_URL,
-            token_url=cls.GOOGLE_TOKEN_URL,
-            user_info_url=cls.GOOGLE_USER_INFO_URL,
-            scopes=cls.DEFAULT_SCOPES,
-            additional_params={
-                "access_type": "offline",  # Get refresh token
-                "prompt": "consent",  # Force consent screen
-            },
-        )
-        return cls(config)
+    @property
+    def display_name(self) -> str:
+        return "Google"
+    
+    @property
+    def _authorization_url(self) -> str:
+        return self.GOOGLE_AUTH_URL
+    
+    @property
+    def _token_url(self) -> str:
+        return self.GOOGLE_TOKEN_URL
+    
+    def _get_authorization_params(self, state: str, redirect_uri: str) -> Dict[str, str]:
+        """Build Google OAuth authorization parameters."""
+        return {
+            "client_id": self.client_id,
+            "redirect_uri": redirect_uri,
+            "response_type": "code",
+            "scope": "openid email profile",
+            "state": state,
+            "access_type": "offline",
+            "prompt": "consent",
+        }
+    
+    async def _exchange_code_impl(
+        self,
+        code: str,
+        redirect_uri: str,
+    ) -> httpx.Response:
+        """Exchange authorization code for Google token."""
+        data = {
+            "code": code,
+            "client_id": self.client_id,
+            "client_secret": self.client_secret,
+            "redirect_uri": redirect_uri,
+            "grant_type": "authorization_code",
+        }
+        headers = {"Accept": "application/json"}
+        return await self._make_request("POST", self._token_url, data=data, headers=headers)
+    
+    async def _refresh_token_impl(
+        self,
+        refresh_token: str,
+    ) -> httpx.Response:
+        """Refresh Google access token."""
+        data = {
+            "refresh_token": refresh_token,
+            "client_id": self.client_id,
+            "client_secret": self.client_secret,
+            "grant_type": "refresh_token",
+        }
+        headers = {"Accept": "application/json"}
+        return await self._make_request("POST", self._token_url, data=data, headers=headers)
     
     async def get_user_info(self, token: Token) -> OAuthUser:
-        """
-        Get user information from Google.
+        """Get user information from Google.
         
         Args:
             token: Valid access token
             
         Returns:
-            OAuthUser entity with user information
-        """
-        client = self._get_http_client()
-        
-        headers = {
-            "Authorization": f"Bearer {token.access_token}",
-            "Accept": "application/json",
-        }
-        
-        response = await client.get(
-            self.config.user_info_url,
-            headers=headers,
-        )
-        
-        response.raise_for_status()
-        user_data = response.json()
-        
-        return self._parse_user_info(user_data)
-    
-    def _parse_user_info(self, data: dict) -> OAuthUser:
-        """Parse user info from Google API response."""
-        return OAuthUser(
-            provider=AuthProvider.GOOGLE,
-            provider_id=data.get("id", ""),
-            email=data.get("email", ""),
-            name=data.get("name"),
-            avatar_url=data.get("picture"),
-            raw_data=data,
-        )
-    
-    async def revoke_token(self, token: str) -> bool:
-        """
-        Revoke a Google access token.
-        
-        Args:
-            token: Token to revoke
+            OAuthUser entity
             
-        Returns:
-            True if revocation successful
+        Raises:
+            OAuthUserInfoError: If user info fetch fails
         """
-        client = self._get_http_client()
-        
-        revoke_url = f"https://oauth2.googleapis.com/revoke?token={token}"
+        headers = {"Authorization": f"Bearer {token.access_token}"}
         
         try:
-            response = await client.post(revoke_url)
-            return response.status_code == 200
-        except Exception:
-            return False
-    
-    async def get_authorization_url(
-        self,
-        state: str,
-        redirect_uri: str,
-        scope: Optional[str] = None,
-    ) -> str:
-        """
-        Generate Google authorization URL.
-        
-        Overrides base to add Google-specific parameters.
-        """
-        # Include offline access for refresh token
-        if scope is None:
-            scope = " ".join(self.DEFAULT_SCOPES)
-        
-        return await super().get_authorization_url(state, redirect_uri, scope)
+            response = await self._make_request("GET", self.GOOGLE_USERINFO_URL, headers=headers)
+            
+            if response.status_code != 200:
+                raise OAuthUserInfoError(f"Failed to get Google user info: {response.status_code}")
+            
+            data = response.json()
+            
+            return OAuthUser(
+                id=data.get("id", ""),
+                email=data.get("email", ""),
+                name=data.get("name"),
+                avatar=data.get("picture"),
+                provider=self.name,
+                provider_id=data.get("id", ""),
+            )
+            
+        except httpx.RequestError as e:
+            raise OAuthUserInfoError(f"Failed to fetch Google user info: {e}") from e

@@ -1,10 +1,7 @@
-"""OAuth provider factory for creating provider instances."""
-
-from typing import Optional
-import os
-
-from src.domain.auth.value_objects import AuthProvider
-from src.domain.auth.interfaces import OAuthProvider as OAuthProviderInterface
+"""OAuth Provider Factory."""
+from typing import Dict, Type, Optional
+from domain.auth.interfaces import OAuthProvider
+from domain.auth.value_objects import AuthProvider
 from .google_oauth import GoogleOAuthProvider
 from .github_oauth import GitHubOAuthProvider
 
@@ -12,114 +9,84 @@ from .github_oauth import GitHubOAuthProvider
 class OAuthProviderFactory:
     """Factory for creating OAuth provider instances."""
     
-    _providers: dict[AuthProvider, type] = {
+    _providers: Dict[AuthProvider, Type[OAuthProvider]] = {
         AuthProvider.GOOGLE: GoogleOAuthProvider,
         AuthProvider.GITHUB: GitHubOAuthProvider,
     }
     
     @classmethod
-    def create(cls, provider: AuthProvider) -> OAuthProviderInterface:
-        """
-        Create an OAuth provider instance from environment variables.
+    def create(cls, provider: AuthProvider) -> OAuthProvider:
+        """Create an OAuth provider instance.
         
         Args:
-            provider: The provider type to create
+            provider: The authentication provider type
             
         Returns:
-            Configured OAuth provider instance
+            OAuthProvider instance
             
         Raises:
             ValueError: If provider is not supported
         """
-        if provider not in cls._providers:
+        provider_class = cls._providers.get(provider)
+        if provider_class is None:
             raise ValueError(f"Unsupported OAuth provider: {provider}")
         
-        provider_class = cls._providers[provider]
-        return provider_class.from_env()
+        return provider_class()
     
     @classmethod
-    def create_google(
-        cls,
-        client_id: Optional[str] = None,
-        client_secret: Optional[str] = None,
-    ) -> GoogleOAuthProvider:
-        """
-        Create a Google OAuth provider.
+    def create_from_string(cls, provider_name: str) -> OAuthProvider:
+        """Create an OAuth provider from string name.
         
         Args:
-            client_id: Google client ID (defaults to env var)
-            client_secret: Google client secret (defaults to env var)
+            provider_name: Provider name (e.g., 'google', 'github')
             
         Returns:
-            Configured GoogleOAuthProvider instance
-        """
-        from .base_oauth import OAuthConfig
-        
-        config = OAuthConfig(
-            client_id=client_id or os.getenv("GOOGLE_CLIENT_ID", ""),
-            client_secret=client_secret or os.getenv("GOOGLE_CLIENT_SECRET", ""),
-            authorization_url=GoogleOAuthProvider.GOOGLE_AUTH_URL,
-            token_url=GoogleOAuthProvider.GOOGLE_TOKEN_URL,
-            user_info_url=GoogleOAuthProvider.GOOGLE_USER_INFO_URL,
-            scopes=GoogleOAuthProvider.DEFAULT_SCOPES,
-            additional_params={
-                "access_type": "offline",
-                "prompt": "consent",
-            },
-        )
-        
-        return GoogleOAuthProvider(config)
-    
-    @classmethod
-    def create_github(
-        cls,
-        client_id: Optional[str] = None,
-        client_secret: Optional[str] = None,
-    ) -> GitHubOAuthProvider:
-        """
-        Create a GitHub OAuth provider.
-        
-        Args:
-            client_id: GitHub client ID (defaults to env var)
-            client_secret: GitHub client secret (defaults to env var)
+            OAuthProvider instance
             
-        Returns:
-            Configured GitHubOAuthProvider instance
+        Raises:
+            ValueError: If provider is not supported
         """
-        from .base_oauth import OAuthConfig
+        auth_provider = AuthProvider.from_string(provider_name)
+        if auth_provider is None:
+            raise ValueError(f"Unknown OAuth provider: {provider_name}")
         
-        config = OAuthConfig(
-            client_id=client_id or os.getenv("GITHUB_CLIENT_ID", ""),
-            client_secret=client_secret or os.getenv("GITHUB_CLIENT_SECRET", ""),
-            authorization_url=GitHubOAuthProvider.GITHUB_AUTH_URL,
-            token_url=GitHubOAuthProvider.GITHUB_TOKEN_URL,
-            user_info_url=GitHubOAuthProvider.GITHUB_USER_INFO_URL,
-            scopes=GitHubOAuthProvider.DEFAULT_SCOPES,
-        )
-        
-        return GitHubOAuthProvider(config)
+        return cls.create(auth_provider)
     
     @classmethod
-    def get_supported_providers(cls) -> list[AuthProvider]:
-        """Get list of supported OAuth providers."""
-        return list(cls._providers.keys())
-    
-    @classmethod
-    def is_provider_supported(cls, provider: AuthProvider) -> bool:
-        """Check if a provider is supported."""
-        return provider in cls._providers
+    def get_available_providers(cls) -> Dict[AuthProvider, bool]:
+        """Get all available providers and their configuration status.
+        
+        Returns:
+            Dictionary mapping providers to their configured status
+        """
+        result = {}
+        for auth_provider, provider_class in cls._providers.items():
+            instance = provider_class()
+            result[auth_provider] = instance.is_configured()
+        return result
     
     @classmethod
     def register_provider(
         cls,
         provider: AuthProvider,
-        provider_class: type,
+        provider_class: Type[OAuthProvider],
     ) -> None:
-        """
-        Register a custom OAuth provider.
+        """Register a custom OAuth provider.
         
         Args:
-            provider: Provider enum value
-            provider_class: Provider class (must implement OAuthProvider interface)
+            provider: The authentication provider type
+            provider_class: The provider implementation class
         """
         cls._providers[provider] = provider_class
+    
+    @classmethod
+    def is_supported(cls, provider_name: str) -> bool:
+        """Check if provider is supported.
+        
+        Args:
+            provider_name: Provider name to check
+            
+        Returns:
+            True if provider is supported, False otherwise
+        """
+        return AuthProvider.from_string(provider_name) is not None

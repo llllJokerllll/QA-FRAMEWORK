@@ -47,13 +47,7 @@ class BaseOAuthProvider(OAuthProvider):
         client_secret: Optional[str] = None,
         redirect_uri: Optional[str] = None,
     ):
-        """Initialize OAuth provider.
-        
-        Args:
-            client_id: OAuth client ID (falls back to env var)
-            client_secret: OAuth client secret (falls back to env var)
-            redirect_uri: OAuth redirect URI (falls back to env var)
-        """
+        """Initialize OAuth provider."""
         self._client_id = client_id
         self._client_secret = client_secret
         self._redirect_uri = redirect_uri
@@ -96,18 +90,7 @@ class BaseOAuthProvider(OAuthProvider):
         data: Optional[Dict[str, Any]] = None,
         json_data: Optional[Dict[str, Any]] = None,
     ) -> httpx.Response:
-        """Make HTTP request with error handling.
-        
-        Args:
-            method: HTTP method (GET, POST, etc.)
-            url: Request URL
-            headers: Optional request headers
-            data: Optional form data
-            json_data: Optional JSON data
-            
-        Returns:
-            HTTP response
-        """
+        """Make HTTP request with error handling."""
         client = self._get_http_client()
         
         try:
@@ -126,29 +109,14 @@ class BaseOAuthProvider(OAuthProvider):
             raise OAuthError(f"HTTP request failed: {e}") from e
     
     def _build_url(self, base_url: str, params: Dict[str, str]) -> str:
-        """Build URL with query parameters.
-        
-        Args:
-            base_url: Base URL
-            params: Query parameters
-            
-        Returns:
-            Complete URL with query string
-        """
+        """Build URL with query parameters."""
         from urllib.parse import urlencode
         query = urlencode(params)
         separator = "&" if "?" in base_url else "?"
-        return f"{base_url}{separator}{query}
+        return f"{base_url}{separator}{query}"
     
     def _parse_token_response(self, data: Dict[str, Any]) -> Token:
-        """Parse OAuth token response.
-        
-        Args:
-            data: Token response data
-            
-        Returns:
-            Token entity
-        """
+        """Parse OAuth token response."""
         expires_in = data.get("expires_in")
         expires_at = None
         if expires_in:
@@ -166,15 +134,7 @@ class BaseOAuthProvider(OAuthProvider):
         state: str,
         redirect_uri: Optional[str] = None,
     ) -> str:
-        """Get OAuth authorization URL.
-        
-        Args:
-            state: CSRF protection state
-            redirect_uri: Optional redirect URI override
-            
-        Returns:
-            Authorization URL
-        """
+        """Get OAuth authorization URL."""
         if not self.is_configured():
             raise OAuthConfigurationError(f"{self.name} OAuth provider not configured")
         
@@ -187,15 +147,7 @@ class BaseOAuthProvider(OAuthProvider):
         code: str,
         redirect_uri: Optional[str] = None,
     ) -> Token:
-        """Exchange authorization code for token.
-        
-        Args:
-            code: Authorization code
-            redirect_uri: Optional redirect URI override
-            
-        Returns:
-            Token entity
-        """
+        """Exchange authorization code for token."""
         if not self.is_configured():
             raise OAuthConfigurationError(f"{self.name} OAuth provider not configured")
         
@@ -216,14 +168,7 @@ class BaseOAuthProvider(OAuthProvider):
             raise OAuthExchangeError(f"Token exchange request failed: {e}") from e
     
     async def refresh_token(self, refresh_token: str) -> Token:
-        """Refresh access token.
-        
-        Args:
-            refresh_token: Refresh token
-            
-        Returns:
-            New token
-        """
+        """Refresh access token."""
         if not self.is_configured():
             raise OAuthConfigurationError(f"{self.name} OAuth provider not configured")
         
@@ -233,4 +178,51 @@ class BaseOAuthProvider(OAuthProvider):
             
             if response.status_code != 200:
                 error = data.get("error", "unknown_error")
-                raise OAuthRefreshError(f
+                raise OAuthRefreshError(f"Token refresh failed: {error}")
+            
+            return self._parse_token_response(data)
+            
+        except httpx.RequestError as e:
+            raise OAuthRefreshError(f"Token refresh request failed: {e}") from e
+    
+    async def close(self):
+        """Close HTTP client connections."""
+        if self._http_client is not None:
+            await self._http_client.aclose()
+            self._http_client = None
+    
+    # Provider-specific implementations (to be overridden)
+    
+    @property
+    @abstractmethod
+    def name(self) -> str:
+        """Provider identifier."""
+        pass
+    
+    @property
+    @abstractmethod
+    def display_name(self) -> str:
+        """Human-readable provider name."""
+        pass
+    
+    @property
+    @abstractmethod
+    def _authorization_url(self) -> str:
+        """OAuth authorization endpoint URL."""
+        pass
+    
+    @property
+    @abstractmethod
+    def _token_url(self) -> str:
+        """OAuth token endpoint URL."""
+        pass
+    
+    @abstractmethod
+    def _get_authorization_params(self, state: str, redirect_uri: str) -> Dict[str, str]:
+        """Build authorization URL parameters."""
+        pass
+    
+    @abstractmethod
+    async def _exchange_code_impl(
+        self,
+        code: str,

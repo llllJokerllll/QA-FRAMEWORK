@@ -1,194 +1,132 @@
-"""Google OAuth endpoints."""
-
-from fastapi import APIRouter, Depends, Request, HTTPException, Query
+"""Google OAuth Endpoints."""
+import secrets
+from typing import Optional
+from fastapi import APIRouter, HTTPException, status
 from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
-from typing import Optional
-import os
+
+from infrastructure.oauth import GoogleOAuthProvider, OAuthConfigurationError, OAuthExchangeError, OAuthUserInfoError
+from domain.auth.entities import Token
 
 router = APIRouter()
 
 
 class TokenResponse(BaseModel):
-    """OAuth token response."""
+    """Token response model."""
     access_token: str
-    token_type: str = "Bearer"
-    expires_in: Optional[int] = None
     refresh_token: Optional[str] = None
-    scope: Optional[str] = None
+    expires_in: Optional[int] = None
+    token_type: str = "Bearer"
 
 
-class UserInfoResponse(BaseModel):
-    """User information response."""
-    id: str
-    email: str
-    name: Optional[str] = None
-    avatar_url: Optional[str] = None
-    provider: str = "google"
+class OAuthErrorResponse(BaseModel):
+    """OAuth error response model."""
+    detail: str
 
 
-# Store state tokens temporarily (use Redis in production)
-_state_store: dict[str, dict] = {}
-
-
-@router.get("")
-async def google_auth(
-    request: Request,
-    redirect_uri: str = Query(..., description="URI to redirect after auth"),
-    state: Optional[str] = Query(None, description="Optional state parameter"),
-):
+@router.get(
+    "/auth/google",
+    response_class=RedirectResponse,
+    responses={
+        307: {"description": "Redirect to Google OAuth"},
+        503: {"description": "OAuth provider not configured"},
+    },
+)
+async def google_auth() -> RedirectResponse:
+    """Initiate Google OAuth flow.
+    
+    Redirects user to Google OAuth authorization page.
     """
-    Initiate Google OAuth flow.
-    
-    Redirects user to Google's consent screen.
-    """
-    from src.infrastructure.oauth import GoogleOAuthProvider
-    
-    # Create provider
-    provider = GoogleOAuthProvider.from_env()
-    
-    # Generate state token for CSRF protection
-    state_token = state or provider.generate_state()
-    
-    # Store state with redirect URI
-    _state_store[state_token] = {
-        "redirect_uri": redirect_uri,
-        "provider": "google",
-    }
-    
-    # Build authorization URL
-    auth_url = await provider.get_authorization_url(
-        state=state_token,
-        redirect_uri=redirect_uri,
-    )
-    
-    return RedirectResponse(url=auth_url)
+    try:
+        provider = GoogleOAuthProvider()
+        
+        if not provider.is_configured():
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Google OAuth is not configured. Please set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET.",
+            )
+        
+        state = secrets.token_urlsafe(16)
+        auth_url = await provider.get_authorization_url(state=state)
+        
+        return RedirectResponse(url=auth_url, status_code=307)
+        
+    except OAuthConfigurationError as e:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=str(e),
+        )
 
 
-@router.get("/callback")
+@router.get(
+    "/auth/google/callback",
+    response_model=TokenResponse,
+    responses={
+        200: {"description": "OAuth successful, token returned"},
+        400: {"description": "Invalid code or state"},
+        503: {"description": "OAuth provider not configured"},
+    },
+)
 async def google_callback(
-    code: str = Query(..., description="Authorization code from Google"),
-    state: str = Query(..., description="State token for CSRF protection"),
-    error: Optional[str] = Query(None, description="Error if auth failed"),
-):
-    """
-    Handle Google OAuth callback.
+    code: str,
+    state: str,
+) -> TokenResponse:
+    """Handle Google OAuth callback.
     
-    Exchanges authorization code for access token.
-    """
-    from src.infrastructure.oauth import GoogleOAuthProvider
+    Exchanges the authorization code for an access token and retrieves user information.
     
-    # Check for errors
-    if error:
+    Args:
+        code: Authorization code from Google
+        state: CSRF protection state parameter
+        
+    Returns:
+        Token response with access token
+    """
+    if not code:
         raise HTTPException(
-            status_code=400,
-            detail=f"Google OAuth error: {error}"
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Authorization code is required",
         )
     
-    # Verify state token
-    state_data = _state_store.pop(state, None)
-    if not state_data:
-        raise HTTPException(
-            status_code=400,
-            detail="Invalid or expired state token"
-        )
+    provider = GoogleOAuthProvider()
     
-    redirect_uri = state_data["redirect_uri"]
+    if not provider.is_configured():
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Google OAuth is not configured",
+        )
     
     try:
-        # Create provider
-        provider = GoogleOAuthProvider.from_env()
-        
         # Exchange code for token
-        token = await provider.exchange_code(code, redirect_uri)
+        token: Token = await provider.exchange_code(code=code)
         
         # Get user info
-        oauth_user = await provider.get_user_info(token)
+        user = await provider.get_user_info(token)
         
-        # TODO: Link or create user in database
-        # TODO: Generate JWT token for our system
+        # In production, create/update user in database and generate JWT here
+        # For now, return the OAuth token
         
         return TokenResponse(
             access_token=token.access_token,
-            token_type=token.token_type,
-            expires_in=token.expires_in_seconds,
             refresh_token=token.refresh_token,
-            scope=token.scope,
+            expires_in=token.expires_in,
+            token_type=token.token_type,
         )
         
+    except OAuthExchangeError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Token exchange failed: {e}",
+        )
+    except OAuthUserInfoError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Failed to get user info: {e}",
+        )
     except Exception as e:
         raise HTTPException(
-            status_code=500,
-            detail=f"Failed to exchange Google token: {str(e)}"
-        )
-    finally:
-        await provider.close()
-
-
-@router.post("/refresh")
-async def google_refresh(
-    refresh_token: str = Query(..., description="Refresh token"),
-):
-    """
-    Refresh Google access token.
-    
-    Use a refresh token to get a new access token.
-    """
-    from src.infrastructure.oauth import GoogleOAuthProvider
-    
-    try:
-        provider = GoogleOAuthProvider.from_env()
-        
-        new_token = await provider.refresh_token(refresh_token)
-        
-        return TokenResponse(
-            access_token=new_token.access_token,
-            token_type=new_token.token_type,
-            expires_in=new_token.expires_in_seconds,
-            refresh_token=new_token.refresh_token,
-        )
-        
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to refresh token: {str(e)}"
-        )
-    finally:
-        await provider.close()
-
-
-@router.get("/user")
-async def get_google_user(
-    access_token: str = Query(..., description="Google access token"),
-):
-    """
-    Get user info from Google.
-    
-    Fetches user profile using the access token.
-    """
-    from src.infrastructure.oauth import GoogleOAuthProvider
-    from src.domain.auth import Token
-    
-    try:
-        provider = GoogleOAuthProvider.from_env()
-        
-        # Create minimal token for user info request
-        token = Token(access_token=access_token)
-        
-        user = await provider.get_user_info(token)
-        
-        return UserInfoResponse(
-            id=user.provider_id,
-            email=user.email,
-            name=user.name,
-            avatar_url=user.avatar_url,
-            provider="google",
-        )
-        
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to get user info: {str(e)}"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"OAuth callback failed: {e}",
         )
     finally:
         await provider.close()

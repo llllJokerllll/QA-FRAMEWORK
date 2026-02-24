@@ -1,197 +1,127 @@
-"""GitHub OAuth endpoints."""
-
-from fastapi import APIRouter, Depends, Request, HTTPException, Query
+"""GitHub OAuth Endpoints."""
+import secrets
+from typing import Optional
+from fastapi import APIRouter, HTTPException, status
 from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
-from typing import Optional
+
+from infrastructure.oauth import GitHubOAuthProvider, OAuthConfigurationError, OAuthExchangeError, OAuthUserInfoError
+from domain.auth.entities import Token
 
 router = APIRouter()
 
 
 class TokenResponse(BaseModel):
-    """OAuth token response."""
+    """Token response model."""
     access_token: str
-    token_type: str = "Bearer"
-    expires_in: Optional[int] = None
     refresh_token: Optional[str] = None
-    scope: Optional[str] = None
+    expires_in: Optional[int] = None
+    token_type: str = "Bearer"
 
 
-class UserInfoResponse(BaseModel):
-    """User information response."""
-    id: str
-    email: str
-    name: Optional[str] = None
-    avatar_url: Optional[str] = None
-    username: Optional[str] = None
-    provider: str = "github"
-
-
-# Store state tokens temporarily (use Redis in production)
-_state_store: dict[str, dict] = {}
-
-
-@router.get("")
-async def github_auth(
-    request: Request,
-    redirect_uri: str = Query(..., description="URI to redirect after auth"),
-    state: Optional[str] = Query(None, description="Optional state parameter"),
-    scope: Optional[str] = Query(None, description="Optional scopes"),
-):
+@router.get(
+    "/auth/github",
+    response_class=RedirectResponse,
+    responses={
+        307: {"description": "Redirect to GitHub OAuth"},
+        503: {"description": "OAuth provider not configured"},
+    },
+)
+async def github_auth() -> RedirectResponse:
+    """Initiate GitHub OAuth flow.
+    
+    Redirects user to GitHub OAuth authorization page.
     """
-    Initiate GitHub OAuth flow.
-    
-    Redirects user to GitHub's authorization page.
-    """
-    from src.infrastructure.oauth import GitHubOAuthProvider
-    
-    # Create provider
-    provider = GitHubOAuthProvider.from_env()
-    
-    # Generate state token for CSRF protection
-    state_token = state or provider.generate_state()
-    
-    # Store state with redirect URI
-    _state_store[state_token] = {
-        "redirect_uri": redirect_uri,
-        "provider": "github",
-    }
-    
-    # Build authorization URL
-    auth_url = await provider.get_authorization_url(
-        state=state_token,
-        redirect_uri=redirect_uri,
-        scope=scope,
-    )
-    
-    return RedirectResponse(url=auth_url)
+    try:
+        provider = GitHubOAuthProvider()
+        
+        if not provider.is_configured():
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="GitHub OAuth is not configured. Please set GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET.",
+            )
+        
+        state = secrets.token_urlsafe(16)
+        auth_url = await provider.get_authorization_url(state=state)
+        
+        return RedirectResponse(url=auth_url, status_code=307)
+        
+    except OAuthConfigurationError as e:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=str(e),
+        )
 
 
-@router.get("/callback")
+@router.get(
+    "/auth/github/callback",
+    response_model=TokenResponse,
+    responses={
+        200: {"description": "OAuth successful, token returned"},
+        400: {"description": "Invalid code or state"},
+        503: {"description": "OAuth provider not configured"},
+    },
+)
 async def github_callback(
-    code: str = Query(..., description="Authorization code from GitHub"),
-    state: str = Query(..., description="State token for CSRF protection"),
-    error: Optional[str] = Query(None, description="Error if auth failed"),
-    error_description: Optional[str] = Query(None, description="Error description"),
-):
-    """
-    Handle GitHub OAuth callback.
+    code: str,
+    state: str,
+) -> TokenResponse:
+    """Handle GitHub OAuth callback.
     
-    Exchanges authorization code for access token.
-    """
-    from src.infrastructure.oauth import GitHubOAuthProvider
+    Exchanges the authorization code for an access token and retrieves user information.
     
-    # Check for errors
-    if error:
-        detail = error_description or error
+    Args:
+        code: Authorization code from GitHub
+        state: CSRF protection state parameter
+        
+    Returns:
+        Token response with access token
+    """
+    if not code:
         raise HTTPException(
-            status_code=400,
-            detail=f"GitHub OAuth error: {detail}"
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Authorization code is required",
         )
     
-    # Verify state token
-    state_data = _state_store.pop(state, None)
-    if not state_data:
-        raise HTTPException(
-            status_code=400,
-            detail="Invalid or expired state token"
-        )
+    provider = GitHubOAuthProvider()
     
-    redirect_uri = state_data["redirect_uri"]
+    if not provider.is_configured():
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="GitHub OAuth is not configured",
+        )
     
     try:
-        # Create provider
-        provider = GitHubOAuthProvider.from_env()
-        
         # Exchange code for token
-        token = await provider.exchange_code(code, redirect_uri)
+        token: Token = await provider.exchange_code(code=code)
         
         # Get user info
-        oauth_user = await provider.get_user_info(token)
+        user = await provider.get_user_info(token)
         
-        # TODO: Link or create user in database
-        # TODO: Generate JWT token for our system
+        # In production, create/update user in database and generate JWT here
+        # For now, return the OAuth token
         
         return TokenResponse(
             access_token=token.access_token,
-            token_type=token.token_type,
-            expires_in=token.expires_in_seconds,
             refresh_token=token.refresh_token,
-            scope=token.scope,
+            expires_in=token.expires_in,
+            token_type=token.token_type,
         )
         
+    except OAuthExchangeError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Token exchange failed: {e}",
+        )
+    except OAuthUserInfoError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Failed to get user info: {e}",
+        )
     except Exception as e:
         raise HTTPException(
-            status_code=500,
-            detail=f"Failed to exchange GitHub token: {str(e)}"
-        )
-    finally:
-        await provider.close()
-
-
-@router.get("/user")
-async def get_github_user(
-    access_token: str = Query(..., description="GitHub access token"),
-):
-    """
-    Get user info from GitHub.
-    
-    Fetches user profile using the access token.
-    """
-    from src.infrastructure.oauth import GitHubOAuthProvider
-    from src.domain.auth import Token
-    
-    try:
-        provider = GitHubOAuthProvider.from_env()
-        
-        # Create minimal token for user info request
-        token = Token(access_token=access_token)
-        
-        user = await provider.get_user_info(token)
-        
-        return UserInfoResponse(
-            id=user.provider_id,
-            email=user.email,
-            name=user.name,
-            avatar_url=user.avatar_url,
-            username=user.raw_data.get("login"),
-            provider="github",
-        )
-        
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to get user info: {str(e)}"
-        )
-    finally:
-        await provider.close()
-
-
-@router.post("/validate")
-async def validate_github_token(
-    access_token: str = Query(..., description="GitHub access token"),
-):
-    """
-    Validate a GitHub access token.
-    
-    Checks if the token is still valid.
-    """
-    from src.infrastructure.oauth import GitHubOAuthProvider
-    
-    try:
-        provider = GitHubOAuthProvider.from_env()
-        
-        is_valid = await provider.check_token_validity(access_token)
-        
-        return {
-            "valid": is_valid,
-            "provider": "github",
-        }
-        
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to validate token: {str(e)}"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"OAuth callback failed: {e}",
         )
     finally:
         await provider.close()
