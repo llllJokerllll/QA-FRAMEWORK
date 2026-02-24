@@ -26,7 +26,7 @@ class MigrationReportGenerator:
     def generate(
         self,
         migrators: List[DataMigrator],
-        overall_status: MigrationStatus,
+        overall_status: DataMigrator.MigrationStatus,
         execution_time: float,
     ) -> Dict[str, Any]:
         """
@@ -111,8 +111,10 @@ class MigrationReportGenerator:
                 errors.extend(stats.get("errors", []))
         return errors
 
-    def _group_by_component(self, migrators: List[DataMigrator]) -> Dict[str, int]:
+    def _group_by_component(self, migrators: List[DataMigrator]) -> Dict[str, Dict[str, Any]]:
         """Group migration stats by component."""
+        from .migrator import DataMigrator
+
         by_component = {}
 
         for migrator in migrators:
@@ -128,7 +130,7 @@ class MigrationReportGenerator:
         return by_component
 
     def _generate_recommendations(
-        self, overall_status: MigrationStatus, migrators: List[DataMigrator]
+        self, overall_status: DataMigrator.MigrationStatus, migrators: List[DataMigrator]
     ) -> List[str]:
         """
         Generate recommendations based on migration status.
@@ -142,7 +144,7 @@ class MigrationReportGenerator:
         """
         recommendations = []
 
-        if overall_status == MigrationStatus.COMPLETED:
+        if overall_status == DataMigrator.MigrationStatus.COMPLETED:
             recommendations.append(
                 "Migration completed successfully. All data migrated to default tenant."
             )
@@ -153,7 +155,7 @@ class MigrationReportGenerator:
                 "Consider setting up backup before production deployment."
             )
 
-        elif overall_status == MigrationStatus.FAILED:
+        elif overall_status == DataMigrator.MigrationStatus.FAILED:
             recommendations.append(
                 "Migration failed. Review errors section for details."
             )

@@ -5,6 +5,12 @@ from typing import List
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from dashboard.backend.models import (
+    TestSuite,
+    TestCase,
+    TestExecution,
+    TestExecutionDetail,
+)
 
 from domain.entities.tenant import Tenant
 from .migrator import DataMigrator
@@ -52,7 +58,7 @@ class TestMigrator(DataMigrator):
         try:
             # Get all test suites
             result = await self.db_session.execute(
-                select("TestSuite")
+                select(TestSuite)
             )
             test_suites = result.scalars().all()
 
@@ -122,7 +128,7 @@ class TestMigrator(DataMigrator):
         """
         try:
             result = await self.db_session.execute(
-                select("TestCase").where(TestCase.suite_id == suite.id)
+                select(TestCase).where(TestCase.suite_id == suite.id)
             )
             test_cases = result.scalars().all()
 
@@ -170,7 +176,7 @@ class TestMigrator(DataMigrator):
         """
         try:
             result = await self.db_session.execute(
-                select("TestExecution").where(TestCase.id == test_case.id)
+                select(TestExecutionDetail).where(TestCase.id == test_case.id)
             )
             executions = result.scalars().all()
 
