@@ -2,10 +2,14 @@
 
 import json
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, List
 
-from .migrator import MigrationStatus, DataMigrator
+from .migrator import DataMigrator
+
+
+# MigrationStatus is defined as DataMigrator.MigrationStatus
+MigrationStatus = DataMigrator.MigrationStatus
 
 
 logger = logging.getLogger(__name__)
@@ -45,7 +49,7 @@ class MigrationReportGenerator:
                 "overall_status": overall_status.value,
                 "execution_time_seconds": round(execution_time, 2),
                 "started_at": self._get_first_start_time(migrators),
-                "completed_at": datetime.utcnow().isoformat(),
+                "completed_at": datetime.now(timezone.utc).isoformat(),
             },
             "total_records": self._calculate_total_records(migrators),
             "migrated_records": self._calculate_migrated_records(migrators),
@@ -68,6 +72,7 @@ class MigrationReportGenerator:
             stats.get("started_at")
             for migrator in migrators
             if (stats := migrator.get_stats())
+            and stats.get("started_at") is not None
         ]
         return min(start_times) if start_times else None
 
@@ -142,6 +147,8 @@ class MigrationReportGenerator:
         Returns:
             List of recommendations
         """
+        from datetime import timezone
+
         recommendations = []
 
         if overall_status == DataMigrator.MigrationStatus.COMPLETED:

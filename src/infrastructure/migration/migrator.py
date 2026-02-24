@@ -78,12 +78,12 @@ class DataMigrator:
             f"- {self.stats['migrated_records']} records migrated"
         )
 
-    async def create_default_tenant(self) -> Optional[Tenant]:
+    async def create_default_tenant(self):
         """
         Create the default tenant for existing data.
 
         Returns:
-            The created Tenant entity or None if it already exists
+            The created TenantModel or None if it already exists
 
         Raises:
             Exception: If tenant creation fails
@@ -92,9 +92,11 @@ class DataMigrator:
             logger.info("Creating default tenant...")
 
             # Check if default tenant already exists
+            from dashboard.backend.models import TenantModel
+
             default_tenant_slug = "default"
             result = await self.db_session.execute(
-                select(Tenant).where(Tenant.slug == default_tenant_slug)
+                select(TenantModel).where(TenantModel.slug == default_tenant_slug)
             )
             existing_tenant = result.scalar_one_or_none()
 
@@ -109,12 +111,17 @@ class DataMigrator:
                 return None
 
             # Create default tenant
-            default_tenant = Tenant(
+            from datetime import timezone
+
+            default_tenant = TenantModel(
+                id="default-id",
                 name="Default Organization",
                 slug=default_tenant_slug,
-                plan=TenantPlan.FREE,
-                status=TenantStatus.ACTIVE,
+                plan="free",
+                status="active",
                 settings={"description": "Default tenant for migrated data"},
+                created_at=datetime.now(timezone.utc),
+                updated_at=datetime.now(timezone.utc),
             )
 
             self.db_session.add(default_tenant)
