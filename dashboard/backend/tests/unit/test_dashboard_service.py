@@ -23,7 +23,7 @@ def mock_db_session():
 
 class TestDashboardService:
     
-        async def test_get_stats_service_success(self, mock_db_session):
+    async def test_get_stats_service_success(self, mock_db_session):
         """Test para get_stats_service - caso exitoso"""
         # Mock de resultados para cada execute call
         # Order: total_executions, recent_executions, passed_executions, total_cases, total_suites, avg_duration
@@ -69,7 +69,7 @@ class TestDashboardService:
         assert mock_db_session.execute.call_count == 6
 
 
-        async def test_get_stats_service_empty_results(self, mock_db_session):
+    async def test_get_stats_service_empty_results(self, mock_db_session):
         """Test para get_stats_service - sin resultados"""
         # Mock de resultados vacíos para cada execute call
         # Order: total_executions, recent_executions, passed_executions, total_cases, total_suites, avg_duration
