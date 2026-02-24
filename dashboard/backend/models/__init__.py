@@ -135,3 +135,17 @@ class Schedule(Base):
     # Relationships
     suite = relationship("TestSuite")
     creator = relationship("User")
+
+
+class TenantModel(Base):
+    """SQLAlchemy model for Tenant entity (multi-tenancy support)"""
+    __tablename__ = "tenants"
+
+    id = Column(String, primary_key=True, index=True)  # UUID as string
+    name = Column(String, nullable=False, index=True)
+    slug = Column(String, unique=True, index=True, nullable=False)
+    plan = Column(String, nullable=False, default="free")  # free, pro, enterprise
+    status = Column(String, nullable=False, default="trial")  # active, suspended, trial
+    settings = Column(JSON, default={})
+    created_at = Column(DateTime, default=func.now())
+    updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
