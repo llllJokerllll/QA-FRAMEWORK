@@ -25,6 +25,14 @@ class User(Base):
     oauth_provider = Column(String, nullable=True)
     oauth_provider_id = Column(String, nullable=True)
     
+    # Subscription & Billing
+    stripe_customer_id = Column(String, nullable=True, index=True)
+    stripe_subscription_id = Column(String, nullable=True)
+    subscription_plan = Column(String, default="free")  # free, pro, enterprise
+    subscription_status = Column(String, default="active")  # active, past_due, canceled, canceling
+    subscription_current_period_start = Column(DateTime, nullable=True)
+    subscription_current_period_end = Column(DateTime, nullable=True)
+    
     created_at = Column(DateTime, default=func.now())
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
 

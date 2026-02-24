@@ -23,6 +23,10 @@ class Settings(BaseSettings):
     # Frontend
     frontend_url: str = "http://localhost:3000"
     
+    # Stripe
+    STRIPE_API_KEY: str = os.getenv("STRIPE_API_KEY", "sk_test_placeholder")
+    STRIPE_WEBHOOK_SECRET: str = os.getenv("STRIPE_WEBHOOK_SECRET", "whsec_placeholder")
+    
     class Config:
         env_file = ".env"
 

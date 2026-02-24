@@ -5,6 +5,7 @@ from typing import List, Optional
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from dashboard.backend.models import User as UserModel
 
 from domain.entities.tenant import Tenant
 from .migrator import DataMigrator
@@ -51,7 +52,7 @@ class UserMigrator(DataMigrator):
         try:
             # Get all users without tenant_id
             result = await self.db_session.execute(
-                select("User").where("User.tenant_id is NULL")
+                select(UserModel).where(UserModel.tenant_id.is_(None))
             )
             users = result.scalars().all()
 

@@ -1,7 +1,7 @@
 """Base DataMigrator class for multi-tenant migration."""
 
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 from enum import Enum
 
@@ -14,14 +14,6 @@ from domain.entities.tenant import Tenant, TenantPlan, TenantStatus
 logger = logging.getLogger(__name__)
 
 
-class MigrationStatus(Enum):
-    """Migration status types"""
-    PENDING = "pending"
-    IN_PROGRESS = "in_progress"
-    COMPLETED = "completed"
-    FAILED = "failed"
-
-
 class DataMigrator:
     """
     Base class for data migration from single-tenant to multi-tenant architecture.
@@ -29,6 +21,13 @@ class DataMigrator:
     This migrator handles the migration of existing data to the new multi-tenant
     system, creating a default tenant and migrating all related entities.
     """
+
+    class MigrationStatus(Enum):
+        """Migration status types"""
+        PENDING = "pending"
+        IN_PROGRESS = "in_progress"
+        COMPLETED = "completed"
+        FAILED = "failed"
 
     def __init__(self, db_session: AsyncSession, dry_run: bool = False):
         """
@@ -41,7 +40,7 @@ class DataMigrator:
         self.db_session = db_session
         self.dry_run = dry_run
         self.stats: Dict[str, Any] = {
-            "status": MigrationStatus.PENDING,
+            "status": self.MigrationStatus.PENDING,
             "started_at": None,
             "completed_at": None,
             "total_records": 0,
@@ -59,8 +58,8 @@ class DataMigrator:
             return
 
         self._started = True
-        self.stats["started_at"] = datetime.utcnow().isoformat()
-        self.stats["status"] = MigrationStatus.IN_PROGRESS
+        self.stats["started_at"] = datetime.now(timezone.utc).isoformat()
+        self.stats["status"] = self.MigrationStatus.IN_PROGRESS
         logger.info("Starting multi-tenant data migration")
 
     async def complete(self, success: bool = True) -> None:
@@ -70,9 +69,9 @@ class DataMigrator:
         Args:
             success: Whether the migration was successful
         """
-        self.stats["completed_at"] = datetime.utcnow().isoformat()
+        self.stats["completed_at"] = datetime.now(timezone.utc).isoformat()
         self.stats["status"] = (
-            MigrationStatus.COMPLETED if success else MigrationStatus.FAILED
+            self.MigrationStatus.COMPLETED if success else self.MigrationStatus.FAILED
         )
         logger.info(
             f"Migration completed: {self.stats['status'].value} "
@@ -187,7 +186,7 @@ class DataMigrator:
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         """Context manager exit."""
         if exc_type is not None:
-            self.stats["status"] = MigrationStatus.FAILED
+            self.stats["status"] = self.MigrationStatus.FAILED
             self.stats["errors"].append(
                 f"Migration failed with exception: {str(exc_val)}"
             )
