@@ -1,1 +1,1 @@
-"""OAuth unit tests.""
+"""OAuth and authentication security unit tests."""
