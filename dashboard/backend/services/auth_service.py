@@ -140,8 +140,84 @@ async def login_for_access_token(
         )
 
     access_token = create_access_token(data={"sub": user.username})
+    refresh_token = create_refresh_token(data={"sub": user.username})
     logger.info(
-        "Login successful - token generated", username=user.username, user_id=user.id
+        "Login successful - tokens generated", username=user.username, user_id=user.id
     )
 
-    return TokenResponse(access_token=access_token, token_type="bearer")
+    return TokenResponse(
+        access_token=access_token,
+        token_type="bearer",
+        refresh_token=refresh_token
+    )
+
+
+def create_refresh_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
+    """Create a refresh token with longer expiry"""
+    to_encode = data.copy()
+    if expires_delta:
+        expire = datetime.utcnow() + expires_delta
+    else:
+        # Default refresh token expiry: 7 days
+        expire = datetime.utcnow() + timedelta(days=7)
+    
+    to_encode.update({"exp": expire, "type": "refresh"})
+    encoded_jwt = jwt.encode(to_encode, settings.secret_key, algorithm=settings.algorithm)
+    logger.debug("Refresh token created", expiry=expire.isoformat())
+    return encoded_jwt
+
+
+async def refresh_access_token(refresh_token: str, db: AsyncSession) -> TokenResponse:
+    """Refresh access token using refresh token"""
+    logger.info("Refreshing access token")
+    
+    try:
+        payload = jwt.decode(
+            refresh_token,
+            settings.secret_key,
+            algorithms=[settings.algorithm],
+        )
+        
+        # Verify it's a refresh token
+        token_type = payload.get("type")
+        if token_type != "refresh":
+            logger.warning("Invalid token type for refresh", token_type=token_type)
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid token type",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        
+        username: str = payload.get("sub")
+        if username is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid refresh token",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        
+        # Verify user exists and is active
+        result = await db.execute(select(User).where(User.username == username))
+        user = result.scalar_one_or_none()
+        
+        if not user or not user.is_active:
+            logger.warning("Refresh token - user not found or inactive", username=username)
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="User not found or inactive",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        
+        # Create new access token
+        access_token = create_access_token(data={"sub": user.username})
+        logger.info("Access token refreshed successfully", username=username)
+        
+        return TokenResponse(access_token=access_token, token_type="bearer")
+        
+    except JWTError as e:
+        logger.warning("Refresh token validation failed", error=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid refresh token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )

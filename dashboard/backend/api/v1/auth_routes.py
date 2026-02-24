@@ -12,7 +12,7 @@ from services.api_key_service import api_key_service, get_user_from_api_key
 from services.auth_service import login_for_access_token
 from schemas import (
     LoginRequest, TokenResponse, OAuthLoginRequest, OAuthUrlResponse,
-    ApiKeyCreate, ApiKeyResponse, UserCreate, UserResponse
+    ApiKeyCreate, ApiKeyResponse, UserCreate, UserResponse, RefreshTokenRequest
 )
 from models import User
 from core.logging_config import get_logger
@@ -103,3 +103,26 @@ async def revoke_api_key(
     if not success:
         raise HTTPException(status_code=404, detail="API key not found")
     return {"message": "API key revoked successfully"}
+
+
+# Session Management
+@router.post("/refresh", response_model=TokenResponse)
+async def refresh_token(
+    refresh_request: RefreshTokenRequest,
+    db: AsyncSession = Depends(get_db_session)
+):
+    """Refresh access token using refresh token"""
+    from services.auth_service import refresh_access_token
+    
+    return await refresh_access_token(refresh_request.refresh_token, db)
+
+
+@router.post("/logout")
+async def logout(
+    current_user: User = Depends(get_current_user)
+):
+    """Logout current user (client should discard token)"""
+    logger.info("User logged out", user_id=current_user.id, username=current_user.username)
+    # Note: JWT tokens are stateless, so logout is handled client-side by discarding the token
+    # For more advanced logout (token blacklist), implement Redis-based token blacklist
+    return {"message": "Logout successful. Please discard your tokens."}
