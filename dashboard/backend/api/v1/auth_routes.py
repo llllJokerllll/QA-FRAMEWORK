@@ -12,7 +12,7 @@ from services.api_key_service import api_key_service, get_user_from_api_key
 from services.auth_service import login_for_access_token
 from schemas import (
     LoginRequest, TokenResponse, OAuthLoginRequest, OAuthUrlResponse,
-    ApiKeyCreate, ApiKeyResponse
+    ApiKeyCreate, ApiKeyResponse, UserCreate, UserResponse
 )
 from models import User
 from core.logging_config import get_logger
@@ -22,10 +22,29 @@ logger = get_logger(__name__)
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 
-# Email/Password
+# Email/Password Login
 @router.post("/login", response_model=TokenResponse)
 async def login(login_request: LoginRequest, db: AsyncSession = Depends(get_db_session)):
     return await login_for_access_token(login_request, db)
+
+
+# User Registration
+@router.post("/register", response_model=UserResponse)
+async def register(
+    user_create: UserCreate,
+    db: AsyncSession = Depends(get_db_session)
+):
+    """
+    Register a new user with email/password
+    
+    Args:
+        user_create: User registration data (email, username, password)
+        
+    Returns:
+        UserResponse with user info (without password)
+    """
+    from services.auth_service import register_user
+    return await register_user(db, user_create)
 
 
 # OAuth
