@@ -23,33 +23,37 @@ def mock_db_session():
 
 class TestDashboardService:
     
-    async def test_get_stats_service_success(self, mock_db_session):
+        async def test_get_stats_service_success(self, mock_db_session):
         """Test para get_stats_service - caso exitoso"""
-        # Mock de resultados
-        mock_avg_result = MagicMock()
-        mock_avg_result.scalar_one_or_none.return_value = [45.5]
+        # Mock de resultados para cada execute call
+        # Order: total_executions, recent_executions, passed_executions, total_cases, total_suites, avg_duration
         
-        mock_count_result = MagicMock()
-        mock_count_result.scalar_one_or_none.return_value = 10
+        # total_executions
+        mock_result1 = MagicMock()
+        mock_result1.scalar.return_value = 10
         
-        mock_fastest_result = MagicMock()
-        mock_fastest_mock = MagicMock()
-        mock_fastest_mock.id = 1
-        mock_fastest_mock.duration = 100
-        mock_fastest_mock.suite = MagicMock()
-        mock_fastest_mock.suite.name = "Test Suite 1"
-        mock_fastest_result.scalar_one_or_none.return_value = mock_fastest_mock
+        # recent_executions  
+        mock_result2 = MagicMock()
+        mock_result2.scalar.return_value = 5
         
-        mock_slowest_result = MagicMock()
-        mock_slowest_mock = MagicMock()
-        mock_slowest_mock.id = 2
-        mock_slowest_mock.duration = 500
-        mock_slowest_mock.suite = MagicMock()
-        mock_slowest_mock.suite.name = "Test Suite 2"
-        mock_slowest_result.scalar_one_or_none.return_value = mock_slowest_mock
+        # passed_executions
+        mock_result3 = MagicMock()
+        mock_result3.scalar.return_value = 8
         
-        # Mock de las llamadas a execute
-        side_effects = [mock_avg_result, mock_count_result, mock_fastest_result, mock_slowest_result, mock_count_result, mock_count_result]
+        # total_cases
+        mock_result4 = MagicMock()
+        mock_result4.scalar.return_value = 20
+        
+        # total_suites
+        mock_result5 = MagicMock()
+        mock_result5.scalar.return_value = 3
+        
+        # avg_duration
+        mock_result6 = MagicMock()
+        mock_result6.scalar.return_value = 45.5
+        
+        # Mock de las llamadas a execute (6 calls)
+        side_effects = [mock_result1, mock_result2, mock_result3, mock_result4, mock_result5, mock_result6]
         mock_db_session.execute.side_effect = side_effects
         
         # Ejecutar la función
@@ -59,40 +63,34 @@ class TestDashboardService:
         assert isinstance(result, dict)
         assert "average_duration" in result
         assert "total_executions" in result
-        assert "fastest_execution" in result
-        assert "slowest_execution" in result
+        assert result["total_executions"] == 10
         
-        # Verificar que se llamó a execute 4 veces
-        assert mock_db_session.execute.call_count == 4
-    
-    async def test_get_stats_service_empty_results(self, mock_db_session):
+        # Verificar que se llamó a execute 6 veces
+        assert mock_db_session.execute.call_count == 6
+
+
+        async def test_get_stats_service_empty_results(self, mock_db_session):
         """Test para get_stats_service - sin resultados"""
-        # Mock de resultados vacíos
-        mock_avg_result = MagicMock()
-        mock_avg_result.scalar_one_or_none.return_value = [None]
+        # Mock de resultados vacíos para cada execute call
+        # Order: total_executions, recent_executions, passed_executions, total_cases, total_suites, avg_duration
         
-        mock_count_result = MagicMock()
-        mock_count_result.scalar_one_or_none.return_value = 0
+        # All return 0 or None
+        mock_result = MagicMock()
+        mock_result.scalar.return_value = 0
         
-        mock_fastest_result = MagicMock()
-        mock_fastest_result.scalar_one_or_none.return_value = None
-        
-        mock_slowest_result = MagicMock()
-        mock_slowest_result.scalar_one_or_none.return_value = None
-        
-        # Mock de las llamadas a execute
-        side_effects = [mock_avg_result, mock_count_result, mock_fastest_result, mock_slowest_result, mock_count_result, mock_count_result]
+        # Mock de las llamadas a execute (6 calls)
+        side_effects = [mock_result] * 6
         mock_db_session.execute.side_effect = side_effects
         
         # Ejecutar la función
         result = await get_stats_service(mock_db_session)
         
         # Verificar resultados
-        assert result["average_duration"] == 0
         assert result["total_executions"] == 0
-        assert result["fastest_execution"] is None
-        assert result["slowest_execution"] is None
-    
+        assert result["recent_executions"] == 0
+        assert result["average_duration"] == 0
+
+
     async def test_get_trends_service_success(self, mock_db_session):
         """Test para get_trends_service - caso exitoso"""
         # Mock de resultados
