@@ -72,6 +72,7 @@ logger = get_logger(__name__)
 # Include auth routes
 router = APIRouter(prefix="/api/v1", tags=["v1"])
 router.include_router(auth_routes.router)
+router.include_router(billing_routes.router)
 
 
 @router.middleware("http")
