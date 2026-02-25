@@ -52,7 +52,7 @@ export default function TestSuites() {
         toast.success('Suite created successfully')
         handleCloseDialog()
       },
-      onError: () => toast.error('Failed to create suite'),
+      onError: () => { toast.error('Failed to create suite') },
     }
   )
 
@@ -63,18 +63,18 @@ export default function TestSuites() {
         queryClient.invalidateQueries('suites')
         toast.success('Suite deleted successfully')
       },
-      onError: () => toast.error('Failed to delete suite'),
+      onError: () => { toast.error('Failed to delete suite') },
     }
   )
 
   const executeMutation = useMutation(
     (suiteId: number) => executionsAPI.create({ suite_id: suiteId }),
     {
-      onSuccess: (response) => {
+      onSuccess: () => {
         toast.success('Execution started')
         navigate('/executions')
       },
-      onError: () => toast.error('Failed to start execution'),
+      onError: () => { toast.error('Failed to start execution') },
     }
   )
 

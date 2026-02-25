@@ -18,6 +18,7 @@ import {
   Dashboard as DashboardIcon,
   Folder as FolderIcon,
   PlayArrow as PlayArrowIcon,
+  Payment as PaymentIcon,
   Settings as SettingsIcon,
   Logout as LogoutIcon,
 } from '@mui/icons-material'
@@ -40,6 +41,7 @@ export default function Layout({ children, sidebarOpen, onSidebarToggle }: Layou
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
     { text: 'Test Suites', icon: <FolderIcon />, path: '/suites' },
     { text: 'Executions', icon: <PlayArrowIcon />, path: '/executions' },
+    { text: 'Billing', icon: <PaymentIcon />, path: '/billing' },
   ]
 
   const handleLogout = () => {

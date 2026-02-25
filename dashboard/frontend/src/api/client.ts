@@ -99,12 +99,47 @@ export const executionsAPI = {
 }
 
 export const dashboardAPI = {
-  getStats: () => 
+  getStats: () =>
     apiClient.get('/dashboard/stats'),
-  
-  getTrends: (days = 30) => 
+
+  getTrends: (days = 30) =>
     apiClient.get('/dashboard/trends', { params: { days } }),
-  
-  getRecentExecutions: (limit = 10) => 
+
+  getRecentExecutions: (limit = 10) =>
     apiClient.get('/dashboard/recent-executions', { params: { limit } }),
+}
+
+export const billingAPI = {
+  getPlans: () =>
+    apiClient.get('/billing/plans'),
+
+  getSubscription: () =>
+    apiClient.get('/billing/subscription'),
+
+  subscribe: (planId: string, paymentMethodId?: string) =>
+    apiClient.post('/billing/subscribe', { plan_id: planId, payment_method_id: paymentMethodId }),
+
+  cancel: () =>
+    apiClient.post('/billing/cancel'),
+
+  upgrade: (planId: string) =>
+    apiClient.post('/billing/upgrade', { plan_id: planId }),
+
+  createCustomer: (email: string, name: string) =>
+    apiClient.post('/billing/customer', { email, name }),
+
+  getInvoices: () =>
+    apiClient.get('/billing/invoices'),
+
+  getPaymentMethods: () =>
+    apiClient.get('/billing/payment-methods'),
+
+  addPaymentMethod: (paymentMethodId: string) =>
+    apiClient.post('/billing/payment-methods', { payment_method_id: paymentMethodId }),
+
+  removePaymentMethod: (paymentMethodId: string) =>
+    apiClient.delete(`/billing/payment-methods/${paymentMethodId}`),
+
+  setDefaultPaymentMethod: (paymentMethodId: string) =>
+    apiClient.put(`/billing/payment-methods/${paymentMethodId}/default`),
 }

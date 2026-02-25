@@ -62,7 +62,7 @@ export default function TestCases() {
         toast.success('Test case created successfully')
         handleCloseDialog()
       },
-      onError: () => toast.error('Failed to create test case'),
+      onError: () => { toast.error('Failed to create test case') },
     }
   )
 
@@ -73,7 +73,7 @@ export default function TestCases() {
         queryClient.invalidateQueries(['cases', suiteId])
         toast.success('Test case deleted successfully')
       },
-      onError: () => toast.error('Failed to delete test case'),
+      onError: () => { toast.error('Failed to delete test case') },
     }
   )
 
