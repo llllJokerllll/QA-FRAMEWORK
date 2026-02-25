@@ -19,6 +19,7 @@ import {
   Folder as FolderIcon,
   PlayArrow as PlayArrowIcon,
   Payment as PaymentIcon,
+  AutoFixHigh as AutoFixHighIcon,
   Settings as SettingsIcon,
   Logout as LogoutIcon,
 } from '@mui/icons-material'
@@ -41,6 +42,7 @@ export default function Layout({ children, sidebarOpen, onSidebarToggle }: Layou
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
     { text: 'Test Suites', icon: <FolderIcon />, path: '/suites' },
     { text: 'Executions', icon: <PlayArrowIcon />, path: '/executions' },
+    { text: 'Self-Healing', icon: <AutoFixHighIcon />, path: '/self-healing' },
     { text: 'Billing', icon: <PaymentIcon />, path: '/billing' },
   ]
 

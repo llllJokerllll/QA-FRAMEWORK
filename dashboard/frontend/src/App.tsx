@@ -6,6 +6,7 @@ import TestSuites from './pages/TestSuites'
 import TestCases from './pages/TestCases'
 import Executions from './pages/Executions'
 import Billing from './pages/Billing'
+import SelfHealing from './pages/SelfHealing'
 import Login from './pages/Login'
 import useAuthStore from './stores/authStore'
 
@@ -33,6 +34,7 @@ function App() {
           <Route path="/suites/:suiteId/cases" element={<TestCases />} />
           <Route path="/executions" element={<Executions />} />
           <Route path="/billing" element={<Billing />} />
+          <Route path="/self-healing" element={<SelfHealing />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Layout>
