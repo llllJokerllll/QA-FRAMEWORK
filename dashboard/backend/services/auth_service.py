@@ -221,3 +221,42 @@ async def refresh_access_token(refresh_token: str, db: AsyncSession) -> TokenRes
             detail="Invalid refresh token",
             headers={"WWW-Authenticate": "Bearer"},
         )
+
+
+async def get_current_user_optional(
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(
+        HTTPBearer(auto_error=False)
+    ),
+    db: AsyncSession = Depends(get_db_session),
+) -> Optional[User]:
+    """Get current user if authenticated, None otherwise.
+    
+    This is useful for endpoints that work both for authenticated
+    and anonymous users (e.g., feedback submission).
+    """
+    if credentials is None:
+        logger.debug("No credentials provided - returning None for optional auth")
+        return None
+    
+    try:
+        payload = jwt.decode(
+            credentials.credentials,
+            settings.secret_key,
+            algorithms=[settings.algorithm],
+        )
+        username: str = payload.get("sub")
+        if username is None:
+            return None
+        
+        result = await db.execute(select(User).where(User.username == username))
+        user = result.scalar_one_or_none()
+        
+        if user is None or not user.is_active:
+            return None
+        
+        logger.debug("Optional auth - user found", username=username, user_id=user.id)
+        return user
+        
+    except JWTError:
+        logger.debug("Optional auth - invalid token, returning None")
+        return None

@@ -143,3 +143,75 @@ export const billingAPI = {
   setDefaultPaymentMethod: (paymentMethodId: string) =>
     apiClient.put(`/billing/payment-methods/${paymentMethodId}/default`),
 }
+
+export const feedbackAPI = {
+  submit: (data: {
+    feedback_type: string
+    category?: string
+    title: string
+    description: string
+    priority?: string
+    rating?: number
+    tags?: string[]
+    page_url?: string
+    browser_info?: any
+  }) => apiClient.post('/feedback', data),
+
+  getAll: (params?: {
+    page?: number
+    page_size?: number
+    status?: string
+    feedback_type?: string
+    priority?: string
+  }) => apiClient.get('/feedback', { params }),
+
+  getById: (id: number) =>
+    apiClient.get(`/feedback/${id}`),
+
+  update: (id: number, data: any) =>
+    apiClient.patch(`/feedback/${id}`, data),
+
+  delete: (id: number) =>
+    apiClient.delete(`/feedback/${id}`),
+
+  getStats: () =>
+    apiClient.get('/feedback/stats'),
+}
+
+export const betaAPI = {
+  signup: (data: {
+    email: string
+    company?: string
+    use_case?: string
+    team_size?: string
+    source?: string
+  }) => apiClient.post('/beta/signup', data),
+
+  checkEmail: (email: string) =>
+    apiClient.get(`/beta/check/${encodeURIComponent(email)}`),
+
+  getAll: (params?: {
+    page?: number
+    page_size?: number
+    status?: string
+    source?: string
+  }) => apiClient.get('/beta', { params }),
+
+  getById: (id: number) =>
+    apiClient.get(`/beta/${id}`),
+
+  update: (id: number, data: any) =>
+    apiClient.patch(`/beta/${id}`, data),
+
+  approve: (id: number) =>
+    apiClient.post(`/beta/${id}/approve`),
+
+  reject: (id: number) =>
+    apiClient.post(`/beta/${id}/reject`),
+
+  delete: (id: number) =>
+    apiClient.delete(`/beta/${id}`),
+
+  getStats: () =>
+    apiClient.get('/beta/stats'),
+}

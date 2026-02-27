@@ -34,7 +34,7 @@ from schemas import (
     ApiKeyResponse,
 )
 from services.auth_service import get_current_user, login_for_access_token
-from api.v1 import auth_routes, billing_routes
+from api.v1 import auth_routes, billing_routes, feedback_routes, beta_routes
 from services.auth_service import get_current_user, login_for_access_token
 from services.suite_service import (
     create_suite_service,
@@ -73,6 +73,8 @@ logger = get_logger(__name__)
 router = APIRouter(prefix="/api/v1", tags=["v1"])
 router.include_router(auth_routes.router)
 router.include_router(billing_routes.router)
+router.include_router(feedback_routes.router)
+router.include_router(beta_routes.router)
 
 
 @router.middleware("http")

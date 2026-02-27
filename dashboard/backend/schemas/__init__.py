@@ -320,3 +320,122 @@ class ApiKeyResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+# Feedback Schemas
+class FeedbackType(str, Enum):
+    bug = "bug"
+    feature = "feature"
+    general = "general"
+    improvement = "improvement"
+
+
+class FeedbackStatus(str, Enum):
+    new = "new"
+    in_progress = "in_progress"
+    resolved = "resolved"
+    closed = "closed"
+
+
+class FeedbackBase(BaseModel):
+    feedback_type: FeedbackType
+    category: Optional[str] = None
+    title: str = Field(..., min_length=5, max_length=200)
+    description: str = Field(..., min_length=10)
+    priority: Priority = Priority.medium
+    rating: Optional[int] = Field(default=None, ge=1, le=5)
+    tags: Optional[List[str]] = []
+
+
+class FeedbackCreate(FeedbackBase):
+    page_url: Optional[str] = None
+    browser_info: Optional[Dict[str, Any]] = None
+    attachments: Optional[List[str]] = []
+
+
+class FeedbackUpdate(BaseModel):
+    feedback_type: Optional[FeedbackType] = None
+    category: Optional[str] = None
+    title: Optional[str] = Field(default=None, min_length=5, max_length=200)
+    description: Optional[str] = Field(default=None, min_length=10)
+    priority: Optional[Priority] = None
+    status: Optional[FeedbackStatus] = None
+    assigned_to: Optional[int] = None
+    rating: Optional[int] = Field(default=None, ge=1, le=5)
+    tags: Optional[List[str]] = None
+    notes: Optional[str] = None
+
+
+class FeedbackResponse(FeedbackBase):
+    id: int
+    user_id: Optional[int] = None
+    status: FeedbackStatus = FeedbackStatus.new
+    assigned_to: Optional[int] = None
+    page_url: Optional[str] = None
+    attachments: List[str] = []
+    created_at: datetime
+    updated_at: datetime
+    resolved_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+
+class FeedbackListResponse(BaseModel):
+    items: List[FeedbackResponse]
+    total: int
+    page: int
+    page_size: int
+
+
+# Beta Signup Schemas
+class TeamSize(str, Enum):
+    tiny = "1-5"
+    small = "6-20"
+    medium = "21-50"
+    large = "50+"
+
+
+class BetaSignupStatus(str, Enum):
+    pending = "pending"
+    approved = "approved"
+    rejected = "rejected"
+    onboarded = "onboarded"
+
+
+class BetaSignupBase(BaseModel):
+    email: str = Field(..., pattern=r'^[\w\.-]+@[\w\.-]+\.\w+$')
+    company: Optional[str] = Field(default=None, max_length=200)
+    use_case: Optional[str] = None
+    team_size: Optional[TeamSize] = None
+
+
+class BetaSignupCreate(BetaSignupBase):
+    source: Optional[str] = None
+    utm_campaign: Optional[str] = None
+    utm_source: Optional[str] = None
+
+
+class BetaSignupUpdate(BaseModel):
+    status: Optional[BetaSignupStatus] = None
+    notes: Optional[str] = None
+    feedback_score: Optional[int] = Field(default=None, ge=0, le=10)
+
+
+class BetaSignupResponse(BetaSignupBase):
+    id: int
+    status: BetaSignupStatus = BetaSignupStatus.pending
+    source: Optional[str] = None
+    invite_sent_at: Optional[datetime] = None
+    onboarded_at: Optional[datetime] = None
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class BetaSignupListResponse(BaseModel):
+    items: List[BetaSignupResponse]
+    total: int
+    page: int
+    page_size: int

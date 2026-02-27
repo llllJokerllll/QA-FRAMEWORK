@@ -184,3 +184,71 @@ class TenantModel(Base):
     settings = Column(JSON, default={})
     created_at = Column(DateTime, default=func.now())
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
+
+
+class Feedback(Base):
+    """Model for user feedback collection"""
+    __tablename__ = "feedback"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)  # Optional for anonymous
+    tenant_id = Column(String, ForeignKey("tenants.id"), nullable=True)
+    
+    # Feedback content
+    feedback_type = Column(String, nullable=False)  # bug, feature, general, improvement
+    category = Column(String, nullable=True)  # ui, ux, performance, documentation, etc.
+    title = Column(String(200), nullable=False)
+    description = Column(Text, nullable=False)
+    priority = Column(String, default="medium")  # low, medium, high, critical
+    
+    # Context
+    page_url = Column(String(500), nullable=True)  # URL where feedback was submitted
+    user_agent = Column(String, nullable=True)
+    browser_info = Column(JSON, nullable=True)  # Browser, OS, screen size, etc.
+    
+    # Status tracking
+    status = Column(String, default="new")  # new, in_progress, resolved, closed
+    assigned_to = Column(Integer, ForeignKey("users.id"), nullable=True)
+    
+    # Rating (optional)
+    rating = Column(Integer, nullable=True)  # 1-5 stars
+    
+    # Metadata
+    tags = Column(JSON, default=list)  # ["ui", "dashboard", "critical"]
+    attachments = Column(JSON, default=list)  # List of attachment URLs/paths
+    
+    created_at = Column(DateTime, default=func.now())
+    updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
+    resolved_at = Column(DateTime, nullable=True)
+
+    # Relationships
+    user = relationship("User", foreign_keys=[user_id])
+    assignee = relationship("User", foreign_keys=[assigned_to])
+
+
+class BetaSignup(Base):
+    """Model for beta tester signups"""
+    __tablename__ = "beta_signups"
+
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String, unique=True, index=True, nullable=False)
+    company = Column(String(200), nullable=True)
+    use_case = Column(Text, nullable=True)
+    team_size = Column(String, nullable=True)  # 1-5, 6-20, 21-50, 50+
+    
+    # Status
+    status = Column(String, default="pending")  # pending, approved, rejected, onboarded
+    invite_sent_at = Column(DateTime, nullable=True)
+    onboarded_at = Column(DateTime, nullable=True)
+    
+    # Tracking
+    source = Column(String, nullable=True)  # landing_page, referral, social, etc.
+    utm_campaign = Column(String, nullable=True)
+    utm_source = Column(String, nullable=True)
+    
+    # Metadata
+    notes = Column(Text, nullable=True)
+    feedback_score = Column(Integer, nullable=True)  # NPS score 0-10
+    
+    created_at = Column(DateTime, default=func.now())
+    updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
