@@ -34,7 +34,7 @@ from schemas import (
     ApiKeyResponse,
 )
 from services.auth_service import get_current_user, login_for_access_token
-from api.v1 import auth_routes, billing_routes, feedback_routes, beta_routes
+from api.v1 import auth_routes, billing_routes, feedback_routes, beta_routes, analytics_routes, email_routes, analytics_routes, email_routes
 from services.auth_service import get_current_user, login_for_access_token
 from services.suite_service import (
     create_suite_service,
@@ -75,6 +75,8 @@ router.include_router(auth_routes.router)
 router.include_router(billing_routes.router)
 router.include_router(feedback_routes.router)
 router.include_router(beta_routes.router)
+router.include_router(analytics_routes.router)
+router.include_router(email_routes.router)
 
 
 @router.middleware("http")

@@ -46,6 +46,21 @@ from services.dashboard_service import (
     get_test_types_distribution,
     get_performance_metrics
 )
+from services.email_service import (
+    email_service,
+    send_beta_invitation,
+    send_welcome_email,
+    send_test_report,
+    send_password_reset
+)
+from services.analytics_service import (
+    get_analytics_service,
+    get_user_analytics,
+    get_test_analytics,
+    get_revenue_analytics,
+    get_feature_usage_analytics,
+    get_dashboard_summary
+)
 
 __all__ = [
     # Auth
@@ -89,5 +104,20 @@ __all__ = [
     'get_trends_service',
     'get_recent_service',
     'get_test_types_distribution',
-    'get_performance_metrics'
+    'get_performance_metrics',
+    
+    # Email
+    'email_service',
+    'send_beta_invitation',
+    'send_welcome_email',
+    'send_test_report',
+    'send_password_reset',
+    
+    # Analytics
+    'get_analytics_service',
+    'get_user_analytics',
+    'get_test_analytics',
+    'get_revenue_analytics',
+    'get_feature_usage_analytics',
+    'get_dashboard_summary'
 ]
