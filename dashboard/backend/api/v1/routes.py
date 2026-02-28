@@ -34,7 +34,7 @@ from schemas import (
     ApiKeyResponse,
 )
 from services.auth_service import get_current_user, login_for_access_token
-from api.v1 import auth_routes, billing_routes, feedback_routes, beta_routes, analytics_routes, email_routes, analytics_routes, email_routes
+from api.v1 import auth_routes, billing_routes, feedback_routes, beta_routes, analytics_routes, email_routes
 from services.auth_service import get_current_user, login_for_access_token
 from services.suite_service import (
     create_suite_service,
