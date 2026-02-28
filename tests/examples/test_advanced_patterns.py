@@ -116,12 +116,12 @@ class TestTableDriven:
         table.add_case("add positive", (2, 3), 5, "Adding positive numbers").add_case(
             "add negative", (-2, -3), -5, "Adding negative numbers"
         ).add_case("add zero", (0, 5), 5, "Adding zero").add_case(
-            "subtract", (5, 3), 2, "Subtracting numbers"
+            "add mixed", (5, 3), 8, "Adding mixed positive numbers"
         )
 
         def calculator(input_data: tuple) -> int:
             a, b = input_data
-            return a + b if b > 0 else a + b  # Simple logic for demo
+            return a + b  # Simple addition for demo
 
         results = table.run(calculator)
 

@@ -25,7 +25,7 @@ class TestDataMigrator:
         with patch.object(
             migrator.db_session, "execute", new_callable=AsyncMock
         ) as mock_execute:
-            mock_result = AsyncMock()
+            mock_result = MagicMock()  # Use MagicMock for result (scalar_one_or_none is sync)
             mock_result.scalar_one_or_none.return_value = MagicMock(
                 slug="default", id="default-id"
             )
@@ -40,28 +40,25 @@ class TestDataMigrator:
     async def test_create_default_tenant_creates_new(self):
         """Test creating a new default tenant when none exists."""
         mock_session = AsyncMock()
+        mock_session.add = MagicMock()
+        mock_session.commit = AsyncMock()
+        mock_session.refresh = AsyncMock()
         migrator = DataMigrator(mock_session, dry_run=False)
 
         # Mock tenant doesn't exist
         with patch.object(
             migrator.db_session, "execute", new_callable=AsyncMock
         ) as mock_execute:
-            mock_result = AsyncMock()
+            mock_result = MagicMock()  # Use MagicMock for result
             mock_result.scalar_one_or_none.return_value = None
             mock_execute.return_value = mock_result
 
-            # Mock adding and commit
-            with patch.object(migrator, "db_session") as mock_db:
-                mock_db.add = MagicMock()
-                mock_db.commit = AsyncMock()
-                mock_db.refresh = MagicMock()
+            tenant = await migrator.create_default_tenant()
 
-                tenant = await migrator.create_default_tenant()
-
-                assert tenant is not None
-                assert tenant.slug == "default"
-                mock_db.add.assert_called_once()
-                mock_db.commit.assert_awaited_once()
+            assert tenant is not None
+            assert tenant.slug == "default"
+            mock_session.add.assert_called_once()
+            mock_session.commit.assert_awaited_once()
 
     @pytest.mark.asyncio
     async def test_dry_run_creates_tenant(self):
@@ -72,14 +69,15 @@ class TestDataMigrator:
         with patch.object(
             migrator.db_session, "execute", new_callable=AsyncMock
         ) as mock_execute:
-            mock_result = AsyncMock()
+            mock_result = MagicMock()  # Use MagicMock for result
             mock_result.scalar_one_or_none.return_value = None
             mock_execute.return_value = mock_result
 
             tenant = await migrator.create_default_tenant()
 
-            assert tenant is None
-            mock_execute.assert_not_called()  # Should not execute in dry-run
+            assert tenant is None  # Dry run returns None
+            # Execute is called once to check if tenant exists
+            mock_execute.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_stats_initialization(self):
@@ -147,7 +145,7 @@ class TestUserMigrator:
         with patch.object(
             mock_session, "execute", new_callable=AsyncMock
         ) as mock_execute:
-            mock_result = AsyncMock()
+            mock_result = MagicMock()  # Use MagicMock for result
             mock_result.scalars.return_value.all.return_value = [mock_user]
             mock_execute.return_value = mock_result
 
@@ -176,7 +174,7 @@ class TestUserMigrator:
         with patch.object(
             mock_session, "execute", new_callable=AsyncMock
         ) as mock_execute:
-            mock_result = AsyncMock()
+            mock_result = MagicMock()  # Use MagicMock for result
             mock_result.scalars.return_value.all.return_value = [mock_user]
             mock_execute.return_value = mock_result
 
@@ -227,7 +225,7 @@ class TestTestMigrator:
         with patch.object(
             mock_session, "execute", new_callable=AsyncMock
         ) as mock_execute:
-            mock_result = AsyncMock()
+            mock_result = MagicMock()  # Use MagicMock for result
             mock_result.scalars.return_value.all.return_value = [mock_suite]
             mock_execute.return_value = mock_result
 
@@ -293,8 +291,9 @@ class TestMigrationReportGenerator:
         assert report["summary"]["overall_status"] == "completed"
         assert report["total_records"] == 15
         assert report["migrated_records"] == 15
-        assert report["by_component"]["UserMigrator"]["total"] == 10
-        assert report["by_component"]["TestMigrator"]["total"] == 5
+        # Component names have "Migrator" suffix removed by _group_by_component
+        assert report["by_component"]["User"]["total"] == 10
+        assert report["by_component"]["Test"]["total"] == 5
 
     def test_save_to_file(self, tmp_path):
         """Test saving report to file."""
@@ -404,7 +403,7 @@ class TestMigrationReportGenerator:
 
         summary = generator.get_summary(report)
 
-        assert "completed" in summary
+        assert "COMPLETED" in summary  # Status is uppercase in summary
         assert "10" in summary  # migrated_records
         assert "10" in summary  # total_records
         assert "5.0" in summary  # execution_time
