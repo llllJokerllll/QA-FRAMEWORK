@@ -215,3 +215,26 @@ export const betaAPI = {
   getStats: () =>
     apiClient.get('/beta/stats'),
 }
+
+export const analyticsAPI = {
+  getDashboard: () =>
+    apiClient.get('/analytics/dashboard'),
+
+  getUsers: (params?: {
+    start_date?: string
+    end_date?: string
+  }) => apiClient.get('/analytics/users', { params }),
+
+  getTests: (params?: {
+    start_date?: string
+    end_date?: string
+  }) => apiClient.get('/analytics/tests', { params }),
+
+  getRevenue: (params?: {
+    start_date?: string
+    end_date?: string
+  }) => apiClient.get('/analytics/revenue', { params }),
+
+  getFeatures: () =>
+    apiClient.get('/analytics/features'),
+}
