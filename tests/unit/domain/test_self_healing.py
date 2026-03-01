@@ -5,7 +5,7 @@ Tests for entities, value objects, and interfaces in the self-healing module.
 """
 
 import pytest
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from unittest.mock import Mock, AsyncMock, MagicMock
 
 from src.domain.self_healing.entities import Selector, HealingResult, HealingSession
@@ -23,7 +23,7 @@ class TestSelectorMetadata:
     
     def test_create_metadata(self):
         """Test creating selector metadata."""
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         metadata = SelectorMetadata(
             created_at=now,
             updated_at=None,
@@ -40,7 +40,7 @@ class TestSelectorMetadata:
     
     def test_with_update_success(self):
         """Test updating metadata with successful usage."""
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         metadata = SelectorMetadata(
             created_at=now - timedelta(days=1),
             updated_at=now,
@@ -59,7 +59,7 @@ class TestSelectorMetadata:
     
     def test_with_update_failure(self):
         """Test updating metadata with failed usage."""
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         metadata = SelectorMetadata(
             created_at=now - timedelta(days=1),
             updated_at=now,
@@ -135,11 +135,11 @@ class TestSelector:
         selector = Selector(
             value=".button",
             metadata=SelectorMetadata(
-                created_at=datetime.utcnow(),
+                created_at=datetime.now(timezone.utc),
                 updated_at=None,
                 usage_count=10,
                 success_rate=0.9,
-                last_successful=datetime.utcnow(),
+                last_successful=datetime.now(timezone.utc),
                 source="manual",
             ),
         )

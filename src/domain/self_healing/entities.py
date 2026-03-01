@@ -6,7 +6,7 @@ Core entities that represent selectors, healing results, and sessions.
 
 from dataclasses import dataclass, field
 from typing import Optional, List, Dict, Any
-from datetime import datetime
+from datetime import datetime, timezone
 from uuid import uuid4
 
 from .value_objects import SelectorType, HealingStatus, ConfidenceLevel, SelectorMetadata, HealingContext
@@ -32,11 +32,11 @@ class Selector:
     def __post_init__(self):
         if self.metadata is None:
             self.metadata = SelectorMetadata(
-                created_at=datetime.utcnow(),
+                created_at=datetime.now(timezone.utc),
                 updated_at=None,
                 usage_count=0,
                 success_rate=1.0,
-                last_successful=datetime.utcnow(),
+                last_successful=datetime.now(timezone.utc),
                 source="manual",
             )
     
@@ -200,7 +200,7 @@ class HealingSession:
             tenant_id=self.tenant_id,
             results=self.results,
             started_at=self.started_at,
-            completed_at=datetime.utcnow(),
+            completed_at=datetime.now(timezone.utc),
             status=final_status,
         )
     

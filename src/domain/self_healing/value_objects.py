@@ -7,7 +7,7 @@ Defines the core value objects used in the self-healing system.
 from enum import Enum
 from dataclasses import dataclass
 from typing import Optional
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 class SelectorType(str, Enum):
@@ -73,10 +73,10 @@ class SelectorMetadata:
         )
         return SelectorMetadata(
             created_at=self.created_at,
-            updated_at=datetime.utcnow(),
+            updated_at=datetime.now(timezone.utc),
             usage_count=new_count,
             success_rate=new_success_rate,
-            last_successful=datetime.utcnow() if success else self.last_successful,
+            last_successful=datetime.now(timezone.utc) if success else self.last_successful,
             source=self.source,
         )
 
