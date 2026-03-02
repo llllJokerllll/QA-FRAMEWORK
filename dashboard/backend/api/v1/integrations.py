@@ -8,8 +8,8 @@ from typing import Dict, List, Optional, Any
 from pydantic import BaseModel
 
 from integrations.manager import integration_manager
-from backend.integrations.base import TestResult, SyncResult
-from backend.integrations.base import IntegrationConfig  # Import the base config
+from integrations.base import TestResult, SyncResult
+from integrations.base import IntegrationConfig  # Import the base config
 
 router = APIRouter(prefix="/integrations", tags=["integrations"])
 
