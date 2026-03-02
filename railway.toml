@@ -1,0 +1,29 @@
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "dashboard/backend/Dockerfile"
+
+[deploy]
+startCommand = "cd dashboard/backend && uvicorn main:app --host 0.0.0.0 --port $PORT"
+healthcheckPath = "/api/v1/live"
+healthcheckTimeout = 300
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3
+
+[[services]]
+name = "qa-framework-backend"
+
+[[services.env]]
+name = "DATABASE_URL"
+value = "${{PostgreSQL.DATABASE_URL}}"
+
+[[services.env]]
+name = "REDIS_URL"
+value = "${{Redis.REDIS_URL}}"
+
+[[services.env]]
+name = "JWT_SECRET_KEY"
+value = "${{JWT_SECRET_KEY}}"
+
+[[services.env]]
+name = "STRIPE_API_KEY"
+value = "${{STRIPE_API_KEY}}"
