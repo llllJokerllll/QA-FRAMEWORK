@@ -13,7 +13,7 @@ name = "qa-framework-backend"
 
 [[services.env]]
 name = "DATABASE_URL"
-value = "${{PostgreSQL.DATABASE_URL}}"
+value = "${{Postgres.DATABASE_URL}}"
 
 [[services.env]]
 name = "REDIS_URL"
