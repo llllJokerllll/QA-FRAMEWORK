@@ -17,3 +17,7 @@ if str(backend_dir) not in sys.path:
 
 print(f"Backend directory: {backend_dir}")
 print(f"Python path: {sys.path[:3]}")  # Show first 3 paths
+
+# Configure logging before any tests run
+from core.logging_config import configure_logging
+configure_logging(log_level="WARNING", environment="test")
