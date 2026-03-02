@@ -10,7 +10,7 @@ from database import init_db
 from api.v1 import router as api_router
 from api.v1.health import router as health_router, set_startup_complete
 from api.v1.integrations import include_router as include_integrations_router
-from core.auth import get_current_user
+from services.auth_service import get_current_user
 from core.logging_config import configure_logging, get_logger
 from models import User
 from integration.qa_framework_client import get_qa_test_suites
