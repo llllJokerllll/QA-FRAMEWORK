@@ -13,7 +13,7 @@ from typing import Optional, Dict, Any, List
 from datetime import datetime
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from models.user import User
+from models import User
 from core.logging_config import get_logger
 from config import settings
 
