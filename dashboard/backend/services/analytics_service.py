@@ -17,7 +17,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_, or_
 from sqlalchemy.orm import joinedload
 
-from models import User, TestExecution, Project, Subscription, UsageRecord
+from models import User, TestExecution, Project  # Subscription, UsageRecord removed
 from core.logging_config import get_logger
 
 logger = get_logger(__name__)
