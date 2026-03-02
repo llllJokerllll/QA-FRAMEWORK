@@ -7,7 +7,7 @@ from fastapi import APIRouter, HTTPException, Depends, Body
 from typing import Dict, List, Optional, Any
 from pydantic import BaseModel
 
-from ...integrations.manager import integration_manager
+from integrations.manager import integration_manager
 from backend.integrations.base import TestResult, SyncResult
 from backend.integrations.base import IntegrationConfig  # Import the base config
 
