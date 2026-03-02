@@ -1,5 +1,5 @@
 # QA-FRAMEWORK Backend - Simple Production Dockerfile
-# Version: 3.0 - Force no-cache rebuild
+# Version: 4.0 - Fix requirements.txt path
 
 ARG BUILD_DATE=2026-03-02
 FROM python:3.11-slim
@@ -13,16 +13,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements first
-COPY requirements.txt .
+# Copy requirements from backend directory
+COPY dashboard/backend/requirements.txt .
 
-# Install Python dependencies - force reinstall uvicorn
+# Install Python dependencies
 RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt && \
-    pip show uvicorn
+    pip install --no-cache-dir -r requirements.txt
 
-# Copy application code
-COPY . .
+# Copy backend application code
+COPY dashboard/backend/ .
 
 # Create non-root user
 RUN useradd -m -u 1000 appuser && \
