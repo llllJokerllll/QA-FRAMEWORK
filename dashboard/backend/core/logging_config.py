@@ -58,7 +58,7 @@ def configure_logging(
         processors=shared_processors
         + [
             structlog.stdlib.PositionalArgumentsFormatter(),
-            structlog.processors.ProcessorFormatter.wrap_for_formatter,
+            structlog.stdlib.ProcessorFormatter.wrap_for_formatter,
         ],
         context_class=dict,
         logger_factory=structlog.stdlib.LoggerFactory(),
