@@ -9,7 +9,7 @@ from typing import List
 from database import get_db_session
 from services.oauth_service import oauth_service, OAuthService
 from services.api_key_service import api_key_service, get_user_from_api_key
-from services.auth_service import login_for_access_token
+from services.auth_service import login_for_access_token, get_current_user
 from schemas import (
     LoginRequest, TokenResponse, OAuthLoginRequest, OAuthUrlResponse,
     ApiKeyCreate, ApiKeyResponse, UserCreate, UserResponse, RefreshTokenRequest
