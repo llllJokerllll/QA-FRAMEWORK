@@ -266,20 +266,3 @@ class Project(Base):
     created_by = Column(Integer, ForeignKey("users.id"))
     created_at = Column(DateTime, default=func.now())
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
-Subscription(Base):
-    """Subscription model for billing."""
-    __tablename__ = "subscriptions"
-    
-    id: int
-    user_id: int
-    plan: str  # "free", "pro", "enterprise"
-    status: str  # "active", "cancelled", "expired"
-
-
-class UsageRecord(Base):
-    """Usage record model for tracking API usage."""
-    __tablename__ = "usage_records"
-    
-    id: int
-    user_id: int
-    endpoint: str
