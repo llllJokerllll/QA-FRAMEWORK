@@ -258,3 +258,40 @@
 ---
 
 **Ver reporte completo:** `NIGHTLY_REPORT_2026-02-27_2330.md`
+
+---
+
+### 🌙 Sesión Nocturna - 2026-03-02 21:05 UTC
+
+**Trabajo Realizado:**
+
+1. ✅ **Identificado Build Failure Cause**
+   - Railway usando Dockerfile en lugar de Dockerfile.prod
+   - Dockerfile intentando copiar requirements.txt desde root (no existe)
+   - Correcto: dashboard/backend/requirements.txt (sí existe)
+
+2. ✅ **Fixed Dockerfile**
+   - Cambiado: `COPY requirements.txt .`
+   - A: `COPY dashboard/backend/requirements.txt .`
+   - Alineado con Dockerfile.prod configuration
+
+3. ✅ **Commit y Push**
+   - Commit: 7ddfdf7
+   - Mensaje: fix(deploy): correct requirements.txt path in Dockerfile for Railway build
+   - Estado: ✅ Push exitoso a origin/main
+
+4. ⏳ **Esperando Railway Deployment**
+   - Railway detectará cambios automáticamente
+   - Tiempo estimado: 2-5 minutos
+   - Verificación: Próximo heartbeat (23:00 UTC)
+
+**Archivos Modificados:**
+- ✅ dashboard/backend/Dockerfile
+
+**Próximos Pasos:**
+1. Verificar estado del deployment (cualquier momento)
+2. Si build exitoso: backend debería responder en 200
+3. Si build falla: revisar logs del Railway Dashboard
+4. Seguir iterando con fixes si es necesario
+
+**Commits en esta sesión:** 1
