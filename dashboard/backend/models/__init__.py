@@ -252,3 +252,33 @@ class BetaSignup(Base):
     
     created_at = Column(DateTime, default=func.now())
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
+
+class Project(Base):
+    """Project model for organizing test suites."""
+    __tablename__ = "projects"
+    
+    id: int
+    name: str
+    description: Optional[str] = None
+    is_active: bool = True
+
+
+class Subscription(Base):
+    """Subscription model for billing."""
+    __tablename__ = "subscriptions"
+    
+    id: int
+    user_id: int
+    plan: str  # "free", "pro", "enterprise"
+    status: str  # "active", "cancelled", "expired"
+
+
+class UsageRecord(Base):
+    """Usage record model for tracking API usage."""
+    __tablename__ = "usage_records"
+    
+    id: int
+    user_id: int
+    endpoint: str
+    calls: int
+    date: datetime
