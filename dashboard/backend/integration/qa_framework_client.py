@@ -149,18 +149,20 @@ if __name__ == '__main__':
 
 
 # Singleton instance
-qa_client = QAFrameworkClient()
+# qa_client = QAFrameworkClient()  # Commented for Railway deployment
 
 
 async def execute_qa_test_suite(suite_name: str, params: Dict[str, Any] = None) -> Dict[str, Any]:
     """
     Convenience function to execute a QA-FRAMEWORK test suite
     """
-    return await qa_client.execute_test_suite(suite_name, params)
+    client = QAFrameworkClient()
+    return await client.execute_test_suite(suite_name, params)
 
 
 async def get_qa_test_suites() -> List[Dict[str, Any]]:
     """
     Convenience function to get available QA-FRAMEWORK test suites
     """
-    return await qa_client.get_available_suites()
+    client = QAFrameworkClient()
+    return await client.get_available_suites()
