@@ -87,3 +87,7 @@ async def get_qa_framework_suites(current_user: User = Depends(get_current_user)
         raise HTTPException(
             status_code=500, detail=f"Error connecting to QA-FRAMEWORK: {str(e)}"
         )
+
+# Run the application on port 80 for Railway
+import uvicorn
+uvicorn.run(app, host="0.0.0.0", port=80)
