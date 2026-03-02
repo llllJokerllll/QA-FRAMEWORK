@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List, Optional
 from datetime import datetime
 
-from database.database import get_db
+from database import get_db_session as get_db
 from schemas import (
     TestSuiteCreate,
     TestSuiteResponse,
