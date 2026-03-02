@@ -90,4 +90,4 @@ async def get_qa_framework_suites(current_user: User = Depends(get_current_user)
 
 # Run the application on port 80 for Railway
 import uvicorn
-uvicorn.run(app, host="0.0.0.0", port=80)
+uvicorn.run(app, host="0.0.0.0", port=int(os.getenv("PORT", "8080")))
