@@ -439,3 +439,23 @@ class BetaSignupListResponse(BaseModel):
     total: int
     page: int
     page_size: int
+
+class DashboardStats(BaseModel):
+    """Dashboard statistics response model."""
+    total_suites: int
+    total_cases: int
+    total_executions: int
+    active_executions: int
+    success_rate: float
+    avg_duration: float
+    last_24h_executions: int
+    pending_executions: int
+
+
+class TrendData(BaseModel):
+    """Execution trend data for dashboard charts."""
+    date: str
+    executions: int
+    passed: int
+    failed: int
+    success_rate: float
