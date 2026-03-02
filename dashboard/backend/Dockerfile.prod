@@ -1,6 +1,7 @@
 # QA-FRAMEWORK Backend - Simple Production Dockerfile
-# Debug version - single stage, no cache issues
+# Version: 3.0 - Force no-cache rebuild
 
+ARG BUILD_DATE=2026-03-02
 FROM python:3.11-slim
 
 WORKDIR /app
@@ -15,9 +16,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Copy requirements first
 COPY requirements.txt .
 
-# Install Python dependencies
+# Install Python dependencies - force reinstall uvicorn
 RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt
+    pip install --no-cache-dir -r requirements.txt && \
+    pip show uvicorn
 
 # Copy application code
 COPY . .
@@ -39,5 +41,5 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:${PORT:-8000}/health || exit 1
 
-# Run uvicorn directly
-CMD uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}
+# Run uvicorn - use shell form for $PORT expansion
+CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}"]
