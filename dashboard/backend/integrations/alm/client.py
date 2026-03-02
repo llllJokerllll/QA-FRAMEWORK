@@ -11,8 +11,8 @@ from typing import Dict, List, Optional, Any, Tuple
 from datetime import datetime
 import httpx
 
-from backend.integrations.base import IntegrationBase, TestResult, SyncResult, TestStatus
-from backend.integrations.alm.config import ALMConfig
+from integrations.base import IntegrationBase, TestResult, SyncResult, TestStatus
+from integrations.alm.config import ALMConfig
 
 
 class ALMIntegration(IntegrationBase):

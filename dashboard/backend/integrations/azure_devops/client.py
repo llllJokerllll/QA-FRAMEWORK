@@ -12,8 +12,8 @@ from typing import Dict, List, Optional, Any, Tuple
 from datetime import datetime
 import httpx
 
-from backend.integrations.base import IntegrationBase, TestResult, SyncResult, TestStatus
-from backend.integrations.azure_devops.config import AzureDevOpsConfig
+from integrations.base import IntegrationBase, TestResult, SyncResult, TestStatus
+from integrations.azure_devops.config import AzureDevOpsConfig
 
 
 class AzureDevOpsIntegration(IntegrationBase):

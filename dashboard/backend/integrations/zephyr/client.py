@@ -11,8 +11,8 @@ from typing import Dict, List, Optional, Any, Tuple
 from datetime import datetime
 import httpx
 
-from backend.integrations.base import IntegrationBase, TestResult, SyncResult, TestStatus
-from backend.integrations.zephyr.config import ZephyrConfig
+from integrations.base import IntegrationBase, TestResult, SyncResult, TestStatus
+from integrations.zephyr.config import ZephyrConfig
 
 
 class ZephyrIntegration(IntegrationBase):

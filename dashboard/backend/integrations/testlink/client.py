@@ -11,8 +11,8 @@ import time
 from typing import Dict, List, Optional, Any, Tuple
 from datetime import datetime
 
-from backend.integrations.base import IntegrationBase, TestResult, SyncResult, TestStatus
-from backend.integrations.testlink.config import TestLinkConfig
+from integrations.base import IntegrationBase, TestResult, SyncResult, TestStatus
+from integrations.testlink.config import TestLinkConfig
 
 
 class TestLinkIntegration(IntegrationBase):

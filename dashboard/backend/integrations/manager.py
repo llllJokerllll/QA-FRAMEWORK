@@ -5,7 +5,7 @@ Centralized manager for all integrations.
 Handles registration, configuration, and orchestration of multiple providers.
 """
 from typing import Dict, List, Optional, Type, Any, Union
-from backend.integrations.base import IntegrationBase, TestResult, SyncResult
+from integrations.base import IntegrationBase, TestResult, SyncResult
 from .jira.client import JiraIntegration
 from .zephyr.client import ZephyrIntegration
 from .alm.client import ALMIntegration

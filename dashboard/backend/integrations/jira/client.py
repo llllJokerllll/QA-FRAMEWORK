@@ -14,8 +14,8 @@ from typing import Dict, List, Optional, Any, Tuple
 from datetime import datetime
 import httpx
 
-from backend.integrations.base import IntegrationBase, TestResult, SyncResult, TestStatus
-from backend.integrations.jira.config import JiraConfig
+from integrations.base import IntegrationBase, TestResult, SyncResult, TestStatus
+from integrations.jira.config import JiraConfig
 
 
 class JiraIntegration(IntegrationBase):
