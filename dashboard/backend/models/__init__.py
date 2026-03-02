@@ -282,5 +282,3 @@ class UsageRecord(Base):
     id: int
     user_id: int
     endpoint: str
-    calls: int
-    date: datetime
