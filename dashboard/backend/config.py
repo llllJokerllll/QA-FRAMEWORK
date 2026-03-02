@@ -96,6 +96,18 @@ class Settings(BaseSettings):
     def is_development(self) -> bool:
         """Check if running in development environment."""
         return self.ENVIRONMENT == "development"
+    
+    @property
+    def async_database_url(self) -> str:
+        """Get database URL formatted for async drivers (asyncpg)."""
+        if not self.database_url:
+            return "sqlite+aiosqlite:///./qafw.db"
+        
+        # Convert postgresql:// to postgresql+asyncpg:// for async support
+        url = self.database_url
+        if url.startswith("postgresql://"):
+            url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
+        return url
 
 
 @lru_cache()
