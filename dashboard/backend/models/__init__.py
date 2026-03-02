@@ -259,13 +259,14 @@ class Project(Base):
     """Project model for organizing test suites."""
     __tablename__ = "projects"
     
-    id: int
-    name: str
-    description: Optional[str] = None
-    is_active: bool = True
-
-
-class Subscription(Base):
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, index=True, nullable=False)
+    description = Column(Text, nullable=True)
+    is_active = Column(Boolean, default=True)
+    created_by = Column(Integer, ForeignKey("users.id"))
+    created_at = Column(DateTime, default=func.now())
+    updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
+Subscription(Base):
     """Subscription model for billing."""
     __tablename__ = "subscriptions"
     
