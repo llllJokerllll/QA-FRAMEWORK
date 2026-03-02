@@ -2,12 +2,13 @@
 # QA-FRAMEWORK Backend - Production Dockerfile
 # Optimized for Railway/Cloud deployment
 # Target size: <400MB
+# Version: 2.0 - Fixed uvicorn path issue
 # ========================================
 
 # ========================================
 # Stage 1: Builder
 # ========================================
-FROM python:3.11-slim as builder
+FROM python:3.11-slim AS builder
 
 WORKDIR /build
 
@@ -29,7 +30,7 @@ RUN pip install --no-cache-dir --upgrade pip && \
 # ========================================
 # Stage 2: Production Runtime
 # ========================================
-FROM python:3.11-slim as runtime
+FROM python:3.11-slim AS runtime
 
 WORKDIR /app
 
