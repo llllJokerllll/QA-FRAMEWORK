@@ -79,50 +79,50 @@ router.include_router(analytics_routes.router)
 router.include_router(email_routes.router)
 
 
-@router.middleware("http")
-async def logging_middleware(request: Request, call_next):
-    """Middleware to add request ID to all logs."""
-    request_id = str(uuid.uuid4())
-    set_request_id(request_id)
+# @router.middleware("http")
+# async def logging_middleware(request: Request, call_next):
+#     """Middleware to add request ID to all logs."""
+#     request_id = str(uuid.uuid4())
+#     set_request_id(request_id)
 
-    logger.info(
-        "Request started",
-        method=request.method,
-        url=str(request.url),
-        client_ip=request.client.host if request.client else None,
-        request_id=request_id,
-    )
+#     logger.info(
+#         "Request started",
+#         method=request.method,
+#         url=str(request.url),
+#         client_ip=request.client.host if request.client else None,
+#         request_id=request_id,
+#     )
 
-    start_time = datetime.utcnow()
+#     start_time = datetime.utcnow()
 
-    try:
-        response = await call_next(request)
-        duration = (datetime.utcnow() - start_time).total_seconds()
+#     try:
+#         response = await call_next(request)
+#         duration = (datetime.utcnow() - start_time).total_seconds()
 
-        logger.info(
-            "Request completed",
-            method=request.method,
-            url=str(request.url),
-            status_code=response.status_code,
-            duration_ms=round(duration * 1000, 2),
-            request_id=request_id,
-        )
+#         logger.info(
+#             "Request completed",
+#             method=request.method,
+#             url=str(request.url),
+#             status_code=response.status_code,
+#             duration_ms=round(duration * 1000, 2),
+#             request_id=request_id,
+#         )
 
-        return response
-    except Exception as e:
-        duration = (datetime.utcnow() - start_time).total_seconds()
-        logger.error(
-            "Request failed",
-            method=request.method,
-            url=str(request.url),
-            error=str(e),
-            duration_ms=round(duration * 1000, 2),
-            request_id=request_id,
-            exc_info=True,
-        )
-        raise
-    finally:
-        clear_request_id()
+#         return response
+#     except Exception as e:
+#         duration = (datetime.utcnow() - start_time).total_seconds()
+#         logger.error(
+#             "Request failed",
+#             method=request.method,
+#             url=str(request.url),
+#             error=str(e),
+#             duration_ms=round(duration * 1000, 2),
+#             request_id=request_id,
+#             exc_info=True,
+#         )
+#         raise
+#     finally:
+#         clear_request_id()
 
 
 # ==================== Auth Routes ====================
