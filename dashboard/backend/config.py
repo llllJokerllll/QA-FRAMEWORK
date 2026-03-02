@@ -73,18 +73,18 @@ class Settings(BaseSettings):
     def _warn_insecure_defaults(self):
         """Warn when using insecure default values."""
         if self.ENVIRONMENT != "production":
-            warnings = []
+            warning_messages = []
             
             if not self.database_url:
-                warnings.append("DATABASE_URL not set - using in-memory SQLite (not suitable for production)")
+                warning_messages.append("DATABASE_URL not set - using in-memory SQLite (not suitable for production)")
             
             if not self.secret_key:
-                warnings.append("JWT_SECRET_KEY not set - generating temporary key (sessions will not persist)")
+                warning_messages.append("JWT_SECRET_KEY not set - generating temporary key (sessions will not persist)")
             
             if self.ENABLE_BILLING and not self.STRIPE_API_KEY:
-                warnings.append("Billing enabled but STRIPE_API_KEY not set - billing will fail")
+                warning_messages.append("Billing enabled but STRIPE_API_KEY not set - billing will fail")
             
-            for warning in warnings:
+            for warning in warning_messages:
                 warnings.warn(warning, UserWarning)
     
     @property
