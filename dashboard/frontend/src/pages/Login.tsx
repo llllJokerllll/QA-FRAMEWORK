@@ -23,14 +23,21 @@ export default function Login() {
   const loginMutation = useMutation(
     () => authAPI.login(username, password),
     {
-      onSuccess: (response) => {
+      onSuccess: async (response) => {
         const { access_token } = response.data
-        // Get user info
-        authAPI.getMe().then((userResponse) => {
+        // Save token first so getMe can use it
+        useAuthStore.getState().setToken(access_token)
+        
+        // Now get user info with the token in headers
+        try {
+          const userResponse = await authAPI.getMe()
           login(access_token, userResponse.data)
           toast.success('Login successful!')
           navigate('/')
-        })
+        } catch (error) {
+          toast.error('Failed to get user info')
+          useAuthStore.getState().logout()
+        }
       },
       onError: (error: any) => {
         toast.error(error.response?.data?.detail || 'Login failed')
