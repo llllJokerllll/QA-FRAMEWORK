@@ -1,6 +1,7 @@
 # ========================================
 # QA-FRAMEWORK SaaS - Railway Deploy Workflow
 # Automatically deploy to Railway on merge to main
+# Tests are handled by CI/CD Pipeline workflow
 # ========================================
 
 name: Deploy to Railway
@@ -19,44 +20,9 @@ env:
 
 jobs:
   # ========================================
-  # Job 1: Run Tests
-  # ========================================
-  test:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-          cache: 'pip'
-
-      - name: Install dependencies
-        run: |
-          cd dashboard/backend
-          pip install -r requirements.txt
-          pip install pytest pytest-cov pytest-asyncio
-
-      - name: Run tests
-        run: |
-          cd dashboard/backend
-          pytest tests/ -v --cov=src --cov-report=xml --cov-report=html
-
-      - name: Upload coverage
-        uses: codecov/codecov-action@v4
-        with:
-          file: ./dashboard/backend/coverage.xml
-          flags: backend
-          fail_ci_if_error: false
-
-  # ========================================
-  # Job 2: Deploy to Railway
+  # Deploy to Railway (tests run in CI/CD Pipeline)
   # ========================================
   deploy:
-    needs: test
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
 
@@ -98,7 +64,7 @@ jobs:
           # You can add Slack/Discord notification here
 
   # ========================================
-  # Job 3: Run Migrations (if needed)
+  # Run Migrations (if needed)
   # ========================================
   migrate:
     needs: deploy
