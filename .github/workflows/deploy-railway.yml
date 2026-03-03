@@ -45,8 +45,8 @@ jobs:
           echo "Waiting for deployment to be ready..."
           sleep 30
 
-          # Get Railway service URL (you'll need to set this in Railway variables)
-          SERVICE_URL=${{ secrets.RAILWAY_SERVICE_URL }}
+          # Railway service URL
+          SERVICE_URL="https://qa-framework-production.up.railway.app"
 
           # Check health endpoint
           curl -f $SERVICE_URL/health || exit 1

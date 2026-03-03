@@ -71,7 +71,7 @@ from core.logging_config import get_logger, set_request_id, clear_request_id
 logger = get_logger(__name__)
 
 # Include auth routes
-router = APIRouter(prefix="/api/v1", tags=["v1"])
+router = APIRouter(tags=["v1"])
 router.include_router(auth_routes.router)
 router.include_router(billing_routes.router)
 router.include_router(feedback_routes.router)
