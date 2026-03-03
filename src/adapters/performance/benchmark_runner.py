@@ -109,7 +109,7 @@ class BenchmarkRunner:
                 await func()
                 iteration_end = time.time()
                 times.append((iteration_end - iteration_start) * 1000)  # Convert to ms
-            except Exception as e:
+            except Exception:
                 iteration_end = time.time()
                 times.append((iteration_end - iteration_start) * 1000)
 
@@ -164,7 +164,7 @@ class BenchmarkRunner:
                 func()
                 iteration_end = time.time()
                 times.append((iteration_end - iteration_start) * 1000)
-            except Exception as e:
+            except Exception:
                 iteration_end = time.time()
                 times.append((iteration_end - iteration_start) * 1000)
 
@@ -224,7 +224,7 @@ class BenchmarkRunner:
                 iteration_end = time.time()
                 times.append((iteration_end - iteration_start) * 1000)
 
-            except Exception as e:
+            except Exception:
                 iteration_end = time.time()
                 times.append((iteration_end - iteration_start) * 1000)
                 errors += 1
