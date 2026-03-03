@@ -1,38 +1,31 @@
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.pool import NullPool, QueuePool
 import logging
 
 from config import settings
 
 logger = logging.getLogger(__name__)
 
-# Determine pool type based on database URL
-# SQLite uses NullPool, PostgreSQL uses QueuePool
+# Determine engine configuration based on database URL
+# SQLite doesn't support connection pooling, PostgreSQL does
 database_url = settings.async_database_url
-if database_url.startswith("sqlite"):
-    # SQLite doesn't support connection pooling like PostgreSQL
-    pool = NullPool
-    pool_size = None
-    max_overflow = None
-    pool_pre_ping = False
-else:
-    # PostgreSQL connection pooling
-    pool = QueuePool
-    pool_size = 20
-    max_overflow = 30
-    pool_pre_ping = True
-    pool_recycle = 300
 
-# Create async engine
-engine = create_async_engine(
-    database_url,
-    pool=pool,
-    pool_size=pool_size,
-    max_overflow=max_overflow,
-    pool_pre_ping=pool_pre_ping,
-    echo=False  # Set to True for SQL debug logging
-)
+if database_url.startswith("sqlite"):
+    # SQLite: minimal config, no pooling
+    engine = create_async_engine(
+        database_url,
+        echo=False  # Set to True for SQL debug logging
+    )
+else:
+    # PostgreSQL: connection pooling with health checks
+    engine = create_async_engine(
+        database_url,
+        pool_size=20,
+        max_overflow=30,
+        pool_pre_ping=True,
+        pool_recycle=300,
+        echo=False  # Set to True for SQL debug logging
+    )
 
 # Create async session maker
 AsyncSessionFactory = sessionmaker(
