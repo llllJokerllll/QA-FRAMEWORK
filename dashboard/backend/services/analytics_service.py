@@ -14,10 +14,10 @@ from collections import defaultdict
 import logging
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, and_, or_
+from sqlalchemy import select, func, and_, or_, case
 from sqlalchemy.orm import joinedload
 
-from models import User, TestExecution, Project  # Subscription, UsageRecord removed
+from models import User, TestExecution, Project, Subscription, UsageRecord
 from core.logging_config import get_logger
 
 logger = get_logger(__name__)
@@ -67,10 +67,11 @@ class AnalyticsService:
         
         # Active users (users with executions in period)
         active_result = await self.db.execute(
-            select(func.count(func.distinct(TestExecution.user_id))).where(
+            select(func.count(func.distinct(TestExecution.executed_by))).where(
                 and_(
-                    TestExecution.created_at >= start_date,
-                    TestExecution.created_at <= end_date
+                    TestExecution.started_at >= start_date,
+                    TestExecution.started_at <= end_date,
+                    TestExecution.executed_by.isnot(None)
                 )
             )
         )
@@ -80,7 +81,7 @@ class AnalyticsService:
         churned_result = await self.db.execute(
             select(func.count(func.distinct(Subscription.user_id))).where(
                 and_(
-                    Subscription.status == 'cancelled',
+                    Subscription.status.in_(['cancelled', 'canceled']),
                     Subscription.updated_at >= start_date,
                     Subscription.updated_at <= end_date
                 )
@@ -108,14 +109,15 @@ class AnalyticsService:
         # Daily active users trend
         active_trend_result = await self.db.execute(
             select(
-                func.date(TestExecution.created_at).label('date'),
-                func.count(func.distinct(TestExecution.user_id)).label('count')
+                func.date(TestExecution.started_at).label('date'),
+                func.count(func.distinct(TestExecution.executed_by)).label('count')
             ).where(
                 and_(
-                    TestExecution.created_at >= start_date,
-                    TestExecution.created_at <= end_date
+                    TestExecution.started_at >= start_date,
+                    TestExecution.started_at <= end_date,
+                    TestExecution.executed_by.isnot(None)
                 )
-            ).group_by(func.date(TestExecution.created_at)).order_by(func.date(TestExecution.created_at))
+            ).group_by(func.date(TestExecution.started_at)).order_by(func.date(TestExecution.started_at))
         )
         active_trend = [
             {"date": str(row.date), "count": row.count}
@@ -162,21 +164,21 @@ class AnalyticsService:
         # Build base query with filters
         base_query = select(TestExecution).where(
             and_(
-                TestExecution.created_at >= start_date,
-                TestExecution.created_at <= end_date
+                TestExecution.started_at >= start_date,
+                TestExecution.started_at <= end_date
             )
         )
         
         if user_id:
-            base_query = base_query.where(TestExecution.user_id == user_id)
+            base_query = base_query.where(TestExecution.executed_by == user_id)
         
         # Total executions
         total_result = await self.db.execute(
             select(func.count(TestExecution.id)).where(
                 and_(
-                    TestExecution.created_at >= start_date,
-                    TestExecution.created_at <= end_date,
-                    *([TestExecution.user_id == user_id] if user_id else [])
+                    TestExecution.started_at >= start_date,
+                    TestExecution.started_at <= end_date,
+                    *([TestExecution.executed_by == user_id] if user_id else [])
                 )
             )
         )
@@ -186,10 +188,10 @@ class AnalyticsService:
         passed_result = await self.db.execute(
             select(func.count(TestExecution.id)).where(
                 and_(
-                    TestExecution.created_at >= start_date,
-                    TestExecution.created_at <= end_date,
+                    TestExecution.started_at >= start_date,
+                    TestExecution.started_at <= end_date,
                     TestExecution.status == 'passed',
-                    *([TestExecution.user_id == user_id] if user_id else [])
+                    *([TestExecution.executed_by == user_id] if user_id else [])
                 )
             )
         )
@@ -199,10 +201,10 @@ class AnalyticsService:
         failed_result = await self.db.execute(
             select(func.count(TestExecution.id)).where(
                 and_(
-                    TestExecution.created_at >= start_date,
-                    TestExecution.created_at <= end_date,
+                    TestExecution.started_at >= start_date,
+                    TestExecution.started_at <= end_date,
                     TestExecution.status == 'failed',
-                    *([TestExecution.user_id == user_id] if user_id else [])
+                    *([TestExecution.executed_by == user_id] if user_id else [])
                 )
             )
         )
@@ -215,10 +217,10 @@ class AnalyticsService:
         avg_result = await self.db.execute(
             select(func.avg(TestExecution.duration)).where(
                 and_(
-                    TestExecution.created_at >= start_date,
-                    TestExecution.created_at <= end_date,
+                    TestExecution.started_at >= start_date,
+                    TestExecution.started_at <= end_date,
                     TestExecution.duration.isnot(None),
-                    *([TestExecution.user_id == user_id] if user_id else [])
+                    *([TestExecution.executed_by == user_id] if user_id else [])
                 )
             )
         )
@@ -227,21 +229,21 @@ class AnalyticsService:
         # Daily executions trend
         trend_result = await self.db.execute(
             select(
-                func.date(TestExecution.created_at).label('date'),
+                func.date(TestExecution.started_at).label('date'),
                 func.count(TestExecution.id).label('total'),
                 func.sum(
-                    func.case((TestExecution.status == 'passed', 1), else_=0)
+                    case((TestExecution.status == 'passed', 1), else_=0)
                 ).label('passed'),
                 func.sum(
-                    func.case((TestExecution.status == 'failed', 1), else_=0)
+                    case((TestExecution.status == 'failed', 1), else_=0)
                 ).label('failed')
             ).where(
                 and_(
-                    TestExecution.created_at >= start_date,
-                    TestExecution.created_at <= end_date,
-                    *([TestExecution.user_id == user_id] if user_id else [])
+                    TestExecution.started_at >= start_date,
+                    TestExecution.started_at <= end_date,
+                    *([TestExecution.executed_by == user_id] if user_id else [])
                 )
-            ).group_by(func.date(TestExecution.created_at)).order_by(func.date(TestExecution.created_at))
+            ).group_by(func.date(TestExecution.started_at)).order_by(func.date(TestExecution.started_at))
         )
         
         executions_trend = [
@@ -262,9 +264,9 @@ class AnalyticsService:
                 func.count(TestExecution.id).label('execution_count')
             ).join(TestExecution).where(
                 and_(
-                    TestExecution.created_at >= start_date,
-                    TestExecution.created_at <= end_date,
-                    *([TestExecution.user_id == user_id] if user_id else [])
+                    TestExecution.started_at >= start_date,
+                    TestExecution.started_at <= end_date,
+                    *([TestExecution.executed_by == user_id] if user_id else [])
                 )
             ).group_by(Project.id).order_by(func.count(TestExecution.id).desc()).limit(5)
         )

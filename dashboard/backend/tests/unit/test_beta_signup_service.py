@@ -168,8 +168,12 @@ class TestListBetaSignups:
         mock_count_result = MagicMock()
         mock_count_result.scalar.return_value = 1
         
+        # Use call count to differentiate between queries
+        call_count = [0]
         def execute_side_effect(query):
-            if 'count' in str(type(query)):
+            call_count[0] += 1
+            # First call is usually the count query, second is the data query
+            if call_count[0] == 1:
                 return mock_count_result
             return mock_result
         

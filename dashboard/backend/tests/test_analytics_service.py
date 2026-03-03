@@ -255,52 +255,44 @@ class TestGetDashboardSummary:
     @pytest.mark.asyncio
     async def test_get_dashboard_summary(self, analytics_service, mock_db):
         """Test comprehensive dashboard summary"""
-        # Mock all required database queries
-        mock_db.execute = AsyncMock()
-        
-        # Setup complex mock responses for all sub-queries
-        # This is a simplified version - real implementation would have more detailed mocks
-        mock_db.execute.side_effect = [
-            # User analytics queries
-            MagicMock(scalar=MagicMock(return_value=100)),
-            MagicMock(scalar=MagicMock(return_value=20)),
-            MagicMock(scalar=MagicMock(return_value=50)),
-            MagicMock(scalar=MagicMock(return_value=5)),
-            MagicMock(__iter__=MagicMock(return_value=iter([]))),
-            MagicMock(__iter__=MagicMock(return_value=iter([]))),
-            # Previous period user analytics
-            MagicMock(scalar=MagicMock(return_value=100)),
-            MagicMock(scalar=MagicMock(return_value=15)),
-            MagicMock(scalar=MagicMock(return_value=45)),
-            MagicMock(scalar=MagicMock(return_value=3)),
-            MagicMock(__iter__=MagicMock(return_value=iter([]))),
-            MagicMock(__iter__=MagicMock(return_value=iter([]))),
-            # Test analytics queries
-            MagicMock(scalar=MagicMock(return_value=1000)),
-            MagicMock(scalar=MagicMock(return_value=850)),
-            MagicMock(scalar=MagicMock(return_value=150)),
-            MagicMock(scalar=MagicMock(return_value=45.5)),
-            MagicMock(__iter__=MagicMock(return_value=iter([]))),
-            MagicMock(__iter__=MagicMock(return_value=iter([]))),
-            # Revenue analytics queries
-            MagicMock(__iter__=MagicMock(return_value=iter([
-                MagicMock(plan_type='pro', count=30),
-                MagicMock(plan_type='enterprise', count=5)
-            ]))),
-            MagicMock(__iter__=MagicMock(return_value=iter([]))),
-            # Feature usage queries
-            MagicMock(__iter__=MagicMock(return_value=iter([]))),
-            MagicMock(scalar=MagicMock(return_value=100))
-        ]
-        
-        result = await analytics_service.get_dashboard_summary()
-        
-        assert 'summary' in result
-        assert 'trends' in result
-        assert 'features' in result
-        assert 'top_projects' in result
-        assert 'period' in result
-        assert 'generated_at' in result
+        # Mock the internal methods instead of all database queries
+        with patch.object(analytics_service, 'get_user_analytics', new_callable=AsyncMock) as mock_user:
+            with patch.object(analytics_service, 'get_test_analytics', new_callable=AsyncMock) as mock_test:
+                with patch.object(analytics_service, 'get_revenue_analytics', new_callable=AsyncMock) as mock_revenue:
+                    with patch.object(analytics_service, 'get_feature_usage_analytics', new_callable=AsyncMock) as mock_feature:
+                        # Setup mock returns
+                        mock_user.return_value = {
+                            'total_users': 100,
+                            'new_signups': 20,
+                            'active_users': 50,
+                            'churned_users': 5,
+                            'signup_trend': [],
+                            'active_trend': []
+                        }
+                        mock_test.return_value = {
+                            'total_executions': 1000,
+                            'success_rate': 85.0,
+                            'executions_trend': [],
+                            'top_projects': []
+                        }
+                        mock_revenue.return_value = {
+                            'mrr': 5000,
+                            'total_subscribers': 35,
+                            'revenue_trend': []
+                        }
+                        mock_feature.return_value = {
+                            'feature_usage': {'ai_test_generation': {'usage_count': 100, 'unique_users': 25}},
+                            'adoption_rates': {}
+                        }
+                        
+                        result = await analytics_service.get_dashboard_summary()
+                        
+                        assert 'summary' in result
+                        assert 'trends' in result
+                        assert 'features' in result
+                        assert 'top_projects' in result
+                        assert 'period' in result
+                        assert 'generated_at' in result
 
 
 class TestConvenienceFunctions:

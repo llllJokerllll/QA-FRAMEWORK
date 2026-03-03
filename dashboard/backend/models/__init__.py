@@ -266,3 +266,33 @@ class Project(Base):
     created_by = Column(Integer, ForeignKey("users.id"))
     created_at = Column(DateTime, default=func.now())
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
+
+
+class Subscription(Base):
+    """Subscription model for billing analytics."""
+    __tablename__ = "subscriptions"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    plan_type = Column(String, default="free")  # free, pro, enterprise
+    status = Column(String, default="active")  # active, past_due, canceled, cancelled
+    stripe_subscription_id = Column(String, nullable=True)
+    current_period_start = Column(DateTime, nullable=True)
+    current_period_end = Column(DateTime, nullable=True)
+    cancel_at_period_end = Column(Boolean, default=False)
+    
+    created_at = Column(DateTime, default=func.now())
+    updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
+
+
+class UsageRecord(Base):
+    """Usage tracking for feature analytics."""
+    __tablename__ = "usage_records"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    feature_name = Column(String, nullable=False)  # ai_test_generation, self_healing, etc.
+    usage_count = Column(Integer, default=1)
+    extra_data = Column(JSON, nullable=True)  # Changed from 'metadata' (reserved word)
+    
+    created_at = Column(DateTime, default=func.now())
