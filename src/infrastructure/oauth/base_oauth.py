@@ -1,6 +1,6 @@
 """Base OAuth Provider Implementation."""
 from abc import abstractmethod
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta
 from typing import Optional, Dict, Any
 import os
 import httpx
@@ -120,7 +120,7 @@ class BaseOAuthProvider(OAuthProvider):
         expires_in = data.get("expires_in")
         expires_at = None
         if expires_in:
-            expires_at = datetime.utcnow() + timedelta(seconds=expires_in)
+            expires_at = datetime.now(timezone.utc) + timedelta(seconds=expires_in)
         
         return Token(
             access_token=data["access_token"],

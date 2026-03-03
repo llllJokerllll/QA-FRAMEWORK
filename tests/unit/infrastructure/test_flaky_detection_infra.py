@@ -3,7 +3,7 @@ Unit Tests for Flaky Detection Infrastructure
 """
 
 import pytest
-from datetime import datetime
+from datetime import datetime, timezone
 from unittest.mock import AsyncMock
 
 from src.domain.flaky_detection.entities import TestRun
@@ -242,7 +242,7 @@ class TestInMemoryQuarantineManager:
             test_identifier=entry.test_identifier,
             reason=entry.reason,
             quarantined_at=entry.quarantined_at,
-            expires_at=datetime.utcnow() - timedelta(days=1),
+            expires_at=datetime.now(timezone.utc) - timedelta(days=1),
         )
         
         expired = await manager.get_expired()

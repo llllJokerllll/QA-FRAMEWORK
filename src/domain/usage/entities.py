@@ -6,7 +6,7 @@ Entities for tracking API usage, test executions, and resource consumption.
 """
 
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Optional
 from uuid import uuid4
@@ -38,7 +38,7 @@ class UsageRecord:
     resource_type: ResourceType = ResourceType.API_CALLS
     quantity: float = 0.0
     unit: str = "count"
-    timestamp: datetime = field(default_factory=datetime.utcnow)
+    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     metadata: dict = field(default_factory=dict)
     
     def to_dict(self) -> dict:
@@ -60,8 +60,8 @@ class UsageSummary:
     id: str = field(default_factory=lambda: str(uuid4()))
     user_id: str = ""
     organization_id: Optional[str] = None
-    period_start: datetime = field(default_factory=datetime.utcnow)
-    period_end: datetime = field(default_factory=datetime.utcnow)
+    period_start: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    period_end: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     billing_period: BillingPeriod = BillingPeriod.MONTHLY
     
     # Resource usage counts
@@ -78,9 +78,9 @@ class UsageSummary:
     storage_cost: int = 0
     bandwidth_cost: int = 0
     total_cost: int = 0
-    
-    created_at: datetime = field(default_factory=datetime.utcnow)
-    updated_at: datetime = field(default_factory=datetime.utcnow)
+
+    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     
     def calculate_total(self) -> int:
         """Calculate total cost in cents."""

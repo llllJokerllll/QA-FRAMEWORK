@@ -5,7 +5,7 @@ Manages quarantined tests and their evaluation.
 """
 
 from typing import Optional, List, Dict
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta
 from uuid import uuid4
 
 from src.domain.flaky_detection.entities import TestRun, QuarantineEntry
@@ -46,16 +46,16 @@ class InMemoryQuarantineManager:
         # Calculate expiry
         expires_at = None
         if expires_in_days is not None:
-            expires_at = datetime.utcnow() + timedelta(days=expires_in_days)
+            expires_at = datetime.now(timezone.utc) + timedelta(days=expires_in_days)
         elif self.default_expiry_days > 0:
-            expires_at = datetime.utcnow() + timedelta(days=self.default_expiry_days)
+            expires_at = datetime.now(timezone.utc) + timedelta(days=self.default_expiry_days)
         
         entry = QuarantineEntry(
             id=str(uuid4()),
             test_identifier=test_identifier,
             reason=reason,
             description=description,
-            quarantined_at=datetime.utcnow(),
+            quarantined_at=datetime.now(timezone.utc),
             quarantined_by="system",
             expires_at=expires_at,
             tenant_id=None,

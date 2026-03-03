@@ -18,7 +18,7 @@ import hashlib
 import secrets
 import re
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta
 from unittest.mock import Mock, patch, MagicMock
 import bcrypt
 import jwt
@@ -57,7 +57,7 @@ def mock_token_generator():
         @staticmethod
         def create_access_token(data: dict, expires_delta: timedelta = None) -> str:
             to_encode = data.copy()
-            expire = datetime.utcnow() + (expires_delta or timedelta(minutes=30))
+            expire = datetime.now(timezone.utc) + (expires_delta or timedelta(minutes=30))
             to_encode.update({"exp": expire})
             return jose_jwt.encode(to_encode, TokenGenerator.SECRET_KEY, algorithm=TokenGenerator.ALGORITHM)
         
@@ -110,14 +110,14 @@ def mock_session_store():
             session_id = secrets.token_urlsafe(32)
             self._sessions[session_id] = {
                 "user_id": user_id,
-                "created_at": datetime.utcnow(),
-                "expires_at": datetime.utcnow() + timedelta(hours=24)
+                "created_at": datetime.now(timezone.utc),
+                "expires_at": datetime.now(timezone.utc) + timedelta(hours=24)
             }
             return session_id
         
         def get_session(self, session_id: str) -> dict:
             session = self._sessions.get(session_id)
-            if session and session["expires_at"] > datetime.utcnow():
+            if session and session["expires_at"] > datetime.now(timezone.utc):
                 return session
             return None
         
@@ -360,7 +360,7 @@ class TestSessionSecurity:
         session_id = mock_session_store.create_session(user_id)
         
         # Mock expired session
-        mock_session_store._sessions[session_id]["expires_at"] = datetime.utcnow() - timedelta(hours=1)
+        mock_session_store._sessions[session_id]["expires_at"] = datetime.now(timezone.utc) - timedelta(hours=1)
         
         session = mock_session_store.get_session(session_id)
         assert session is None, "Expired session should return None"

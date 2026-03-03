@@ -15,7 +15,7 @@ import tempfile
 import threading
 import uuid
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime
+from datetime import datetime, timezone
 from multiprocessing import Queue
 from typing import Any, AsyncGenerator, Callable, Dict, Generator, List, Optional
 from unittest.mock import AsyncMock, MagicMock, Mock

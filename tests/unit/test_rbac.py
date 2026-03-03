@@ -9,7 +9,7 @@ Tests cover:
 """
 
 import pytest
-from datetime import datetime
+from datetime import datetime, timezone
 from uuid import uuid4, UUID
 
 from src.domain.entities.role import Role, ROLE_PERMISSIONS

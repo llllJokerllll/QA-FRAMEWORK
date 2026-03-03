@@ -6,7 +6,7 @@ Tests for usage tracking entities and services.
 """
 
 import pytest
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta
 
 from src.domain.usage.entities import (
     UsageRecord,

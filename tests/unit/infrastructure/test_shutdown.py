@@ -5,7 +5,7 @@ Unit tests for graceful shutdown functionality
 import asyncio
 import signal
 import pytest
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta
 from unittest.mock import Mock, AsyncMock, MagicMock, patch
 import time
 

@@ -10,7 +10,7 @@ Provides sophisticated data generation patterns including:
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta
 from enum import Enum
 from typing import Any, Dict, Generic, List, Optional, TypeVar, Callable
 from uuid import uuid4

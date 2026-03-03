@@ -6,7 +6,7 @@ Core entities that represent generated tests, scenarios, edge cases, and session
 
 from dataclasses import dataclass, field
 from typing import Optional, List, Dict, Any
-from datetime import datetime
+from datetime import datetime, timezone
 from uuid import uuid4
 
 from .value_objects import (
@@ -211,7 +211,7 @@ class TestGenerationSession:
     edge_cases_identified: int = 0
     
     # Timing
-    started_at: datetime = field(default_factory=datetime.utcnow)
+    started_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     completed_at: Optional[datetime] = None
     generation_time_ms: int = 0
     
@@ -334,7 +334,7 @@ class TestGenerationSession:
             else GenerationStatus.FAILED
         )
         
-        generation_time = int((datetime.utcnow() - self.started_at).total_seconds() * 1000)
+        generation_time = int((datetime.now(timezone.utc) - self.started_at).total_seconds() * 1000)
         
         return TestGenerationSession(
             id=self.id,
@@ -350,7 +350,7 @@ class TestGenerationSession:
             tests_generated=self.tests_generated,
             edge_cases_identified=self.edge_cases_identified,
             started_at=self.started_at,
-            completed_at=datetime.utcnow(),
+            completed_at=datetime.now(timezone.utc),
             generation_time_ms=generation_time,
             status=final_status,
             error_message=error or self.error_message,

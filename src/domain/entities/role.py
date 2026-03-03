@@ -1,7 +1,7 @@
 """Role entity - Domain model for RBAC roles"""
 
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Set
 from uuid import UUID, uuid4
 
@@ -43,7 +43,7 @@ class Role:
     def __post_init__(self) -> None:
         """Initialize default values"""
         if self.created_at is None:
-            self.created_at = datetime.utcnow()
+            self.created_at = datetime.now(timezone.utc)
         if self.permissions is None:
             self.permissions = []
     

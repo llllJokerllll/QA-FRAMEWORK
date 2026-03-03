@@ -16,7 +16,7 @@ No actual Stripe SDK required - all Stripe functionality is mocked.
 """
 
 import pytest
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta
 from unittest.mock import Mock, MagicMock, AsyncMock
 from typing import Dict, Any, Optional
 import json
@@ -298,8 +298,8 @@ class MockUser:
         self.subscription_status = "active"
         self.stripe_customer_id = None
         self.stripe_subscription_id = None
-        self.subscription_current_period_start = datetime.utcnow()
-        self.subscription_current_period_end = datetime.utcnow() + timedelta(days=30)
+        self.subscription_current_period_start = datetime.now(timezone.utc)
+        self.subscription_current_period_end = datetime.now(timezone.utc) + timedelta(days=30)
         self.tenant_id = None
     
     def to_dict(self):
@@ -534,7 +534,7 @@ class TestTimestampTolerance:
     ):
         """Should accept webhook with recent timestamp (< 5 minutes)."""
         # Generate event with timestamp 2 minutes ago
-        recent_timestamp = int((datetime.utcnow() - timedelta(minutes=2)).timestamp())
+        recent_timestamp = int((datetime.now(timezone.utc) - timedelta(minutes=2)).timestamp())
         
         event = webhook_generator.generate_event(
             "invoice.payment_succeeded",
@@ -564,7 +564,7 @@ class TestTimestampTolerance:
     ):
         """Should reject webhook with old timestamp (> 5 minutes)."""
         # Generate event with timestamp 10 minutes ago
-        old_timestamp = int((datetime.utcnow() - timedelta(minutes=10)).timestamp())
+        old_timestamp = int((datetime.now(timezone.utc) - timedelta(minutes=10)).timestamp())
         
         event = webhook_generator.generate_event(
             "invoice.payment_succeeded",
@@ -594,7 +594,7 @@ class TestTimestampTolerance:
     ):
         """Should reject webhook with future timestamp."""
         # Generate event with timestamp 10 minutes in future
-        future_timestamp = int((datetime.utcnow() + timedelta(minutes=10)).timestamp())
+        future_timestamp = int((datetime.now(timezone.utc) + timedelta(minutes=10)).timestamp())
         
         event = webhook_generator.generate_event(
             "invoice.payment_succeeded",
@@ -624,7 +624,7 @@ class TestTimestampTolerance:
     ):
         """Test boundary case: exactly 5 minutes old."""
         # Generate event with timestamp exactly 5 minutes ago
-        boundary_timestamp = int((datetime.utcnow() - timedelta(minutes=5)).timestamp())
+        boundary_timestamp = int((datetime.now(timezone.utc) - timedelta(minutes=5)).timestamp())
         
         event = webhook_generator.generate_event(
             "invoice.payment_succeeded",

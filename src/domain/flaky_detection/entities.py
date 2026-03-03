@@ -4,7 +4,7 @@ Entities for Flaky Test Detection Domain
 
 from dataclasses import dataclass, field
 from typing import Optional, List, Dict, Any
-from datetime import datetime
+from datetime import datetime, timezone
 from uuid import uuid4
 
 from .value_objects import (
@@ -136,11 +136,11 @@ class FlakyTest:
             common_errors=self.common_errors,
             detection_method=self.detection_method,
             first_detected=self.first_detected,
-            last_flaky_at=datetime.utcnow() if failures > 0 else self.last_flaky_at,
+            last_flaky_at=datetime.now(timezone.utc) if failures > 0 else self.last_flaky_at,
             quarantine_entry=self.quarantine_entry,
             tenant_id=self.tenant_id,
             created_at=self.created_at,
-            updated_at=datetime.utcnow(),
+            updated_at=datetime.now(timezone.utc),
         )
     
     def to_dict(self) -> Dict[str, Any]:
@@ -197,7 +197,7 @@ class QuarantineEntry:
         """Check if quarantine has expired."""
         if self.expires_at is None:
             return False
-        return datetime.utcnow() > self.expires_at
+        return datetime.now(timezone.utc) > self.expires_at
     
     @property
     def is_resolved(self) -> bool:
@@ -209,7 +209,7 @@ class QuarantineEntry:
         new_results = self.evaluation_results + [{
             "passed": passed,
             "notes": notes,
-            "evaluated_at": datetime.utcnow().isoformat(),
+            "evaluated_at": datetime.now(timezone.utc).isoformat(),
         }]
         
         return QuarantineEntry(
@@ -221,7 +221,7 @@ class QuarantineEntry:
             quarantined_by=self.quarantined_by,
             expires_at=self.expires_at,
             attempts_to_fix=self.attempts_to_fix + (1 if not passed else 0),
-            last_evaluation=datetime.utcnow(),
+            last_evaluation=datetime.now(timezone.utc),
             evaluation_results=new_results,
             resolved_at=self.resolved_at,
             resolution_notes=self.resolution_notes,
@@ -241,7 +241,7 @@ class QuarantineEntry:
             attempts_to_fix=self.attempts_to_fix,
             last_evaluation=self.last_evaluation,
             evaluation_results=self.evaluation_results,
-            resolved_at=datetime.utcnow(),
+            resolved_at=datetime.now(timezone.utc),
             resolution_notes=notes,
             tenant_id=self.tenant_id,
         )
@@ -321,7 +321,7 @@ class FlakyDetectionSession:
             detected_flaky=self.detected_flaky,
             auto_quarantined=self.auto_quarantined,
             started_at=self.started_at,
-            completed_at=datetime.utcnow(),
+            completed_at=datetime.now(timezone.utc),
             status="completed",
         )
     

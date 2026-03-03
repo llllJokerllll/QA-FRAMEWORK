@@ -6,7 +6,7 @@ Immutable value objects used in the billing domain.
 
 from dataclasses import dataclass, field
 from decimal import Decimal, ROUND_HALF_UP
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Optional, Tuple
 
@@ -149,7 +149,7 @@ class BillingPeriod:
     @classmethod
     def current_month(cls) -> "BillingPeriod":
         """Create billing period for current month"""
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
         if now.month == 12:
             end = start.replace(year=now.year + 1, month=1)

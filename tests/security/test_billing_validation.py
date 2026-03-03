@@ -5,7 +5,7 @@ Simplified security tests that can run independently.
 """
 
 import pytest
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta
 from unittest.mock import Mock, MagicMock
 import sys
 import os
@@ -149,7 +149,7 @@ class TestWebhookSecurity:
     def test_webhook_timestamp_tolerance(self):
         """Test webhook timestamp validation."""
         # Stripe webhooks should be within 5 minutes
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         
         valid_timestamp = int((now - timedelta(minutes=2)).timestamp())
         invalid_timestamp = int((now - timedelta(minutes=10)).timestamp())

@@ -9,7 +9,7 @@ Tests cover:
 """
 
 import pytest
-from datetime import datetime
+from datetime import datetime, timezone
 from uuid import UUID, uuid4
 
 from src.domain.entities.tenant import Tenant, TenantPlan, TenantStatus

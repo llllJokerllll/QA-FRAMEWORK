@@ -1,6 +1,6 @@
 """OAuth Domain Entities."""
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 
@@ -40,12 +40,12 @@ class Token:
         """Check if token is expired."""
         if self.expires_at is None:
             return False
-        return datetime.utcnow() >= self.expires_at
+        return datetime.now(timezone.utc) >= self.expires_at
     
     @property
     def expires_in(self) -> Optional[int]:
         """Get seconds until expiration."""
         if self.expires_at is None:
             return None
-        delta = self.expires_at - datetime.utcnow()
+        delta = self.expires_at - datetime.now(timezone.utc)
         return max(0, int(delta.total_seconds()))

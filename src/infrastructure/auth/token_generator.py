@@ -1,6 +1,6 @@
 """Token generation utilities using JWT."""
 from abc import ABC, abstractmethod
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta
 from typing import Optional, Dict, Any
 import secrets
 import hashlib
@@ -118,7 +118,7 @@ class JWTokenGenerator(TokenGenerator):
         extra_claims: Optional[Dict[str, Any]] = None
     ) -> str:
         """Generate JWT access token."""
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         expire = now + self._access_token_expire
 
         claims = {
@@ -145,7 +145,7 @@ class JWTokenGenerator(TokenGenerator):
 
     def generate_refresh_token(self, user_id: str) -> str:
         """Generate JWT refresh token."""
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         expire = now + self._refresh_token_expire
 
         claims = {
@@ -169,7 +169,7 @@ class JWTokenGenerator(TokenGenerator):
 
     def generate_password_reset_token(self, user_id: str) -> str:
         """Generate password reset token."""
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         expire = now + self._password_reset_token_expire
 
         claims = {
@@ -214,7 +214,7 @@ class JWTokenGenerator(TokenGenerator):
         """Check if token is expired."""
         expiry = self.get_token_expiry(token)
         if expiry:
-            return datetime.utcnow() > expiry
+            return datetime.now(timezone.utc) > expiry
         return True
 
 

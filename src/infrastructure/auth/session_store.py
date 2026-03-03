@@ -1,6 +1,6 @@
 """Session storage backends for session management."""
 from abc import ABC, abstractmethod
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta
 from typing import Optional, Dict, List
 from uuid import UUID, uuid4
 import json
@@ -250,7 +250,7 @@ class InMemorySessionStore(SessionStore):
         inactive_days: int
     ) -> int:
         """Terminate inactive sessions."""
-        cutoff = datetime.utcnow() - timedelta(days=inactive_days)
+        cutoff = datetime.now(timezone.utc) - timedelta(days=inactive_days)
         terminated = 0
         for session in self._sessions.values():
             if session.user_id == user_id and session.last_activity_at < cutoff:

@@ -6,7 +6,7 @@ Tests for billing entities, services, and Stripe integration.
 """
 
 import pytest
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta
 from unittest.mock import Mock, patch, MagicMock
 from dataclasses import dataclass, field
 from enum import Enum
@@ -65,7 +65,7 @@ class MockSubscription:
     stripe_subscription_id: Optional[str] = None
     stripe_customer_id: Optional[str] = None
     current_period_start: datetime = field(default_factory=datetime.utcnow)
-    current_period_end: datetime = field(default_factory=lambda: datetime.utcnow() + timedelta(days=30))
+    current_period_end: datetime = field(default_factory=lambda: datetime.now(timezone.utc) + timedelta(days=30))
     cancel_at_period_end: bool = False
     created_at: datetime = field(default_factory=datetime.utcnow)
     updated_at: datetime = field(default_factory=datetime.utcnow)
@@ -219,7 +219,7 @@ class MockBillingService:
         sub = self.get_subscription(user_id)
         if sub:
             sub.cancel_at_period_end = True
-            sub.updated_at = datetime.utcnow()
+            sub.updated_at = datetime.now(timezone.utc)
         return sub
     
     def update_subscription(self, user_id: str, new_plan_id: str) -> Optional[MockSubscription]:
@@ -227,7 +227,7 @@ class MockBillingService:
         sub = self.get_subscription(user_id)
         if sub:
             sub.plan_id = new_plan_id
-            sub.updated_at = datetime.utcnow()
+            sub.updated_at = datetime.now(timezone.utc)
         return sub
     
     def create_invoice(
@@ -250,7 +250,7 @@ class MockBillingService:
         invoice = self.invoices.get(invoice_id)
         if invoice:
             invoice.status = "paid"
-            invoice.paid_at = datetime.utcnow()
+            invoice.paid_at = datetime.now(timezone.utc)
         return invoice
     
     def add_payment_method(

@@ -13,7 +13,7 @@ import asyncio
 import random
 import time
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Set
 from unittest.mock import AsyncMock, MagicMock, patch
 

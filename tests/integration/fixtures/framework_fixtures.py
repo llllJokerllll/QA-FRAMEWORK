@@ -6,7 +6,7 @@ adapters, and result entities.
 """
 
 import asyncio
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, AsyncGenerator, Dict, List, Optional
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -34,7 +34,7 @@ def test_result_factory():
             duration=kwargs.get("duration", 1.5),
             error_message=kwargs.get("error_message", None),
             metadata=kwargs.get("metadata", {}),
-            timestamp=kwargs.get("timestamp", datetime.utcnow()),
+            timestamp=kwargs.get("timestamp", datetime.now(timezone.utc)),
             suite_id=kwargs.get("suite_id", 1),
             case_id=kwargs.get("case_id", 1),
         )
@@ -234,7 +234,7 @@ def execution_context():
         "execution_id": "exec_001",
         "suite_id": 1,
         "environment": "test",
-        "start_time": datetime.utcnow(),
+        "start_time": datetime.now(timezone.utc),
         "user_id": "user_001",
         "parameters": {"parallel": False, "timeout": 300},
     }
@@ -251,7 +251,7 @@ def framework_event_stream():
 
         def add_event(self, event_type: str, data: Dict[str, Any]):
             self.events.append(
-                {"type": event_type, "data": data, "timestamp": datetime.utcnow().isoformat()}
+                {"type": event_type, "data": data, "timestamp": datetime.now(timezone.utc).isoformat()}
             )
 
         def get_events(self) -> List[Dict]:

@@ -5,7 +5,7 @@ Core domain entities for the billing system.
 """
 
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Dict, List, Optional
 from uuid import UUID, uuid4
@@ -57,9 +57,9 @@ class Plan:
     def __post_init__(self) -> None:
         """Initialize default timestamps"""
         if self.created_at is None:
-            self.created_at = datetime.utcnow()
+            self.created_at = datetime.now(timezone.utc)
         if self.updated_at is None:
-            self.updated_at = datetime.utcnow()
+            self.updated_at = datetime.now(timezone.utc)
     
     def is_free(self) -> bool:
         """Check if this is a free plan"""
@@ -126,9 +126,9 @@ class Subscription:
     def __post_init__(self) -> None:
         """Initialize default timestamps"""
         if self.created_at is None:
-            self.created_at = datetime.utcnow()
+            self.created_at = datetime.now(timezone.utc)
         if self.updated_at is None:
-            self.updated_at = datetime.utcnow()
+            self.updated_at = datetime.now(timezone.utc)
     
     def is_active(self) -> bool:
         """Check if subscription is active"""
@@ -148,14 +148,14 @@ class Subscription:
     def cancel(self, at_period_end: bool = True) -> None:
         """Mark subscription for cancellation"""
         self.cancel_at_period_end = at_period_end
-        self.canceled_at = datetime.utcnow()
-        self.updated_at = datetime.utcnow()
+        self.canceled_at = datetime.now(timezone.utc)
+        self.updated_at = datetime.now(timezone.utc)
         self.status = SubscriptionStatus.CANCELING
     
     def activate(self) -> None:
         """Activate subscription"""
         self.status = SubscriptionStatus.ACTIVE
-        self.updated_at = datetime.utcnow()
+        self.updated_at = datetime.now(timezone.utc)
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary"""
@@ -195,21 +195,21 @@ class Usage:
     def __post_init__(self) -> None:
         """Initialize default timestamps"""
         if self.created_at is None:
-            self.created_at = datetime.utcnow()
+            self.created_at = datetime.now(timezone.utc)
         if self.updated_at is None:
-            self.updated_at = datetime.utcnow()
+            self.updated_at = datetime.now(timezone.utc)
         if self.period_start is None:
-            self.period_start = datetime.utcnow().replace(day=1, hour=0, minute=0, second=0)
+            self.period_start = datetime.now(timezone.utc).replace(day=1, hour=0, minute=0, second=0)
     
     def increment_tests(self, count: int = 1) -> None:
         """Increment test execution count"""
         self.tests_executed += count
-        self.updated_at = datetime.utcnow()
+        self.updated_at = datetime.now(timezone.utc)
     
     def increment_ai_calls(self, count: int = 1) -> None:
         """Increment AI feature usage"""
         self.ai_feature_calls += count
-        self.updated_at = datetime.utcnow()
+        self.updated_at = datetime.now(timezone.utc)
     
     def check_against_limits(self, plan: Plan) -> Dict[str, bool]:
         """

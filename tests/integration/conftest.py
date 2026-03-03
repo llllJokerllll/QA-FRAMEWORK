@@ -9,7 +9,7 @@ import asyncio
 import os
 import sys
 from contextlib import asynccontextmanager
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta
 from typing import Any, AsyncGenerator, Dict, Generator, Optional
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -373,7 +373,7 @@ def test_id():
 @pytest.fixture
 def test_timestamp():
     """Provide current timestamp for test data."""
-    return datetime.utcnow()
+    return datetime.now(timezone.utc)
 
 
 # =============================================================================

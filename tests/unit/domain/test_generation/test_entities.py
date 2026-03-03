@@ -3,7 +3,7 @@ Unit tests for test generation entities.
 """
 
 import pytest
-from datetime import datetime
+from datetime import datetime, timezone
 
 from src.domain.test_generation.entities import (
     GeneratedTest,

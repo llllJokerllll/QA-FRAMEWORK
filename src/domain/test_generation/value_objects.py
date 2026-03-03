@@ -7,7 +7,7 @@ Defines the core value objects used in the test generation system.
 from enum import Enum
 from dataclasses import dataclass
 from typing import Optional, List
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 class GenerationType(str, Enum):
@@ -98,7 +98,7 @@ class TestCaseMetadata:
     def create_empty(cls) -> "TestCaseMetadata":
         """Create empty metadata."""
         return cls(
-            generated_at=datetime.utcnow(),
+            generated_at=datetime.now(timezone.utc),
             generator_version="1.0.0",
             llm_model=None,
             source_type=RequirementSource.MARKDOWN,

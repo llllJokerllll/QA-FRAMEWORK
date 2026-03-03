@@ -12,7 +12,7 @@ and Dashboard backend, including:
 import asyncio
 import json
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, List
 from unittest.mock import AsyncMock, MagicMock, patch
 

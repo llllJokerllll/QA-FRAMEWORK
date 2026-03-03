@@ -6,7 +6,7 @@ database models, and service mocks.
 """
 
 import asyncio
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta
 from typing import Any, AsyncGenerator, Dict, List, Optional
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -33,8 +33,8 @@ def user_model_factory():
             "hashed_password": kwargs.get("hashed_password", "hashed_password_hash"),
             "is_active": kwargs.get("is_active", True),
             "is_superuser": kwargs.get("is_superuser", False),
-            "created_at": kwargs.get("created_at", datetime.utcnow()),
-            "updated_at": kwargs.get("updated_at", datetime.utcnow()),
+            "created_at": kwargs.get("created_at", datetime.now(timezone.utc)),
+            "updated_at": kwargs.get("updated_at", datetime.now(timezone.utc)),
         }
 
     return _factory
@@ -51,8 +51,8 @@ def test_suite_model_factory():
             "description": kwargs.get("description", "Test suite description"),
             "framework_type": kwargs.get("framework_type", "pytest"),
             "config": kwargs.get("config", {"parallel": False, "timeout": 300, "retry_count": 1}),
-            "created_at": kwargs.get("created_at", datetime.utcnow()),
-            "updated_at": kwargs.get("updated_at", datetime.utcnow()),
+            "created_at": kwargs.get("created_at", datetime.now(timezone.utc)),
+            "updated_at": kwargs.get("updated_at", datetime.now(timezone.utc)),
             "created_by": kwargs.get("created_by", 1),
         }
 
@@ -72,8 +72,8 @@ def test_case_model_factory():
             "test_type": kwargs.get("test_type", "unit"),
             "priority": kwargs.get("priority", "medium"),
             "tags": kwargs.get("tags", ["integration"]),
-            "created_at": kwargs.get("created_at", datetime.utcnow()),
-            "updated_at": kwargs.get("updated_at", datetime.utcnow()),
+            "created_at": kwargs.get("created_at", datetime.now(timezone.utc)),
+            "updated_at": kwargs.get("updated_at", datetime.now(timezone.utc)),
         }
 
     return _factory
@@ -96,7 +96,7 @@ def test_execution_model_factory():
             "results_summary": kwargs.get(
                 "results_summary", {"total": 0, "passed": 0, "failed": 0, "skipped": 0, "error": 0}
             ),
-            "created_at": kwargs.get("created_at", datetime.utcnow()),
+            "created_at": kwargs.get("created_at", datetime.now(timezone.utc)),
             "triggered_by": kwargs.get("triggered_by", 1),
         }
 
@@ -115,7 +115,7 @@ def test_artifact_model_factory():
             "artifact_type": kwargs.get("artifact_type", "screenshot"),
             "file_path": kwargs.get("file_path", "/path/to/artifact.png"),
             "file_size": kwargs.get("file_size", 1024),
-            "created_at": kwargs.get("created_at", datetime.utcnow()),
+            "created_at": kwargs.get("created_at", datetime.now(timezone.utc)),
         }
 
     return _factory
@@ -264,7 +264,7 @@ def websocket_message_factory():
         return {
             "type": message_type,
             "data": data or {},
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
         }
 
     return _factory

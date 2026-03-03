@@ -2,7 +2,7 @@
 
 from enum import Enum
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, Optional
 
 
@@ -40,7 +40,7 @@ class TestResult:
         if self.metadata is None:
             self.metadata = {}
         if self.timestamp is None:
-            self.timestamp = datetime.utcnow()
+            self.timestamp = datetime.now(timezone.utc)
     
     def is_passed(self) -> bool:
         """Check if test passed"""

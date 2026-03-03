@@ -1,7 +1,7 @@
 """Unit tests for health module"""
 
 import pytest
-from datetime import datetime
+from datetime import datetime, timezone
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from src.infrastructure.health import (

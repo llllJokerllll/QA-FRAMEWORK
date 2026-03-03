@@ -5,7 +5,7 @@ Tests for selector healer, confidence scorer, and related implementations.
 """
 
 import pytest
-from datetime import datetime
+from datetime import datetime, timezone
 from unittest.mock import Mock, AsyncMock, MagicMock, patch
 
 from src.domain.self_healing.entities import Selector, HealingResult
@@ -102,11 +102,11 @@ class TestConfidenceScorer:
             value=".button",
             selector_type=SelectorType.CLASS,
             metadata=SelectorMetadata(
-                created_at=datetime.utcnow(),
+                created_at=datetime.now(timezone.utc),
                 updated_at=None,
                 usage_count=100,
                 success_rate=0.95,
-                last_successful=datetime.utcnow(),
+                last_successful=datetime.now(timezone.utc),
                 source="manual",
             ),
         )
@@ -122,7 +122,7 @@ class TestConfidenceScorer:
             value=".button",
             selector_type=SelectorType.CLASS,
             metadata=SelectorMetadata(
-                created_at=datetime.utcnow(),
+                created_at=datetime.now(timezone.utc),
                 updated_at=None,
                 usage_count=100,
                 success_rate=0.2,
@@ -404,11 +404,11 @@ class TestInMemorySelectorRepository:
             selector_type=SelectorType.ID,
             tenant_id="tenant-1",
             metadata=SelectorMetadata(
-                created_at=datetime.utcnow(),
+                created_at=datetime.now(timezone.utc),
                 updated_at=None,
                 usage_count=10,
                 success_rate=0.9,
-                last_successful=datetime.utcnow(),
+                last_successful=datetime.now(timezone.utc),
                 source="manual",
             ),
         )
@@ -418,7 +418,7 @@ class TestInMemorySelectorRepository:
             selector_type=SelectorType.ID,
             tenant_id="tenant-1",
             metadata=SelectorMetadata(
-                created_at=datetime.utcnow(),
+                created_at=datetime.now(timezone.utc),
                 updated_at=None,
                 usage_count=10,
                 success_rate=0.3,

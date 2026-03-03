@@ -5,7 +5,7 @@ Usage Tracking Service
 Service for tracking, aggregating, and reporting resource usage.
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional, List, Dict, Any
 from collections import defaultdict
 import logging
@@ -180,8 +180,8 @@ class UsageTracker:
         )
         
         summary.calculate_total()
-        summary.updated_at = datetime.utcnow()
-        
+        summary.updated_at = datetime.now(timezone.utc)
+
         return summary
     
     def check_usage_limit(
@@ -259,7 +259,7 @@ class UsageTracker:
             "usage": summary_with_costs.to_dict(),
             "limits": limits.to_dict(),
             "limit_status": limit_checks,
-            "generated_at": datetime.utcnow().isoformat(),
+            "generated_at": datetime.now(timezone.utc).isoformat(),
         }
     
     def _get_unit(self, resource_type: ResourceType) -> str:
@@ -275,8 +275,8 @@ class UsageTracker:
     
     def _get_period_dates(self, period: BillingPeriod) -> tuple:
         """Get start and end dates for a billing period."""
-        now = datetime.utcnow()
-        
+        now = datetime.now(timezone.utc)
+
         if period == BillingPeriod.DAILY:
             start = now.replace(hour=0, minute=0, second=0, microsecond=0)
             end = start + timedelta(days=1)
