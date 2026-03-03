@@ -36,7 +36,7 @@ jobs:
       - name: Deploy to Railway
         run: |
           # Use RAILWAY_TOKEN env var directly with railway up
-          railway up --service qa-framework-backend
+          railway up --service QA-FRAMEWORK
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
 
