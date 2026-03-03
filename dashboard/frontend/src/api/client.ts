@@ -44,7 +44,7 @@ export const authAPI = {
   login: (username: string, password: string) =>
     apiClient.post('/auth/login', { username, password }),
   
-  getMe: () => apiClient.get('/auth/me'),
+  getMe: () => apiClient.get('/me'),
 }
 
 export const suitesAPI = {
