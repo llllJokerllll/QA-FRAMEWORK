@@ -366,7 +366,7 @@ export default function Analytics() {
                       .slice(0, 5)
                       .map(([feature, data]: [string, any]) => {
                         const total = Object.values(featuresData).reduce(
-                          (sum: number, val: any) => sum + (val.usage_count || 0),
+                          (sum: number, val: any) => sum + ((val.usage_count || 0) as number),
                           0
                         )
                         return (
@@ -374,9 +374,9 @@ export default function Analytics() {
                             <TableCell component="th" scope="row">
                               {feature.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
                             </TableCell>
-                            <TableCell align="right">{data.usage_count.toLocaleString()}</TableCell>
+                            <TableCell align="right">{(data.usage_count as number).toLocaleString()}</TableCell>
                             <TableCell align="right">
-                              {total > 0 ? ((data.usage_count / total) * 100).toFixed(1) : 0}%
+                              {total > 0 ? (((data.usage_count as number) / total) * 100).toFixed(1) : '0'}%
                             </TableCell>
                           </TableRow>
                         )

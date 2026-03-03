@@ -18,7 +18,7 @@ import {
   Email as EmailIcon,
 } from '@mui/icons-material'
 import { useMutation } from 'react-query'
-import { betaAPI } from '../api/client'
+import { betaAPI } from '../../api/client'
 import toast from 'react-hot-toast'
 
 type TeamSize = '1-5' | '6-20' | '21-50' | '50+'

@@ -23,7 +23,7 @@ import {
   ExpandLess as CollapseIcon,
 } from '@mui/icons-material'
 import { useMutation } from 'react-query'
-import { feedbackAPI } from '../api/client'
+import { feedbackAPI } from '../../api/client'
 import toast from 'react-hot-toast'
 
 type FeedbackType = 'bug' | 'feature' | 'general' | 'improvement'
