@@ -111,7 +111,7 @@ export default function Layout({ children, sidebarOpen, onSidebarToggle }: Layou
         <Divider />
         <List>
           <ListItem disablePadding>
-            <ListItemButton>
+            <ListItemButton onClick={() => navigate('/settings')}>
               <ListItemIcon>
                 <SettingsIcon />
               </ListItemIcon>
