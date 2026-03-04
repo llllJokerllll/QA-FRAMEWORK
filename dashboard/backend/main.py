@@ -37,6 +37,8 @@ app.add_middleware(
         settings.frontend_url,
         "http://localhost:3000",
         "http://localhost:8080",
+        "https://frontend-phi-three-52.vercel.app",  # Production frontend
+        "https://frontend-*.vercel.app",  # Vercel preview deployments
     ],
     allow_credentials=True,
     allow_methods=["*"],
