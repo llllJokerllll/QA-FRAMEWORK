@@ -459,3 +459,16 @@ class TrendData(BaseModel):
     passed: int
     failed: int
     success_rate: float
+
+
+# Cron Job Schemas
+from schemas.cron import (
+    CronJobBase,
+    CronJobCreate,
+    CronJobResponse,
+    CronJobStatus,
+    CronExecutionBase,
+    CronExecutionResponse,
+    CronExecutionStatus,
+    CronStats
+)
