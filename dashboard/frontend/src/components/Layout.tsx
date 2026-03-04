@@ -1,4 +1,4 @@
-import { ReactNode } from 'react'
+import { ReactNode, useState } from 'react'
 import {
   Box,
   Drawer,
@@ -23,9 +23,12 @@ import {
   Extension as ExtensionIcon,
   Settings as SettingsIcon,
   Logout as LogoutIcon,
+  Help as HelpIcon,
 } from '@mui/icons-material'
 import { useNavigate } from 'react-router-dom'
 import useAuthStore from '../stores/authStore'
+import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts'
+import KeyboardShortcutsDialog from './common/KeyboardShortcutsDialog'
 
 const drawerWidth = 240
 
@@ -38,6 +41,7 @@ interface LayoutProps {
 export default function Layout({ children, sidebarOpen, onSidebarToggle }: LayoutProps) {
   const navigate = useNavigate()
   const { logout, user } = useAuthStore()
+  const { isHelpOpen, toggleHelp } = useKeyboardShortcuts()
 
   const menuItems = [
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
@@ -79,12 +83,20 @@ export default function Layout({ children, sidebarOpen, onSidebarToggle }: Layou
           <Typography variant="body2" sx={{ mr: 2 }}>
             {user?.username}
           </Typography>
-          <IconButton color="inherit" onClick={handleLogout}>
+          <IconButton
+            color="inherit"
+            onClick={toggleHelp}
+            title="Keyboard Shortcuts (?)"
+            sx={{ mr: 1 }}
+          >
+            <HelpIcon />
+          </IconButton>
+          <IconButton color="inherit" onClick={handleLogout} title="Logout">
             <LogoutIcon />
           </IconButton>
         </Toolbar>
       </AppBar>
-      
+
       <Drawer
         sx={{
           width: drawerWidth,
@@ -122,7 +134,7 @@ export default function Layout({ children, sidebarOpen, onSidebarToggle }: Layou
           </ListItem>
         </List>
       </Drawer>
-      
+
       <Box
         component="main"
         sx={{
@@ -137,6 +149,12 @@ export default function Layout({ children, sidebarOpen, onSidebarToggle }: Layou
         <Toolbar />
         {children}
       </Box>
+
+      {/* Keyboard Shortcuts Dialog */}
+      <KeyboardShortcutsDialog
+        open={isHelpOpen}
+        onClose={toggleHelp}
+      />
     </Box>
   )
 }
