@@ -554,18 +554,17 @@ class TestAPIRequestTracker:
 
 class TestGetMetricsResponse:
     """Tests for get_metrics_response function."""
-    
-    @patch('core.metrics.generate_latest')
+
     @patch('core.metrics.generate_latest')
     def test_get_metrics_response(self, mock_generate):
         """Test get_metrics_response generates correct response."""
         mock_generate.return_value = b'metrics_data'
         
         response = get_metrics_response()
-        
+
         # Check that response is generated
         assert response is not None
-        assert response.content == b'metrics_data'
+        assert response.body == b'metrics_data'
     
     @patch('core.metrics.generate_latest')
     def test_get_metrics_response_content_type(self, mock_generate):
