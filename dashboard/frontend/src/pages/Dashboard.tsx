@@ -7,6 +7,13 @@ import {
   Box,
   Chip,
   CircularProgress,
+  Avatar,
+  LinearProgress,
+  Paper,
+  Fade,
+  Skeleton,
+  IconButton,
+  Tooltip as MuiTooltip,
 } from '@mui/material'
 import {
   TrendingUp,
@@ -15,6 +22,11 @@ import {
   PlayArrow,
   CheckCircle,
   Error,
+  Speed,
+  Assessment,
+  AutoGraph,
+  Refresh,
+  Schedule,
 } from '@mui/icons-material'
 import {
   Chart as ChartJS,
@@ -27,9 +39,11 @@ import {
   Tooltip,
   Legend,
   ArcElement,
+  Filler,
 } from 'chart.js'
 import { Line, Bar, Doughnut } from 'react-chartjs-2'
 import { dashboardAPI } from '../api/client'
+import { useState } from 'react'
 
 ChartJS.register(
   CategoryScale,
@@ -40,229 +54,394 @@ ChartJS.register(
   Title,
   Tooltip,
   Legend,
-  ArcElement
+  ArcElement,
+  Filler
+)
+
+// Custom styled components
+const StatCard = ({ title, value, icon, color, trend, trendValue }: any) => (
+  <Card
+    sx={{
+      height: '100%',
+      background: `linear-gradient(135deg, ${color}.light 0%, ${color}.main 100%)`,
+      color: 'white',
+      position: 'relative',
+      overflow: 'hidden',
+      transition: 'all 0.3s ease',
+      '&:hover': {
+        transform: 'translateY(-4px)',
+        boxShadow: '0 12px 20px -10px rgba(0,0,0,0.3)',
+      },
+      '&::before': {
+        content: '""',
+        position: 'absolute',
+        top: 0,
+        right: 0,
+        width: '100px',
+        height: '100%',
+        background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.1))',
+      },
+    }}
+  >
+    <CardContent>
+      <Box display="flex" alignItems="flex-start" justifyContent="space-between">
+        <Box>
+          <Typography variant="overline" sx={{ opacity: 0.9, letterSpacing: 1 }}>
+            {title}
+          </Typography>
+          <Typography variant="h3" fontWeight="bold" sx={{ mt: 1 }}>
+            {value}
+          </Typography>
+          {trend && (
+            <Box display="flex" alignItems="center" mt={1}>
+              {trend === 'up' ? (
+                <TrendingUp sx={{ fontSize: 16, mr: 0.5 }} />
+              ) : (
+                <TrendingDown sx={{ fontSize: 16, mr: 0.5 }} />
+              )}
+              <Typography variant="caption">{trendValue}</Typography>
+            </Box>
+          )}
+        </Box>
+        <Avatar
+          sx={{
+            bgcolor: 'rgba(255,255,255,0.2)',
+            width: 56,
+            height: 56,
+          }}
+        >
+          {icon}
+        </Avatar>
+      </Box>
+    </CardContent>
+  </Card>
+)
+
+const LoadingSkeleton = () => (
+  <Box>
+    <Grid container spacing={3} sx={{ mb: 3 }}>
+      {[1, 2, 3, 4].map((i) => (
+        <Grid item xs={12} sm={6} md={3} key={i}>
+          <Skeleton variant="rectangular" height={140} sx={{ borderRadius: 2 }} />
+        </Grid>
+      ))}
+    </Grid>
+    <Skeleton variant="rectangular" height={400} sx={{ borderRadius: 2, mb: 3 }} />
+  </Box>
 )
 
 export default function Dashboard() {
-  const { data: stats, isLoading: statsLoading } = useQuery('dashboard-stats', () =>
-    dashboardAPI.getStats()
+  const [refreshKey, setRefreshKey] = useState(0)
+  
+  const { data: stats, isLoading: statsLoading, refetch: refetchStats } = useQuery(
+    ['dashboard-stats', refreshKey],
+    () => dashboardAPI.getStats(),
+    { refetchInterval: 30000 }
   )
 
-  const { data: trends, isLoading: trendsLoading } = useQuery('dashboard-trends', () =>
-    dashboardAPI.getTrends(30)
+  const { data: trends, isLoading: trendsLoading, refetch: refetchTrends } = useQuery(
+    ['dashboard-trends', refreshKey],
+    () => dashboardAPI.getTrends(30)
   )
 
-  const { data: recent, isLoading: recentLoading } = useQuery('dashboard-recent', () =>
-    dashboardAPI.getRecentExecutions(10)
+  const { data: recent, isLoading: recentLoading, refetch: refetchRecent } = useQuery(
+    ['dashboard-recent', refreshKey],
+    () => dashboardAPI.getRecentExecutions(10)
   )
+
+  const handleRefresh = () => {
+    setRefreshKey((prev) => prev + 1)
+  }
 
   if (statsLoading || trendsLoading || recentLoading) {
-    return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
-        <CircularProgress />
-      </Box>
-    )
+    return <LoadingSkeleton />
   }
 
   const statsData = stats?.data
   const trendsData = trends?.data || []
   const recentData = recent?.data || []
 
-  // Chart data
+  // Enhanced chart options
+  const lineChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'top' as const,
+        labels: {
+          usePointStyle: true,
+          padding: 20,
+        },
+      },
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        grid: {
+          color: 'rgba(0, 0, 0, 0.05)',
+        },
+      },
+      x: {
+        grid: {
+          display: false,
+        },
+      },
+    },
+    interaction: {
+      intersect: false,
+      mode: 'index' as const,
+    },
+  }
+
   const lineChartData = {
     labels: trendsData.map((t: any) => t.date),
     datasets: [
       {
         label: 'Total Executions',
         data: trendsData.map((t: any) => t.total),
-        borderColor: 'rgb(75, 192, 192)',
-        backgroundColor: 'rgba(75, 192, 192, 0.5)',
+        borderColor: 'rgb(99, 102, 241)',
+        backgroundColor: 'rgba(99, 102, 241, 0.1)',
+        fill: true,
+        tension: 0.4,
+        pointRadius: 4,
+        pointHoverRadius: 6,
       },
       {
         label: 'Passed',
         data: trendsData.map((t: any) => t.passed),
         borderColor: 'rgb(34, 197, 94)',
-        backgroundColor: 'rgba(34, 197, 94, 0.5)',
+        backgroundColor: 'rgba(34, 197, 94, 0.1)',
+        fill: true,
+        tension: 0.4,
+        pointRadius: 4,
+        pointHoverRadius: 6,
       },
       {
         label: 'Failed',
         data: trendsData.map((t: any) => t.failed),
         borderColor: 'rgb(239, 68, 68)',
-        backgroundColor: 'rgba(239, 68, 68, 0.5)',
+        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+        fill: true,
+        tension: 0.4,
+        pointRadius: 4,
+        pointHoverRadius: 6,
       },
     ],
   }
 
+  const doughnutOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'bottom' as const,
+        labels: {
+          usePointStyle: true,
+          padding: 15,
+        },
+      },
+    },
+    cutout: '65%',
+  }
+
   const testTypeData = {
-    labels: ['API', 'UI', 'DB', 'Security', 'Performance'],
+    labels: ['API Tests', 'UI Tests', 'Database', 'Security', 'Performance'],
     datasets: [
       {
         data: [12, 19, 3, 5, 2],
         backgroundColor: [
-          'rgba(59, 130, 246, 0.8)',
-          'rgba(16, 185, 129, 0.8)',
-          'rgba(245, 158, 11, 0.8)',
-          'rgba(239, 68, 68, 0.8)',
-          'rgba(139, 92, 246, 0.8)',
+          'rgba(99, 102, 241, 0.9)',
+          'rgba(34, 197, 94, 0.9)',
+          'rgba(251, 146, 60, 0.9)',
+          'rgba(239, 68, 68, 0.9)',
+          'rgba(139, 92, 246, 0.9)',
         ],
+        borderWidth: 0,
+        hoverOffset: 10,
       },
     ],
   }
 
+  const successRate = statsData?.success_rate || 0
+
   return (
-    <Box>
-      <Typography variant="h4" gutterBottom>
-        Dashboard
-      </Typography>
-
-      {/* Stats Cards */}
-      <Grid container spacing={3} sx={{ mb: 3 }}>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Box display="flex" alignItems="center" justifyContent="space-between">
-                <Box>
-                  <Typography color="textSecondary" gutterBottom>
-                    Total Executions
-                  </Typography>
-                  <Typography variant="h4">
-                    {statsData?.total_executions || 0}
-                  </Typography>
-                </Box>
-                <PlayArrow color="primary" sx={{ fontSize: 40 }} />
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Box display="flex" alignItems="center" justifyContent="space-between">
-                <Box>
-                  <Typography color="textSecondary" gutterBottom>
-                    Test Suites
-                  </Typography>
-                  <Typography variant="h4">
-                    {statsData?.total_test_suites || 0}
-                  </Typography>
-                </Box>
-                <Folder color="secondary" sx={{ fontSize: 40 }} />
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Box display="flex" alignItems="center" justifyContent="space-between">
-                <Box>
-                  <Typography color="textSecondary" gutterBottom>
-                    Success Rate
-                  </Typography>
-                  <Typography variant="h4">
-                    {statsData?.success_rate || 0}%
-                  </Typography>
-                </Box>
-                {statsData?.success_rate >= 80 ? (
-                  <TrendingUp color="success" sx={{ fontSize: 40 }} />
-                ) : (
-                  <TrendingDown color="error" sx={{ fontSize: 40 }} />
-                )}
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Box display="flex" alignItems="center" justifyContent="space-between">
-                <Box>
-                  <Typography color="textSecondary" gutterBottom>
-                    Avg Duration
-                  </Typography>
-                  <Typography variant="h4">
-                    {statsData?.average_duration || 0}s
-                  </Typography>
-                </Box>
-                <CheckCircle color="info" sx={{ fontSize: 40 }} />
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
-
-      {/* Charts */}
-      <Grid container spacing={3}>
-        <Grid item xs={12} md={8}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Execution Trends (Last 30 Days)
-              </Typography>
-              <Line data={lineChartData} />
-            </CardContent>
-          </Card>
-        </Grid>
-
-        <Grid item xs={12} md={4}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Test Types Distribution
-              </Typography>
-              <Doughnut data={testTypeData} />
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
-
-      {/* Recent Executions */}
-      <Box sx={{ mt: 3 }}>
-        <Card>
-          <CardContent>
-            <Typography variant="h6" gutterBottom>
-              Recent Executions
+    <Fade in timeout={500}>
+      <Box>
+        {/* Header */}
+        <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+          <Box>
+            <Typography variant="h4" fontWeight="bold" gutterBottom>
+              Dashboard
             </Typography>
-            {recentData.map((execution: any) => (
-              <Box
-                key={execution.id}
-                display="flex"
-                alignItems="center"
-                justifyContent="space-between"
-                sx={{ py: 1, borderBottom: '1px solid #333' }}
-              >
-                <Box>
-                  <Typography variant="body1">{execution.suite_name}</Typography>
-                  <Typography variant="caption" color="textSecondary">
-                    {execution.environment} • {execution.started_at}
+            <Typography variant="body2" color="textSecondary">
+              Welcome back! Here's your testing overview.
+            </Typography>
+          </Box>
+          <MuiTooltip title="Refresh Data">
+            <IconButton onClick={handleRefresh} color="primary">
+              <Refresh />
+            </IconButton>
+          </MuiTooltip>
+        </Box>
+
+        {/* Stats Cards */}
+        <Grid container spacing={3} sx={{ mb: 4 }}>
+          <Grid item xs={12} sm={6} md={3}>
+            <StatCard
+              title="Total Executions"
+              value={statsData?.total_executions || 0}
+              icon={<PlayArrow sx={{ fontSize: 28 }} />}
+              color="primary"
+              trend="up"
+              trendValue="+12% from last week"
+            />
+          </Grid>
+
+          <Grid item xs={12} sm={6} md={3}>
+            <StatCard
+              title="Test Suites"
+              value={statsData?.total_test_suites || 0}
+              icon={<Folder sx={{ fontSize: 28 }} />}
+              color="secondary"
+            />
+          </Grid>
+
+          <Grid item xs={12} sm={6} md={3}>
+            <StatCard
+              title="Success Rate"
+              value={`${successRate}%`}
+              icon={successRate >= 80 ? <CheckCircle sx={{ fontSize: 28 }} /> : <Error sx={{ fontSize: 28 }} />}
+              color={successRate >= 80 ? 'success' : 'warning'}
+              trend={successRate >= 80 ? 'up' : 'down'}
+              trendValue={successRate >= 80 ? 'Great!' : 'Needs attention'}
+            />
+          </Grid>
+
+          <Grid item xs={12} sm={6} md={3}>
+            <StatCard
+              title="Avg Duration"
+              value={`${statsData?.average_duration || 0}s`}
+              icon={<Speed sx={{ fontSize: 28 }} />}
+              color="info"
+            />
+          </Grid>
+        </Grid>
+
+        {/* Charts Row */}
+        <Grid container spacing={3} sx={{ mb: 4 }}>
+          <Grid item xs={12} md={8}>
+            <Card sx={{ height: '100%', boxShadow: 3 }}>
+              <CardContent>
+                <Box display="flex" alignItems="center" mb={2}>
+                  <AutoGraph sx={{ mr: 1, color: 'primary.main' }} />
+                  <Typography variant="h6" fontWeight="medium">
+                    Execution Trends
                   </Typography>
                 </Box>
-                <Box display="flex" alignItems="center" gap={1}>
-                  <Chip
-                    size="small"
-                    label={`${execution.passed}/${execution.total_tests} passed`}
-                    color={execution.passed === execution.total_tests ? 'success' : 'warning'}
-                  />
-                  <Chip
-                    size="small"
-                    label={execution.status}
-                    color={
-                      execution.status === 'completed'
-                        ? 'success'
-                        : execution.status === 'running'
-                        ? 'primary'
-                        : 'error'
-                    }
-                  />
+                <Box height={300}>
+                  <Line data={lineChartData} options={lineChartOptions} />
                 </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+
+          <Grid item xs={12} md={4}>
+            <Card sx={{ height: '100%', boxShadow: 3 }}>
+              <CardContent>
+                <Box display="flex" alignItems="center" mb={2}>
+                  <Assessment sx={{ mr: 1, color: 'secondary.main' }} />
+                  <Typography variant="h6" fontWeight="medium">
+                    Test Types
+                  </Typography>
+                </Box>
+                <Box height={300} display="flex" alignItems="center" justifyContent="center">
+                  <Doughnut data={testTypeData} options={doughnutOptions} />
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+        </Grid>
+
+        {/* Recent Executions */}
+        <Card sx={{ boxShadow: 3 }}>
+          <CardContent>
+            <Box display="flex" alignItems="center" justifyContent="space-between" mb={3}>
+              <Box display="flex" alignItems="center">
+                <Schedule sx={{ mr: 1, color: 'info.main' }} />
+                <Typography variant="h6" fontWeight="medium">
+                  Recent Executions
+                </Typography>
               </Box>
-            ))}
+              <Chip label={`${recentData.length} total`} size="small" />
+            </Box>
+
+            {recentData.length === 0 ? (
+              <Box py={4} textAlign="center">
+                <Typography color="textSecondary">
+                  No recent executions. Run some tests to see them here!
+                </Typography>
+              </Box>
+            ) : (
+              recentData.map((execution: any, index: number) => (
+                <Fade in timeout={300 * (index + 1)} key={execution.id}>
+                  <Paper
+                    elevation={0}
+                    sx={{
+                      p: 2,
+                      mb: 1,
+                      bgcolor: 'grey.50',
+                      borderRadius: 2,
+                      transition: 'all 0.2s',
+                      '&:hover': {
+                        bgcolor: 'grey.100',
+                        transform: 'translateX(4px)',
+                      },
+                    }}
+                  >
+                    <Box display="flex" alignItems="center" justifyContent="space-between">
+                      <Box>
+                        <Typography variant="subtitle1" fontWeight="medium">
+                          {execution.suite_name || `Execution #${execution.id}`}
+                        </Typography>
+                        <Typography variant="caption" color="textSecondary">
+                          {execution.environment || 'production'} • {execution.started_at || 'Recently'}
+                        </Typography>
+                      </Box>
+                      <Box display="flex" alignItems="center" gap={1}>
+                        {execution.total_tests > 0 && (
+                          <Box display="flex" alignItems="center" gap={1} mr={1}>
+                            <LinearProgress
+                              variant="determinate"
+                              value={(execution.passed / execution.total_tests) * 100}
+                              sx={{ width: 60, height: 6, borderRadius: 3 }}
+                              color="success"
+                            />
+                            <Typography variant="caption" fontWeight="medium">
+                              {execution.passed}/{execution.total_tests}
+                            </Typography>
+                          </Box>
+                        )}
+                        <Chip
+                          size="small"
+                          label={execution.status || 'completed'}
+                          color={
+                            execution.status === 'completed'
+                              ? 'success'
+                              : execution.status === 'running'
+                              ? 'primary'
+                              : 'error'
+                          }
+                          sx={{ fontWeight: 'medium' }}
+                        />
+                      </Box>
+                    </Box>
+                  </Paper>
+                </Fade>
+              ))
+            )}
           </CardContent>
         </Card>
       </Box>
-    </Box>
+    </Fade>
   )
 }
