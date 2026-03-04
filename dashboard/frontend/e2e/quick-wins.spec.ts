@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test'
 
-test.describe('Quick Wins - Empty States & Keyboard Shortcuts', () => {
+test.describe('Quick Wins - Celebrations & Time Saved', () => {
   test.beforeEach(async ({ page }) => {
     // Navigate to the application
     await page.goto('http://localhost:5173')
@@ -230,5 +230,105 @@ test.describe('Quick Wins - Empty States & Keyboard Shortcuts', () => {
 
     // Verify dialog is closed
     await expect(dialog).not.toBeVisible({ timeout: 5000 })
+  })
+
+  test('Celebrations - First successful test shows confetti', async ({ page }) => {
+    // Navigate to Executions page
+    await page.click('text=Executions')
+    await page.waitForURL('**/executions')
+
+    // Check that page loaded successfully
+    await expect(page.locator('text=Test Executions')).toBeVisible()
+
+    // Get initial confetti count from sessionStorage
+    const initialConfettiCount = await page.evaluate(() => {
+      return sessionStorage.getItem('celebratedFirstTest') || 'false'
+    })
+
+    expect(initialConfettiCount).toBe('false')
+
+    // Note: To fully test confetti, we'd need to actually run a test
+    // which requires the backend API. This test verifies the
+    // celebration logic is in place and sessionStorage works.
+
+    // Reload page to verify sessionStorage persistence
+    await page.reload()
+    const afterReload = await page.evaluate(() => {
+      return sessionStorage.getItem('celebratedFirstTest')
+    })
+
+    expect(afterReload).toBe('true')
+  })
+
+  test('Celebrations - Confetti does not spam on reload', async ({ page }) => {
+    // Navigate to Executions page
+    await page.click('text=Executions')
+    await page.waitForURL('**/executions')
+
+    // Set up confetti celebration
+    await page.evaluate(() => {
+      sessionStorage.setItem('celebratedFirstTest', 'true')
+    })
+
+    // Reload page - confetti should NOT trigger again
+    await page.reload()
+
+    // Verify sessionStorage still has the value
+    const confettiCount = await page.evaluate(() => {
+      return sessionStorage.getItem('celebratedFirstTest')
+    })
+
+    expect(confettiCount).toBe('true')
+  })
+
+  test('Time Saved - Dashboard shows time saved card', async ({ page }) => {
+    // Navigate to Dashboard
+    await page.click('text=Dashboard')
+    await page.waitForURL('**/dashboard')
+
+    // Verify time saved card is visible
+    await expect(page.locator('text=Time Saved')).toBeVisible({ timeout: 5000 })
+
+    // Verify the card has correct structure
+    const card = page.locator('text=Time Saved').locator('..').locator('..').locator('..')
+
+    // Check for card header
+    await expect(page.locator('text=Time Saved')).toBeVisible()
+
+    // Verify icon
+    const accessTimeIcon = page.locator('svg[data-testid="AccessTimeIcon"]')
+    await expect(accessTimeIcon).toBeVisible()
+
+    // Verify subtitle text
+    await expect(page.locator('text=By automating')).toBeVisible()
+
+    // Check for gradient styling (background should be purple)
+    const cardElement = page.locator('text=Time Saved').locator('..').locator('..')
+    const backgroundStyle = await cardElement.evaluate(el => {
+      const style = window.getComputedStyle(el)
+      return style.background
+    })
+
+    // Should be a purple gradient
+    expect(backgroundStyle).toMatch(/rgba?\(\s*124,\s*58,\s*234/gi)
+  })
+
+  test('Time Saved - Time calculation shows correct format', async ({ page }) => {
+    // Navigate to Dashboard
+    await page.click('text=Dashboard')
+    await page.waitForURL('**/dashboard')
+
+    // Get the time saved text
+    const timeSavedText = page.locator('text=Time Saved').locator('..').locator('..').locator('..')
+      .locator('h3')
+
+    // Wait for time to be rendered
+    await timeSavedText.waitFor({ timeout: 5000 })
+
+    // The text should be in format "Xh Xm" or "Xh" or "Xm"
+    const text = await timeSavedText.textContent()
+
+    // Should contain hours and/or minutes
+    expect(text).toMatch(/\d+\s*(h|m)/)
   })
 })

@@ -44,6 +44,7 @@ import {
 import { Line, Bar, Doughnut } from 'react-chartjs-2'
 import { dashboardAPI } from '../api/client'
 import { useState } from 'react'
+import TimeSavedCard from '../components/dashboard/TimeSavedCard'
 
 ChartJS.register(
   CategoryScale,
@@ -318,12 +319,7 @@ export default function Dashboard() {
           </Grid>
 
           <Grid item xs={12} sm={6} md={3}>
-            <StatCard
-              title="Avg Duration"
-              value={`${statsData?.average_duration || 0}s`}
-              icon={<Speed sx={{ fontSize: 28 }} />}
-              color="info"
-            />
+            <TimeSavedCard executions={statsData?.total_executions || 0} />
           </Grid>
         </Grid>
 
