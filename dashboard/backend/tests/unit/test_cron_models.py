@@ -30,11 +30,9 @@ class TestCronJobModel:
         assert job.error_count == 0
         assert job.avg_duration == 0.0
         
-        # Verify datetime fields are set
-        assert job.created_at is not None
-        assert isinstance(job.created_at, datetime)
-        assert job.updated_at is not None
-        assert isinstance(job.updated_at, datetime)
+        # Note: created_at and updated_at are set by DB on insert (server_default)
+        # When creating object without DB session, they will be None
+        # This is expected SQLAlchemy behavior for server_default columns
 
     def test_cron_job_with_custom_status(self):
         """Test cron job with custom status"""

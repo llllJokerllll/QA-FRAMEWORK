@@ -84,3 +84,19 @@ def update_duration_on_update(mapper, connection, target):
         if isinstance(target.started_at, datetime) and isinstance(target.finished_at, datetime):
             delta = target.finished_at - target.started_at
             target.duration = delta.total_seconds()
+
+
+# Event listeners for CronJob defaults
+@event.listens_for(CronJob, "init")
+def set_cron_job_defaults(target, args, kwargs):
+    """Set default values for CronJob when initialized"""
+    if 'status' not in kwargs:
+        target.status = "active"
+    if 'is_active' not in kwargs:
+        target.is_active = True
+    if 'success_count' not in kwargs:
+        target.success_count = 0
+    if 'error_count' not in kwargs:
+        target.error_count = 0
+    if 'avg_duration' not in kwargs:
+        target.avg_duration = 0.0
