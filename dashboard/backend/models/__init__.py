@@ -10,6 +10,13 @@ from models.cron import CronJob, CronExecution
 
 Base = declarative_base()
 
+# Export relationship for use in models
+__all__ = [
+    'Base', 'Column', 'Integer', 'String', 'DateTime', 'Boolean',
+    'Text', 'ForeignKey', 'JSON', 'Optional', 'func', 'relationship',
+    'datetime', 'CronJob', 'CronExecution'
+]
+
 
 class User(Base):
     __tablename__ = "users"
