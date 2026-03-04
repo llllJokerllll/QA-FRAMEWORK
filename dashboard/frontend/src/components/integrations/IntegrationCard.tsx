@@ -32,7 +32,7 @@ import {
   Close,
 } from '@mui/icons-material'
 import { Provider, IntegrationConfig } from '../../api/integrations'
-import { useAuthStore } from '../../stores/authStore'
+import useAuthStore from '../../stores/authStore'
 
 interface IntegrationCardProps {
   provider: Provider

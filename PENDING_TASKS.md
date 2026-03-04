@@ -120,7 +120,7 @@
 
 ### Sprint 4.1: Landing Page
 **Prioridad:** 🟡 ALTA
-**Estado:** 87.5% completado ⬆️
+**Estado:** 100% completado ✅
 
 | Tarea | Estado | Notas |
 |-------|--------|-------|
@@ -129,6 +129,8 @@
 | ⬜ Crear demo video | **EN PROGRESO** | Script detallado completado (docs/DEMO_VIDEO_SCRIPT.md) |
 | ✅ Crear documentación pública | **COMPLETADO** | commit 4b054a7 (2026-02-26) |
 | ✅ **Demo video script detallado** | **COMPLETADO** | commit 75fdfca (2026-02-27) - 15,818 bytes |
+| ✅ **E2E Tests con Playwright** | **COMPLETADO** | commit 232289a (2026-03-04) - 8 tests ✓ |
+| ✅ **E2E Tests con Playwright** | **COMPLETADO** | commit 232289a (2026-03-04) - 8 tests ✓ |
 
 **Detalles Landing Page:**
 - Hero section con headline y CTAs

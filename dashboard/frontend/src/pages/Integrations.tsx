@@ -20,7 +20,7 @@ import {
 } from '@mui/icons-material'
 import IntegrationCard from '../components/integrations/IntegrationCard'
 import { Provider, integrationsAPI } from '../api/integrations'
-import { useAuthStore } from '../stores/authStore'
+import useAuthStore from '../stores/authStore'
 
 export default function Integrations() {
   const theme = useTheme()
