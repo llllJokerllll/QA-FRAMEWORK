@@ -7,8 +7,7 @@ Models for managing scheduled background jobs with execution tracking.
 from datetime import datetime, timezone
 from sqlalchemy import Column, Integer, String, Float, DateTime, Boolean, Text, ForeignKey, event
 from sqlalchemy.sql import func
-from sqlalchemy.orm import relationship
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import declarative_base
 
 Base = declarative_base()
 

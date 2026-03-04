@@ -62,12 +62,12 @@ class TestCounterMetrics:
     def test_tests_executed_total_labels(self):
         """Test tests_executed_total has correct labels."""
         # Check metric name (may vary by prometheus_client version)
-        assert tests_executed_total._name in ['qa_tests_executed_total', 'tests_executed_total']
-    
+        assert tests_executed_total._name in ['qa_tests_executed_total', 'qa_tests_executed', 'tests_executed_total']
+
     def test_test_failures_total_labels(self):
         """Test test_failures_total has correct labels."""
         # Check metric name (may vary by prometheus_client version)
-        assert test_failures_total._name in ['qa_test_failures_total', 'test_failures_total']
+        assert test_failures_total._name in ['qa_test_failures_total', 'qa_test_failures', 'test_failures_total']
 
 
 class TestHistogramMetrics:

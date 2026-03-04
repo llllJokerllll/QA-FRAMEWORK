@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional, List, Dict, Any
 from datetime import datetime
 from enum import Enum
@@ -33,8 +33,7 @@ class UserResponse(UserBase):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class TestSuiteBase(BaseModel):
@@ -63,8 +62,7 @@ class TestSuiteResponse(TestSuiteBase):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class TestType(str, Enum):
@@ -113,8 +111,7 @@ class TestCaseResponse(TestCaseBase):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ExecutionStatus(str, Enum):

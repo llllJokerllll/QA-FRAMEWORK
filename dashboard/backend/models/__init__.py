@@ -1,9 +1,8 @@
 from sqlalchemy import Column, Integer, String, DateTime, Boolean, Text, ForeignKey, JSON
-from sqlalchemy.ext.declarative import declarative_base
 from typing import Optional
 
 from sqlalchemy.sql import func
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import declarative_base, relationship
 from datetime import datetime
 
 # Import cron job models

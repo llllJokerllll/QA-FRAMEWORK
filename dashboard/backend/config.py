@@ -1,48 +1,47 @@
 import os
 import warnings
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import Optional
 from functools import lru_cache
 
 
 class Settings(BaseSettings):
     """Application settings with environment-based configuration.
-    
+
     Security: All sensitive values MUST be provided via environment variables.
     Defaults are ONLY for local development and will trigger warnings.
     """
-    
+
     # Environment
     ENVIRONMENT: str = os.getenv("ENVIRONMENT", "development")
-    
+
     # Database - REQUIRED in production
     database_url: Optional[str] = os.getenv("DATABASE_URL")
-    
+
     # Redis
     redis_host: str = os.getenv("REDIS_HOST", "localhost")
     redis_port: int = int(os.getenv("REDIS_PORT", "6379"))
     redis_password: Optional[str] = os.getenv("REDIS_PASSWORD")
-    
+
     # JWT - REQUIRED in production
     secret_key: Optional[str] = os.getenv("JWT_SECRET_KEY")
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 30
-    
+
     # QA Framework Integration
     qa_framework_api_url: str = os.getenv("QA_FRAMEWORK_API_URL", "http://localhost:8001")
-    
+
     # Frontend
     frontend_url: str = os.getenv("FRONTEND_URL", "http://localhost:3000")
-    
+
     # Stripe - REQUIRED for billing
     STRIPE_API_KEY: Optional[str] = os.getenv("STRIPE_API_KEY")
     STRIPE_WEBHOOK_SECRET: Optional[str] = os.getenv("STRIPE_WEBHOOK_SECRET")
-    
+
     # Feature Flags
     ENABLE_BILLING: bool = os.getenv("ENABLE_BILLING", "false").lower() == "true"
-    
-    class Config:
-        env_file = ".env"
+
+    model_config = SettingsConfigDict(env_file=".env")
     
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
