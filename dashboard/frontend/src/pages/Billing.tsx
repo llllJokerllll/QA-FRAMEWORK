@@ -235,7 +235,22 @@ export default function Billing() {
     )
   }
 
-  const plans = plansData?.data || defaultPlans
+  // Transform backend features object to frontend array format
+  const transformFeatures = (features: any): { name: string; included: boolean }[] => {
+    if (Array.isArray(features)) {
+      return features
+    }
+    // Convert object features to array
+    return Object.entries(features || {}).map(([key, value]) => ({
+      name: key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+      included: Boolean(value) || value === -1 // -1 means unlimited
+    }))
+  }
+
+  const plans = (plansData?.plans || defaultPlans).map((plan: any) => ({
+    ...plan,
+    features: transformFeatures(plan.features)
+  }))
   const subscription = subscriptionData?.data
   const invoices = invoicesData?.data || []
   const paymentMethods = paymentMethodsData?.data || []
