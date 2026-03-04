@@ -5,6 +5,7 @@ import Dashboard from './pages/Dashboard'
 import TestSuites from './pages/TestSuites'
 import TestCases from './pages/TestCases'
 import Executions from './pages/Executions'
+import Integrations from './pages/Integrations'
 import Billing from './pages/Billing'
 import SelfHealing from './pages/SelfHealing'
 import Settings from './pages/Settings'
@@ -34,6 +35,7 @@ function App() {
           <Route path="/suites" element={<TestSuites />} />
           <Route path="/suites/:suiteId/cases" element={<TestCases />} />
           <Route path="/executions" element={<Executions />} />
+          <Route path="/integrations" element={<Integrations />} />
           <Route path="/billing" element={<Billing />} />
           <Route path="/self-healing" element={<SelfHealing />} />
           <Route path="/settings" element={<Settings />} />
