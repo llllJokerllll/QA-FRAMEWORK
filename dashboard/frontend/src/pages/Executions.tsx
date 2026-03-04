@@ -21,12 +21,36 @@ import {
   Visibility as VisibilityIcon,
 } from '@mui/icons-material'
 import { executionsAPI } from '../api/client'
+import { celebrateFirstTest, celebrateSuccess } from '../utils/celebrations'
 import toast from 'react-hot-toast'
+import EmptyState from '../components/common/EmptyState'
 
 export default function Executions() {
   const { data: executions, isLoading, refetch } = useQuery('executions', () =>
     executionsAPI.getAll()
   )
+
+  // Track if we've celebrated the first test (to avoid spamming)
+  const celebratedFirstTest = sessionStorage.getItem('celebratedFirstTest')
+  const celebratedFirstTestSet = !!celebratedFirstTest
+
+  const handleSuccessCelebration = () => {
+    if (!celebratedFirstTestSet) {
+      celebrateFirstTest()
+      sessionStorage.setItem('celebratedFirstTest', 'true')
+    }
+
+    // Check for 100% pass rate
+    executions?.data?.forEach((execution: any) => {
+      if (
+        execution.status === 'completed' &&
+        execution.total_tests > 0 &&
+        execution.passed_tests === execution.total_tests
+      ) {
+        celebrateSuccess()
+      }
+    })
+  }
 
   const startExecution = (executionId: number) => {
     executionsAPI.start(executionId).then(() => {
@@ -41,6 +65,7 @@ export default function Executions() {
     executionsAPI.stop(executionId).then(() => {
       toast.success('Execution stopped')
       refetch()
+      handleSuccessCelebration()
     }).catch(() => {
       toast.error('Failed to stop execution')
     })
@@ -50,6 +75,27 @@ export default function Executions() {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
         <CircularProgress />
+      </Box>
+    )
+  }
+
+  // Show empty state if no executions
+  if (!executions?.data || executions.data.length === 0) {
+    return (
+      <Box>
+        <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+          <Typography variant="h4">Test Executions</Typography>
+        </Box>
+        <EmptyState
+          illustration="/illustrations/empty-executions.svg"
+          title="No Executions Yet"
+          description="Run your test suites to see execution results and test reports here. Track your test history and analyze performance over time."
+          actionLabel="Run Your First Test"
+          onAction={() => {
+            // Navigate to suites to run a test
+            window.location.href = '/suites'
+          }}
+        />
       </Box>
     )
   }

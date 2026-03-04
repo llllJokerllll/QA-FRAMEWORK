@@ -36,6 +36,7 @@ import {
   CheckCircle as CheckCircleIcon,
   History as HistoryIcon,
 } from '@mui/icons-material';
+import EmptyState from '../components/common/EmptyState';
 
 interface Selector {
   id: string;
@@ -166,17 +167,17 @@ const SelfHealingDashboard: React.FC = () => {
 
       setSelectors(mockSelectors);
       setSessions(mockSessions);
-      
+
       // Calculate stats
       const lowConf = mockSelectors.filter(s => s.confidence_score < 0.5).length;
       const avgConf = mockSelectors.reduce((sum, s) => sum + s.confidence_score, 0) / mockSelectors.length;
-      
+
       setStats({
         totalSelectors: mockSelectors.length,
         lowConfidence: lowConf,
         avgConfidence: avgConf,
-        healSuccessRate: mockSessions.length > 0 
-          ? mockSessions.reduce((sum, s) => sum + s.success_rate, 0) / mockSessions.length 
+        healSuccessRate: mockSessions.length > 0
+          ? mockSessions.reduce((sum, s) => sum + s.success_rate, 0) / mockSessions.length
           : 0,
       });
     } catch (error) {
@@ -189,14 +190,14 @@ const SelfHealingDashboard: React.FC = () => {
   const handleHealSelector = async (selector: Selector) => {
     setSelectedSelector(selector);
     setHealDialogOpen(true);
-    
+
     // Simulate healing process
     setTimeout(() => {
       const mockResult: HealingResult = {
         id: 'r1',
         original_selector_value: selector.value,
-        healed_selector_value: selector.confidence_score < 0.5 
-          ? `#healed-${selector.id}` 
+        healed_selector_value: selector.confidence_score < 0.5
+          ? `#healed-${selector.id}`
           : undefined,
         status: selector.confidence_score < 0.5 ? 'success' : 'skipped',
         confidence_score: selector.confidence_score < 0.5 ? 0.85 : selector.confidence_score,
@@ -231,6 +232,28 @@ const SelfHealingDashboard: React.FC = () => {
     return (
       <Box sx={{ p: 3 }}>
         <LinearProgress />
+      </Box>
+    );
+  }
+
+  // Show empty state if no selectors
+  if (selectors.length === 0) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Typography variant="h4" gutterBottom>
+          <AutoFixHighIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
+          Self-Healing Dashboard
+        </Typography>
+        <EmptyState
+          illustration="/illustrations/empty-selectors.svg"
+          title="No Selectors Found"
+          description="Self-healing selectors will appear here after your tests run. The system automatically detects and heals flaky selectors to improve test stability."
+          actionLabel="Learn More"
+          onAction={() => {
+            // Navigate to documentation or show help
+            window.open('https://docs.example.com/self-healing', '_blank');
+          }}
+        />
       </Box>
     );
   }
@@ -275,9 +298,9 @@ const SelfHealingDashboard: React.FC = () => {
               <Typography variant="h4">
                 {(stats.avgConfidence * 100).toFixed(1)}%
               </Typography>
-              <LinearProgress 
-                variant="determinate" 
-                value={stats.avgConfidence * 100} 
+              <LinearProgress
+                variant="determinate"
+                value={stats.avgConfidence * 100}
                 sx={{ mt: 1 }}
               />
             </CardContent>
@@ -342,8 +365,8 @@ const SelfHealingDashboard: React.FC = () => {
                     </TableCell>
                     <TableCell>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <LinearProgress 
-                          variant="determinate" 
+                        <LinearProgress
+                          variant="determinate"
                           value={selector.confidence_score * 100}
                           sx={{ width: 60 }}
                           color={getConfidenceColor(selector.confidence_level) as any}
@@ -359,8 +382,8 @@ const SelfHealingDashboard: React.FC = () => {
                     </TableCell>
                     <TableCell>
                       <Tooltip title="Heal Selector">
-                        <IconButton 
-                          size="small" 
+                        <IconButton
+                          size="small"
                           onClick={() => handleHealSelector(selector)}
                           color="primary"
                         >
@@ -444,13 +467,13 @@ const SelfHealingDashboard: React.FC = () => {
               <Typography variant="body1" sx={{ fontFamily: 'monospace', mb: 2 }}>
                 {selectedSelector.value}
               </Typography>
-              
+
               {healResults.length > 0 ? (
                 <Box>
                   <Alert severity={healResults[0].status === 'success' ? 'success' : 'info'} sx={{ mb: 2 }}>
                     Healing {healResults[0].status === 'success' ? 'completed successfully' : 'skipped (confidence OK)'}
                   </Alert>
-                  
+
                   {healResults[0].healed_selector_value && (
                     <Box>
                       <Typography variant="body2" color="textSecondary">
@@ -461,7 +484,7 @@ const SelfHealingDashboard: React.FC = () => {
                       </Typography>
                     </Box>
                   )}
-                  
+
                   <Box sx={{ mt: 2 }}>
                     <Typography variant="body2">
                       Confidence: {(healResults[0].confidence_score * 100).toFixed(1)}%

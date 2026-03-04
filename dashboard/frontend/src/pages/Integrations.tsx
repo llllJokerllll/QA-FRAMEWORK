@@ -21,6 +21,7 @@ import {
 import IntegrationCard from '../components/integrations/IntegrationCard'
 import { Provider, integrationsAPI } from '../api/integrations'
 import useAuthStore from '../stores/authStore'
+import EmptyState from '../components/common/EmptyState'
 
 export default function Integrations() {
   const theme = useTheme()
@@ -149,26 +150,18 @@ export default function Integrations() {
         </Box>
       )}
 
-      {/* No Providers State */}
+      {/* No Providers State - Using EmptyState */}
       {!loading && providers.length === 0 && (
-        <Box
-          sx={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            minHeight: '400px',
-            textAlign: 'center',
+        <EmptyState
+          illustration="/illustrations/empty-tests.svg"
+          title="No Integrations Configured"
+          description="Connect your test management tools to automatically sync test cases and execution results. Popular integrations include Jira, Azure DevOps, and TestRail."
+          actionLabel="Configure Integration"
+          onAction={() => {
+            // In a real implementation, this would open a dialog to select an integration
+            alert('Integration configuration wizard coming soon!')
           }}
-        >
-          <ExtensionIcon sx={{ fontSize: 80, color: theme.palette.text.disabled, mb: 2 }} />
-          <Typography variant="h6" color="text.secondary" gutterBottom>
-            No integrations available
-          </Typography>
-          <Typography variant="body1" color="text.secondary">
-            Contact your administrator to enable integrations
-          </Typography>
-        </Box>
+        />
       )}
 
       {/* Providers Grid */}

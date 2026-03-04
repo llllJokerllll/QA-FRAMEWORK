@@ -30,6 +30,7 @@ import {
 import { useNavigate } from 'react-router-dom'
 import { suitesAPI, executionsAPI } from '../api/client'
 import toast from 'react-hot-toast'
+import EmptyState from '../components/common/EmptyState'
 
 export default function TestSuites() {
   const navigate = useNavigate()
@@ -108,6 +109,31 @@ export default function TestSuites() {
 
   if (isLoading) {
     return <Typography>Loading...</Typography>
+  }
+
+  // Show empty state if no suites
+  if (!suites?.data || suites.data.length === 0) {
+    return (
+      <Box>
+        <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+          <Typography variant="h4">Test Suites</Typography>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => handleOpenDialog()}
+          >
+            New Suite
+          </Button>
+        </Box>
+        <EmptyState
+          illustration="/illustrations/empty-suites.svg"
+          title="No Test Suites Yet"
+          description="Create your first test suite to start organizing and running your automated tests. Test suites help you group related tests together."
+          actionLabel="Create First Suite"
+          onAction={() => handleOpenDialog()}
+        />
+      </Box>
+    )
   }
 
   return (
