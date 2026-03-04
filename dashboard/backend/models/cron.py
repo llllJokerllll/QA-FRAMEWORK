@@ -4,7 +4,8 @@ Cron Jobs Models
 Models for managing scheduled background jobs with execution tracking.
 """
 
-from sqlalchemy import Column, Integer, String, Float, DateTime, Boolean, Text, ForeignKey
+from datetime import datetime, timezone
+from sqlalchemy import Column, Integer, String, Float, DateTime, Boolean, Text, ForeignKey, event
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
@@ -19,7 +20,7 @@ class CronJob(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, unique=True, index=True, nullable=False)
     schedule = Column(String, nullable=False)  # Cron expression
-    status = Column(String, default="active")  # active, paused, error
+    status = Column(String, default=lambda: "active")  # active, paused, error
     description = Column(Text)
 
     # Script path
@@ -35,7 +36,7 @@ class CronJob(Base):
     # Metadata
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
-    is_active = Column(Boolean, default=True)
+    is_active = Column(Boolean, default=lambda: True)
 
     # Relationships
     executions = relationship("CronExecution", backref="job", cascade="all, delete-orphan")
@@ -64,3 +65,22 @@ class CronExecution(Base):
 
     # Metadata
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+# Event listener to automatically calculate duration
+@event.listens_for(CronExecution, "before_insert")
+def calculate_duration(mapper, connection, target):
+    """Automatically calculate duration when finished_at is set"""
+    if target.started_at and target.finished_at:
+        if isinstance(target.started_at, datetime) and isinstance(target.finished_at, datetime):
+            delta = target.finished_at - target.started_at
+            target.duration = delta.total_seconds()
+
+
+@event.listens_for(CronExecution, "before_update")
+def update_duration_on_update(mapper, connection, target):
+    """Update duration when finished_at changes"""
+    if target.started_at and target.finished_at:
+        if isinstance(target.started_at, datetime) and isinstance(target.finished_at, datetime):
+            delta = target.finished_at - target.started_at
+            target.duration = delta.total_seconds()
