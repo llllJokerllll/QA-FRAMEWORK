@@ -1,65 +1,67 @@
-import { Box, Card, CardContent, Typography, Avatar } from '@mui/material'
-import AccessTimeIcon from '@mui/icons-material/AccessTime'
-import { calculateTimeSaved } from '../../utils/timeCalculations'
+import { Card, CardContent, Typography, Box } from '@mui/material';
+import { Schedule as ScheduleIcon } from '@mui/icons-material';
+import { calculateTimeSaved, TimeSavedResult } from '../../utils/timeCalculations';
 
 interface TimeSavedCardProps {
-  executions: number
+  executions: number;
+  testCount?: number; // Optional: if not provided, uses executions
+  automatedTimeMinutes?: number; // Optional: defaults to 2 min per execution
 }
 
-export default function TimeSavedCard({ executions }: TimeSavedCardProps) {
-  const timeSaved = calculateTimeSaved(executions)
+export default function TimeSavedCard({
+  executions,
+  testCount,
+  automatedTimeMinutes
+}: TimeSavedCardProps) {
+  // Use testCount if provided, otherwise estimate from executions
+  const actualTestCount = testCount || executions * 5; // Assume 5 tests per execution
+
+  // Use automatedTimeMinutes if provided, otherwise estimate
+  const actualAutomatedTime = automatedTimeMinutes || executions * 2; // Assume 2 min per execution
+
+  const timeSaved: TimeSavedResult = calculateTimeSaved(actualTestCount, actualAutomatedTime);
 
   return (
-    <Card
-      sx={{
-        height: '100%',
-        background: 'linear-gradient(135deg, #7c3aed 0%, #a855f7 100%)',
-        color: 'white',
-        position: 'relative',
-        overflow: 'hidden',
-        transition: 'all 0.3s ease',
-        '&:hover': {
-          transform: 'translateY(-4px)',
-          boxShadow: '0 12px 20px -10px rgba(124, 58, 237, 0.5)',
-        },
-        '&::before': {
-          content: '""',
-          position: 'absolute',
-          top: 0,
-          right: 0,
-          width: '120px',
-          height: '120%',
-          background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.1))',
-        },
-      }}
-    >
+    <Card sx={{ height: '100%' }}>
       <CardContent>
-        <Box display="flex" alignItems="flex-start" justifyContent="space-between">
-          <Box>
-            <Typography variant="overline" sx={{ opacity: 0.9, letterSpacing: 1 }}>
-              Time Saved
-            </Typography>
-            <Typography variant="h3" fontWeight="bold" sx={{ mt: 1 }}>
-              {timeSaved.hours}h {timeSaved.minutes}m
-            </Typography>
-          </Box>
-          <Avatar
-            sx={{
-              bgcolor: 'rgba(255,255,255,0.2)',
-              width: 56,
-              height: 56,
-            }}
-          >
-            <AccessTimeIcon sx={{ fontSize: 32 }} />
-          </Avatar>
+        <Box display="flex" alignItems="center" mb={2}>
+          <ScheduleIcon sx={{ fontSize: 40, color: 'primary.main', mr: 2 }} />
+          <Typography variant="h6" component="div">
+            Time Saved
+          </Typography>
         </Box>
-        <Typography
-          variant="body2"
-          sx={{ mt: 2, opacity: 0.85 }}
+
+        <Box mb={2}>
+          <Typography variant="h3" component="div" color="primary" fontWeight="bold">
+            {timeSaved.formatted}
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            by automating {actualTestCount} tests
+          </Typography>
+        </Box>
+
+        <Box
+          sx={{
+            backgroundColor: 'success.light',
+            borderRadius: 1,
+            p: 1.5,
+            mt: 2,
+          }}
         >
-          By automating {executions} tests
-        </Typography>
+          <Typography variant="body2" color="success.contrastText">
+            <strong>Calculation:</strong>
+          </Typography>
+          <Typography variant="body2" color="success.contrastText">
+            • Manual: {actualTestCount} × 15min = {(actualTestCount * 15).toFixed(0)}min
+          </Typography>
+          <Typography variant="body2" color="success.contrastText">
+            • Automated: {actualAutomatedTime}min
+          </Typography>
+          <Typography variant="body2" color="success.contrastText" fontWeight="bold">
+            • Saved: {timeSaved.totalMinutes}min
+          </Typography>
+        </Box>
       </CardContent>
     </Card>
-  )
+  );
 }
