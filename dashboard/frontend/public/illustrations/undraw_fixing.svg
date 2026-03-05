@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
+  <rect x="50" y="50" width="300" height="200" rx="10" fill="#FEF3C7"/>
+  <circle cx="200" cy="120" r="50" fill="#F59E0B" opacity="0.3"/>
+  <path d="M200 90 L200 150 M170 120 L230 120" stroke="#F59E0B" stroke-width="8" stroke-linecap="round"/>
+  <circle cx="200" cy="120" r="20" fill="#F59E0B"/>
+  <rect x="120" y="180" width="160" height="20" rx="10" fill="#FBBF24"/>
+  <path d="M140 190 L160 190 M180 190 L220 190 M240 190 L260 190" stroke="#FEF3C7" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="330" cy="80" r="20" fill="#10B981" opacity="0.5"/>
+  <path d="M320 80 L330 90 L345 70" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <text x="200" y="260" text-anchor="middle" font-family="Arial" font-size="14" fill="#6B7280">Self-Healing in Progress</text>
+</svg>

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
+  <rect x="50" y="30" width="300" height="240" rx="10" fill="#DBEAFE"/>
+  <rect x="80" y="60" width="240" height="30" rx="5" fill="#3B82F6"/>
+  <circle cx="100" cy="75" r="10" fill="#10B981"/>
+  <rect x="80" y="110" width="240" height="30" rx="5" fill="#E5E7EB"/>
+  <circle cx="100" cy="125" r="10" fill="#F59E0B"/>
+  <rect x="80" y="160" width="240" height="30" rx="5" fill="#E5E7EB"/>
+  <circle cx="100" cy="175" r="10" fill="#10B981"/>
+  <rect x="80" y="210" width="100" height="30" rx="5" fill="#3B82F6"/>
+  <text x="130" y="230" text-anchor="middle" font-family="Arial" font-size="12" fill="white">Run Tests</text>
+  <path d="M330 50 L350 70 L330 90 L310 70 Z" fill="#F59E0B" opacity="0.5"/>
+  <text x="200" y="280" text-anchor="middle" font-family="Arial" font-size="14" fill="#6B7280">Testing Dashboard</text>
+</svg>

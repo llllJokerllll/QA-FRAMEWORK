@@ -1,11 +1,12 @@
-import { Box, Typography, Button, useTheme } from '@mui/material'
+import { Box, Typography, Button } from '@mui/material';
+import { Add as AddIcon } from '@mui/icons-material';
 
 interface EmptyStateProps {
-  illustration: string
-  title: string
-  description: string
-  actionLabel?: string
-  onAction?: () => void
+  illustration: string;
+  title: string;
+  description: string;
+  actionLabel?: string;
+  onAction?: () => void;
 }
 
 export default function EmptyState({
@@ -15,8 +16,6 @@ export default function EmptyState({
   actionLabel,
   onAction,
 }: EmptyStateProps) {
-  const theme = useTheme()
-
   return (
     <Box
       sx={{
@@ -29,42 +28,51 @@ export default function EmptyState({
         p: 4,
       }}
     >
+      {/* Illustration */}
       <Box
         component="img"
         src={illustration}
         alt={title}
         sx={{
-          width: 300,
-          height: 200,
-          maxWidth: '100%',
+          width: '100%',
+          maxWidth: '300px',
+          height: 'auto',
           mb: 3,
           opacity: 0.8,
         }}
+        onError={(e) => {
+          // Fallback if image doesn't load
+          e.currentTarget.style.display = 'none';
+        }}
       />
-      <Typography variant="h5" gutterBottom color="text.primary">
+
+      {/* Title */}
+      <Typography variant="h5" gutterBottom fontWeight="bold">
         {title}
       </Typography>
+
+      {/* Description */}
       <Typography
         variant="body1"
-        color="text.secondary"
-        sx={{ maxWidth: 500, mb: actionLabel ? 3 : 0 }}
+        color="textSecondary"
+        sx={{ maxWidth: '500px', mb: 3 }}
       >
         {description}
       </Typography>
+
+      {/* Action Button */}
       {actionLabel && onAction && (
         <Button
           variant="contained"
-          onClick={onAction}
+          color="primary"
           size="large"
-          sx={{
-            textTransform: 'none',
-            px: 4,
-            py: 1.5,
-          }}
+          startIcon={<AddIcon />}
+          onClick={onAction}
+          sx={{ mt: 2 }}
         >
           {actionLabel}
         </Button>
       )}
     </Box>
-  )
+  );
 }
