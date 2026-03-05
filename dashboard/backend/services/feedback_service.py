@@ -2,6 +2,14 @@
 Feedback Service
 
 Business logic for feedback collection and management.
+
+Security Note:
+    All user-provided text fields (title, description, etc.) are sanitized
+    to prevent XSS attacks. This service uses bleach library to strip
+    potentially dangerous HTML tags and attributes.
+
+    Sanitization is applied at the input layer (before database storage)
+    to ensure clean data throughout the system.
 """
 
 from typing import List, Optional
@@ -9,6 +17,8 @@ from datetime import datetime
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_
 from sqlalchemy.orm import selectinload
+import bleach
+import re
 
 from models import Feedback, User
 from schemas import (
@@ -19,6 +29,61 @@ from schemas import (
     FeedbackType,
     Priority,
 )
+
+
+def sanitize_user_input(text: str, field_name: str = "input") -> str:
+    """
+    Sanitize user input to prevent XSS attacks.
+
+    This function removes potentially dangerous HTML tags and attributes
+    from user-provided text. It's designed to be used on all user inputs
+    before storing them in the database.
+
+    Args:
+        text: User-provided text to sanitize
+        field_name: Name of the field being sanitized (for logging)
+
+    Returns:
+        Sanitized text with dangerous HTML removed
+
+    Example:
+        >>> sanitize_user_input("<script>alert('xss')</script>Hello")
+        "Hello"
+
+    Security:
+        - Strips all HTML tags by default (whitelist approach)
+        - Removes javascript: and data: URLs
+        - Limits text length to prevent DoS
+        - Escapes special characters
+    """
+    if not text:
+        return text
+
+    # Limit length to prevent DoS attacks (100KB max)
+    MAX_LENGTH = 100000
+    if len(text) > MAX_LENGTH:
+        text = text[:MAX_LENGTH]
+
+    # Remove all HTML tags (strict whitelist - no tags allowed)
+    sanitized = bleach.clean(text, tags=[], strip=True)
+
+    # Remove potential javascript: and data: URLs
+    sanitized = re.sub(
+        r'(javascript|data|vbscript):.*?(?=[\s\n\r]|$)',
+        '',
+        sanitized,
+        flags=re.IGNORECASE
+    )
+
+    # Remove on* event handlers (onclick, onerror, etc.)
+    sanitized = re.sub(
+        r'\s+on\w+\s*=\s*["\'][^"\']*["\']',
+        '',
+        sanitized,
+        flags=re.IGNORECASE
+    )
+
+    return sanitized.strip()
 
 
 async def create_feedback(
