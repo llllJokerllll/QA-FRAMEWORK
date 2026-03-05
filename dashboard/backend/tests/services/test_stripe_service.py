@@ -326,13 +326,29 @@ class TestUpdateSubscription:
             assert result["subscription_id"] == "sub_new"
     
     @pytest.mark.asyncio
-    async def test_update_subscription_success(self, mock_db, mock_user, mock_stripe_subscription):
+    async def test_update_subscription_success(self, mock_db, mock_user):
         """Test successful subscription update"""
         mock_user.stripe_subscription_id = "sub_test123"
         
+        # Create a subscription mock that behaves like a dict
+        mock_subscription = Mock()
+        mock_subscription.id = "sub_test123"
+        mock_subscription.status = "active"
+        
+        # Mock the subscription item
+        mock_item = Mock()
+        mock_item.id = "si_test123"
+        
+        # Make subscription subscriptable for ["items"]["data"][0].id
+        mock_subscription.__getitem__ = Mock(side_effect=lambda key: {
+            "items": {
+                "data": [mock_item]
+            }
+        }[key])
+        
         with patch('services.stripe_service.stripe.Subscription') as mock_sub_api:
-            mock_sub_api.retrieve.return_value = mock_stripe_subscription
-            mock_sub_api.modify.return_value = mock_stripe_subscription
+            mock_sub_api.retrieve.return_value = mock_subscription
+            mock_sub_api.modify.return_value = mock_subscription
             
             result = await update_subscription(mock_db, mock_user, "enterprise")
             
@@ -353,14 +369,24 @@ class TestUpdateSubscription:
             assert result["plan"] == "enterprise"
     
     @pytest.mark.asyncio
-    async def test_update_subscription_stripe_error(self, mock_db, mock_user, mock_stripe_subscription):
+    async def test_update_subscription_stripe_error(self, mock_db, mock_user):
         """Test update with Stripe error"""
         import stripe
         
         mock_user.stripe_subscription_id = "sub_test123"
         
+        # Create a subscription mock that behaves like a dict
+        mock_subscription = Mock()
+        mock_item = Mock()
+        mock_item.id = "si_test123"
+        mock_subscription.__getitem__ = Mock(side_effect=lambda key: {
+            "items": {
+                "data": [mock_item]
+            }
+        }[key])
+        
         with patch('services.stripe_service.stripe.Subscription') as mock_sub_api:
-            mock_sub_api.retrieve.return_value = mock_stripe_subscription
+            mock_sub_api.retrieve.return_value = mock_subscription
             mock_sub_api.modify.side_effect = stripe.error.StripeError("API error")
             
             with pytest.raises(Exception) as exc_info:

@@ -413,7 +413,10 @@ class TestListExecutionsService:
     async def test_list_executions_no_filters(self, mock_db, mock_execution):
         """Test listing executions without filters"""
         mock_result = AsyncMock()
-        mock_result.scalars.return_value.all.return_value = [mock_execution]
+        # Create a chain of mocks for scalars().all()
+        mock_scalars = AsyncMock()
+        mock_scalars.all = Mock(return_value=[mock_execution])
+        mock_result.scalars = Mock(return_value=mock_scalars)
         mock_db.execute.return_value = mock_result
         
         with patch('services.execution_service.cache_manager') as mock_cache_mgr:
@@ -446,7 +449,9 @@ class TestListExecutionsService:
     async def test_list_executions_with_suite_filter(self, mock_db, mock_execution):
         """Test listing executions filtered by suite"""
         mock_result = AsyncMock()
-        mock_result.scalars.return_value.all.return_value = [mock_execution]
+        mock_scalars = AsyncMock()
+        mock_scalars.all = Mock(return_value=[mock_execution])
+        mock_result.scalars = Mock(return_value=mock_scalars)
         mock_db.execute.return_value = mock_result
         
         with patch('services.execution_service.cache_manager') as mock_cache_mgr:
@@ -462,7 +467,9 @@ class TestListExecutionsService:
     async def test_list_executions_with_status_filter(self, mock_db, mock_execution):
         """Test listing executions filtered by status"""
         mock_result = AsyncMock()
-        mock_result.scalars.return_value.all.return_value = [mock_execution]
+        mock_scalars = AsyncMock()
+        mock_scalars.all = Mock(return_value=[mock_execution])
+        mock_result.scalars = Mock(return_value=mock_scalars)
         mock_db.execute.return_value = mock_result
         
         with patch('services.execution_service.cache_manager') as mock_cache_mgr:
@@ -478,7 +485,9 @@ class TestListExecutionsService:
     async def test_list_executions_with_pagination(self, mock_db, mock_execution):
         """Test listing executions with pagination"""
         mock_result = AsyncMock()
-        mock_result.scalars.return_value.all.return_value = [mock_execution]
+        mock_scalars = AsyncMock()
+        mock_scalars.all = Mock(return_value=[mock_execution])
+        mock_result.scalars = Mock(return_value=mock_scalars)
         mock_db.execute.return_value = mock_result
         
         with patch('services.execution_service.cache_manager') as mock_cache_mgr:
@@ -494,7 +503,9 @@ class TestListExecutionsService:
     async def test_list_executions_empty_result(self, mock_db):
         """Test listing executions when empty"""
         mock_result = AsyncMock()
-        mock_result.scalars.return_value.all.return_value = []
+        mock_scalars = AsyncMock()
+        mock_scalars.all = Mock(return_value=[])
+        mock_result.scalars = Mock(return_value=mock_scalars)
         mock_db.execute.return_value = mock_result
         
         with patch('services.execution_service.cache_manager') as mock_cache_mgr:
@@ -595,7 +606,9 @@ class TestCacheIntegration:
             
             mock_result = AsyncMock()
             mock_result.scalar_one_or_none = Mock(return_value=mock_execution)
-            mock_result.scalars.return_value.all.return_value = [mock_execution]
+            mock_scalars = AsyncMock()
+            mock_scalars.all = Mock(return_value=[mock_execution])
+            mock_result.scalars = Mock(return_value=mock_scalars)
             mock_db.execute.return_value = mock_result
             
             # Test list key with filters
