@@ -21,7 +21,7 @@ import {
   Visibility as VisibilityIcon,
 } from '@mui/icons-material'
 import { executionsAPI } from '../api/client'
-import { celebrateFirstTest, celebrateSuccess } from '../utils/celebrations'
+import { celebrateFirstSuccess, celebratePerfectRun } from '../utils/celebrations'
 import toast from 'react-hot-toast'
 import EmptyState from '../components/common/EmptyState'
 
@@ -36,7 +36,7 @@ export default function Executions() {
 
   const handleSuccessCelebration = () => {
     if (!celebratedFirstTestSet) {
-      celebrateFirstTest()
+      celebrateFirstSuccess()
       sessionStorage.setItem('celebratedFirstTest', 'true')
     }
 
@@ -47,7 +47,7 @@ export default function Executions() {
         execution.total_tests > 0 &&
         execution.passed_tests === execution.total_tests
       ) {
-        celebrateSuccess()
+        celebratePerfectRun()
       }
     })
   }
