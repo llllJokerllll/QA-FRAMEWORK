@@ -2,89 +2,92 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
-  DialogActions,
-  Button,
-  Box,
+  List,
+  ListItem,
+  ListItemText,
   Typography,
-  Table,
-  TableBody,
-  TableRow,
-  TableCell,
+  Box,
   Chip,
-  Divider,
-} from '@mui/material'
-import {
-  Keyboard as KeyboardIcon,
-} from '@mui/icons-material'
-
-interface ShortcutItem {
-  key: string
-  description: string
-}
+} from '@mui/material';
+import { Keyboard as KeyboardIcon } from '@mui/icons-material';
 
 interface KeyboardShortcutsDialogProps {
-  open: boolean
-  onClose: () => void
+  open: boolean;
+  onClose: () => void;
 }
 
-const shortcuts: ShortcutItem[] = [
-  { key: '/', description: 'Focus search input' },
-  { key: 'n', description: 'Navigate to Test Suites' },
-  { key: 'h', description: 'Navigate to Home/Dashboard' },
-  { key: '?', description: 'Show this help dialog' },
-  { key: 'Escape', description: 'Close dialog' },
-]
+const shortcuts = [
+  { key: '/', description: 'Focus search bar', category: 'Navigation' },
+  { key: 'n', description: 'Create new test', category: 'Actions' },
+  { key: 'h', description: 'Go to home/dashboard', category: 'Navigation' },
+  { key: '?', description: 'Show this help dialog', category: 'Help' },
+  { key: 'Esc', description: 'Close dialogs', category: 'Navigation' },
+];
 
-export default function KeyboardShortcutsDialog({ open, onClose }: KeyboardShortcutsDialogProps) {
+export default function KeyboardShortcutsDialog({
+  open,
+  onClose,
+}: KeyboardShortcutsDialogProps) {
+  // Group shortcuts by category
+  const groupedShortcuts = shortcuts.reduce((acc, shortcut) => {
+    if (!acc[shortcut.category]) {
+      acc[shortcut.category] = [];
+    }
+    acc[shortcut.category].push(shortcut);
+    return acc;
+  }, {} as Record<string, typeof shortcuts>);
+
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle>
-        <Box display="flex" alignItems="center" gap={2}>
-          <KeyboardIcon />
-          <Typography variant="h6">Keyboard Shortcuts</Typography>
+        <Box display="flex" alignItems="center" gap={1}>
+          <KeyboardIcon color="primary" />
+          <Typography variant="h6" fontWeight="bold">
+            Keyboard Shortcuts
+          </Typography>
         </Box>
       </DialogTitle>
       <DialogContent>
-        <Typography variant="body2" color="text.secondary" paragraph>
-          Power user keyboard shortcuts to navigate the application faster.
+        <Typography variant="body2" color="textSecondary" mb={2}>
+          Use keyboard shortcuts to navigate faster. Press the key combination to trigger the action.
         </Typography>
 
-        <Divider sx={{ my: 2 }} />
+        {Object.entries(groupedShortcuts).map(([category, items]) => (
+          <Box key={category} mb={3}>
+            <Typography variant="subtitle2" color="primary" fontWeight="bold" mb={1}>
+              {category}
+            </Typography>
+            <List dense disablePadding>
+              {items.map((shortcut, index) => (
+                <ListItem key={index} sx={{ px: 0 }}>
+                  <Box display="flex" alignItems="center" justifyContent="space-between" width="100%">
+                    <ListItemText
+                      primary={shortcut.description}
+                      primaryTypographyProps={{ variant: 'body2' }}
+                    />
+                    <Chip
+                      label={shortcut.key}
+                      size="small"
+                      sx={{
+                        fontFamily: 'monospace',
+                        fontWeight: 'bold',
+                        minWidth: 40,
+                        backgroundColor: 'grey.100',
+                      }}
+                    />
+                  </Box>
+                </ListItem>
+              ))}
+            </List>
+          </Box>
+        ))}
 
-        <Table>
-          <TableBody>
-            {shortcuts.map((shortcut) => (
-              <TableRow key={shortcut.key}>
-                <TableCell sx={{ width: '30%', pb: 1, pt: 1 }}>
-                  <Chip
-                    label={shortcut.key}
-                    variant="outlined"
-                    sx={{
-                      fontFamily: 'monospace',
-                      fontWeight: 'bold',
-                      fontSize: '0.875rem',
-                    }}
-                  />
-                </TableCell>
-                <TableCell sx={{ pb: 1, pt: 1 }}>
-                  <Typography variant="body2">{shortcut.description}</Typography>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-
-        <Divider sx={{ my: 2 }} />
-
-        <Typography variant="caption" color="text.secondary" display="block">
-          Press <strong>Escape</strong> or click outside to close this dialog
-        </Typography>
+        <Box mt={3} p={2} bgcolor="grey.50" borderRadius={1}>
+          <Typography variant="caption" color="textSecondary">
+            💡 Tip: Shortcuts are disabled when typing in input fields (except Esc)
+          </Typography>
+        </Box>
       </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose} variant="contained">
-          Got it!
-        </Button>
-      </DialogActions>
     </Dialog>
-  )
+  );
 }
