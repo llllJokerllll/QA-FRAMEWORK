@@ -5,8 +5,8 @@ from sqlalchemy.sql import func
 from sqlalchemy.orm import declarative_base, relationship
 from datetime import datetime
 
-# Import cron job models
-from models.cron import CronJob, CronExecution
+# Import cron job models (moved to migration files directly)
+# from cron import CronJob, CronExecution
 
 Base = declarative_base()
 
