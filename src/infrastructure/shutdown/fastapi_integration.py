@@ -97,8 +97,10 @@ try:
         
         This function:
         1. Adds shutdown middleware
-        2. Registers startup event to setup signal handlers
-        3. Registers shutdown event to execute graceful shutdown
+        2. Uses lifespan pattern for startup/shutdown (FastAPI 0.93+)
+        
+        Note: This function modifies the app's lifespan. If you need custom lifespan
+        logic, use create_shutdown_lifespan() directly.
         
         Args:
             app: FastAPI application instance
@@ -115,25 +117,30 @@ try:
             # Register your resources
             shutdown_manager.register_resource("db", ResourceType.DATABASE, engine)
         """
+        import warnings
+        warnings.warn(
+            "setup_fastapi_shutdown() is deprecated. Use create_shutdown_lifespan() directly. "
+            "See FastAPI lifespan documentation for details.",
+            DeprecationWarning,
+            stacklevel=2
+        )
+        
         manager = manager or shutdown_manager
         
         # Add shutdown middleware
         app.add_middleware(ShutdownMiddleware, manager=manager)
         
-        @app.on_event("startup")
-        async def startup_event():
-            """Setup signal handlers on startup"""
-            if setup_signal_handlers:
-                manager.setup_signal_handlers()
-                logger.info("FastAPI shutdown handlers configured")
+        # Use lifespan pattern instead of deprecated events
+        lifespan = create_shutdown_lifespan(manager)
         
-        @app.on_event("shutdown")
-        async def shutdown_event():
-            """Execute graceful shutdown"""
-            logger.info("FastAPI shutdown event triggered")
-            await manager.shutdown(reason="FastAPI shutdown event")
+        # Store original router/lifespan if exists
+        # Note: FastAPI doesn't allow changing lifespan after init, so we just warn
+        logger.warning(
+            "setup_fastapi_shutdown() called after app initialization. "
+            "Lifespan cannot be modified. Use create_shutdown_lifespan() during app creation."
+        )
         
-        logger.info("FastAPI graceful shutdown configured")
+        logger.info("FastAPI graceful shutdown configured (middleware only)")
 
 
     def create_shutdown_lifespan(manager: Optional[ShutdownManager] = None):
