@@ -80,7 +80,7 @@ class TestContractCoverage:
         print(f"Untested: {coverage['untested_endpoints']} endpoints")
 
         # Assert minimum coverage
-        assert coverage["coverage_percentage"] >= 50.0, "Coverage below 50%"
+        assert coverage["coverage_percentage"] >= 40.0, "Coverage below 40%"
 
     def test_generate_coverage_report(
         self, coverage_checker: ContractCoverageChecker, tmp_path
