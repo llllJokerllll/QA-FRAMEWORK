@@ -26,3 +26,7 @@ value = "${{JWT_SECRET_KEY}}"
 [[services.env]]
 name = "STRIPE_API_KEY"
 value = "${{STRIPE_API_KEY}}"
+
+[[services.env]]
+name = "STRIPE_WEBHOOK_SECRET"
+value = "${{STRIPE_WEBHOOK_SECRET}}"
