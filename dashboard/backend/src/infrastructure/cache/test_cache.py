@@ -13,7 +13,7 @@ Features:
 
 import logging
 import re
-from typing import Any, Optional, List
+from typing import Any, Optional, List, Dict
 from datetime import datetime, timedelta
 
 logger = logging.getLogger(__name__)

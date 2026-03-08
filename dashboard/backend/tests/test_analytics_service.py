@@ -3,6 +3,7 @@ Unit tests for Analytics Service
 """
 
 import pytest
+from typing import Dict, Any, List, Optional
 from unittest.mock import AsyncMock, MagicMock, patch
 from datetime import datetime, timedelta
 from sqlalchemy.ext.asyncio import AsyncSession

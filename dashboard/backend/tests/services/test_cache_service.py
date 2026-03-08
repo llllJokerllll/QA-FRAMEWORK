@@ -4,6 +4,7 @@ Unit tests for cache_service.py
 
 import pytest
 import json
+from typing import Dict, Any, Optional
 from unittest.mock import Mock, patch, MagicMock
 from datetime import datetime
 

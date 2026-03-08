@@ -3,6 +3,7 @@ Unit tests for parallel_execution_service.py
 """
 
 import pytest
+from typing import Dict, Any, List
 from unittest.mock import Mock, patch, MagicMock
 from datetime import datetime
 

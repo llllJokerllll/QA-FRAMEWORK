@@ -11,7 +11,7 @@ Metrics tracked:
 """
 
 import logging
-from typing import Dict, Any
+from typing import Dict, Any, Optional, List
 from datetime import datetime
 from collections import defaultdict
 

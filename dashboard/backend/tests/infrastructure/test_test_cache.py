@@ -5,6 +5,7 @@ Unit tests for test_cache.py
 import pytest
 import json
 import redis
+from typing import Dict, Any, Optional
 from unittest.mock import Mock, patch, MagicMock, call
 from datetime import datetime
 
