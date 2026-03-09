@@ -103,7 +103,9 @@ class BatchExecutionService:
                 )
 
                 results["results"].update(batch_results["results"])
-                results["stats"].update(batch_results["stats"])
+                # Accumulate stats instead of replacing
+                for key in ["passed", "failed", "errors", "skipped"]:
+                    results["stats"][key] += batch_results["stats"].get(key, 0)
 
             # Calculate execution time
             execution_time = (datetime.now() - start_time).total_seconds() * 1000
@@ -210,10 +212,10 @@ class BatchExecutionService:
         """
         results = {"results": {}, "stats": {"passed": 0, "failed": 0, "errors": 0, "skipped": 0}}
 
-        with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+        with ThreadPoolExecutor(max_workers=self.max_workers) as thread_executor:
             # Submit all tests
             future_to_test = {
-                executor.submit(self._execute_single_test, test_id, executor, use_cache, timeout): test_id
+                thread_executor.submit(self._execute_single_test, test_id, executor, use_cache, timeout): test_id
                 for test_id in batch
             }
 
@@ -270,9 +272,9 @@ class BatchExecutionService:
         chunks = self._create_batches(batch, chunk_size)
 
         for chunk in chunks:
-            with ThreadPoolExecutor(max_workers=len(chunk)) as executor:
+            with ThreadPoolExecutor(max_workers=len(chunk)) as thread_executor:
                 future_to_test = {
-                    executor.submit(self._execute_single_test, test_id, executor, use_cache, timeout): test_id
+                    thread_executor.submit(self._execute_single_test, test_id, executor, use_cache, timeout): test_id
                     for test_id in chunk
                 }
 
@@ -321,9 +323,11 @@ class BatchExecutionService:
         Returns:
             Result dictionary
         """
-        if use_cache:
-            cache_key = f"batch_execution_test_{test_id}"
+        # Include executor in cache key to differentiate between different executors
+        executor_id = id(executor) if executor else 0
+        cache_key = f"batch_execution_test_{test_id}_{executor_id}"
 
+        if use_cache:
             # Try to get from cache
             cached_result = self.cache_service.test_cache.get(cache_key)
             if cached_result:
@@ -332,13 +336,40 @@ class BatchExecutionService:
         try:
             # Execute test
             start_time = datetime.now()
-            result = executor(test_id)
+
+            # Handle timeout if specified
+            if timeout:
+                from concurrent.futures import TimeoutError as FuturesTimeoutError
+                import concurrent.futures
+
+                with concurrent.futures.ThreadPoolExecutor(max_workers=1) as timeout_executor:
+                    future = timeout_executor.submit(executor, test_id)
+                    try:
+                        result = future.result(timeout=timeout)
+                    except FuturesTimeoutError:
+                        raise TimeoutError(f"Test {test_id} exceeded timeout of {timeout}s")
+
+            else:
+                result = executor(test_id)
+
             execution_time = (datetime.now() - start_time).total_seconds() * 1000
+
+            # Determine status based on result
+            status = "passed"
+            if isinstance(result, dict):
+                if result.get("error"):
+                    status = "error"
+                elif result.get("passed") is False:
+                    status = "failed"
+                elif result.get("status") == "skipped":
+                    status = "skipped"
+                elif result.get("passed") is True:
+                    status = "passed"
 
             # Create result dict
             result_dict = {
                 "test_id": test_id,
-                "status": "passed" if result.get("passed", True) else "failed",
+                "status": status,
                 "result": result,
                 "execution_time_ms": execution_time,
                 "timestamp": datetime.now().isoformat()
@@ -347,7 +378,7 @@ class BatchExecutionService:
             # Cache the result
             if use_cache:
                 self.cache_service.test_cache.set(
-                    key=f"batch_execution_test_{test_id}",
+                    key=cache_key,
                     value=result_dict,
                     ttl=3600
                 )

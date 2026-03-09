@@ -1,0 +1,22 @@
+Fix all 59 failing tests to use REAL Railway Redis instead of mocks.
+
+## Context
+- 761 total tests, 698 passing, 59 failing
+- Redis connection already working (REDIS_URL configured)
+- Tests fail because they expect mocked behavior
+
+## Files to Fix (in order)
+1. tests/infrastructure/test_test_cache.py (18 failures)
+2. tests/services/test_batch_execution_service.py (19 failures)
+3. tests/services/test_parallel_execution_service.py (19 failures)
+4. tests/unit/test_auth_service.py (3 failures)
+
+## Rules
+- NO MOCKS for Redis
+- Use unique test keys with cleanup
+- Keep all 698 passing tests working
+- Achieve >= 80% coverage
+
+Read TEST_FIX_PROMPT.md for complete instructions.
+
+When finished, run: openclaw system event --text "Done: Fixed 59 Redis tests" --mode now

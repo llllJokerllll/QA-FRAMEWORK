@@ -83,16 +83,22 @@ class SharedResourceManager:
         """
         key = f"{resource_type}:{resource_id}" if resource_id else resource_type
 
+        # Check if resource type exists
+        if resource_type not in self._locks:
+            logger.debug(f"Resource type {resource_type} not found, nothing to release")
+            return
+
         with self._locks[resource_type]:
             if key in self._counters:
                 self._counters[key] -= 1
 
-            if self._counters[key] == 0:
-                # Clean up resource if no longer needed
-                if key in self._resources[resource_type]:
-                    del self._resources[resource_type][key]
-
-            logger.debug(f"Released resource: {key}, usage: {self._counters[key]}")
+                if self._counters[key] <= 0:
+                    # Clean up resource if no longer needed
+                    if key in self._resources[resource_type]:
+                        del self._resources[resource_type][key]
+                    del self._counters[key]
+                else:
+                    logger.debug(f"Released resource: {key}, usage: {self._counters[key]}")
 
     def get_usage(self, resource_type: str) -> Dict[str, int]:
         """
@@ -211,10 +217,10 @@ class ParallelExecutionService:
 
         try:
             # Use ThreadPoolExecutor for CPU-bound tasks
-            with ThreadPoolExecutor(max_workers=workers) as executor:
+            with ThreadPoolExecutor(max_workers=workers) as thread_executor:
                 # Submit all tests
                 future_to_test = {
-                    executor.submit(
+                    thread_executor.submit(
                         self._execute_single_test,
                         test_id,
                         executor,
@@ -320,9 +326,11 @@ class ParallelExecutionService:
         Returns:
             Result dictionary
         """
-        if use_cache:
-            cache_key = f"parallel_execution_test_{test_id}"
+        # Include executor in cache key to differentiate between different executors
+        executor_id = id(executor) if executor else 0
+        cache_key = f"parallel_execution_test_{test_id}_{executor_id}"
 
+        if use_cache:
             # Try to get from cache
             cached_result = self.test_cache.get(cache_key)
             if cached_result:
@@ -334,10 +342,22 @@ class ParallelExecutionService:
             result = executor(test_id)
             execution_time = (datetime.now() - start_time).total_seconds() * 1000
 
+            # Determine status based on result
+            status = "passed"
+            if isinstance(result, dict):
+                if result.get("error"):
+                    status = "error"
+                elif result.get("passed") is False:
+                    status = "failed"
+                elif result.get("status") == "skipped":
+                    status = "skipped"
+                elif result.get("passed") is True:
+                    status = "passed"
+
             # Create result dict
             result_dict = {
                 "test_id": test_id,
-                "status": "passed" if result.get("passed", True) else "failed",
+                "status": status,
                 "result": result,
                 "execution_time_ms": execution_time,
                 "timestamp": datetime.now().isoformat()
@@ -346,7 +366,7 @@ class ParallelExecutionService:
             # Cache the result
             if use_cache:
                 self.test_cache.set(
-                    key=f"parallel_execution_test_{test_id}",
+                    key=cache_key,
                     value=result_dict,
                     ttl=3600
                 )
@@ -391,10 +411,10 @@ class ParallelExecutionService:
 
     def cleanup_resources(self):
         """Clean up all shared resources."""
-        if self.shared_resources:
+        if self.shared_resources and self.resource_manager:
             # Release all resources
-            for resource_type in self._resources:
-                for resource_id in list(self._resources[resource_type].keys()):
+            for resource_type in list(self.resource_manager._resources.keys()):
+                for resource_id in list(self.resource_manager._resources[resource_type].keys()):
                     self.resource_manager.release(resource_type, resource_id)
 
             logger.info("All shared resources cleaned up")
