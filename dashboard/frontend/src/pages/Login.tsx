@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import {
   Box,
   Card,
@@ -56,19 +56,22 @@ export default function Login() {
 
   return (
     <Box
-      display="flex"
-      justifyContent="center"
-      alignItems="center"
-      minHeight="100vh"
-      sx={{ bgcolor: 'background.default' }}
+      sx={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        p: 2,
+      }}
     >
-      <Card sx={{ maxWidth: 400, width: '100%', mx: 2 }}>
-        <CardContent>
-          <Typography variant="h4" gutterBottom align="center">
+      <Card sx={{ maxWidth: 400, width: '100%' }}>
+        <CardContent sx={{ p: 4 }}>
+          <Typography variant="h4" gutterBottom align="center" fontWeight="bold">
             QA Framework
           </Typography>
-          <Typography variant="h6" gutterBottom align="center" color="textSecondary">
-            Dashboard Login
+          <Typography variant="body2" gutterBottom align="center" color="textSecondary">
+            Welcome back! Please login to your account.
           </Typography>
 
           {loginMutation.isError && (
@@ -111,7 +114,24 @@ export default function Login() {
 
           <Box sx={{ mt: 3, textAlign: 'center' }}>
             <Typography variant="body2" color="textSecondary">
-              Demo credentials: admin / admin123
+              <Link to="/forgot-password" style={{ color: '#667eea', textDecoration: 'none' }}>
+                Forgot password?
+              </Link>
+            </Typography>
+          </Box>
+
+          <Box sx={{ mt: 2, textAlign: 'center' }}>
+            <Typography variant="body2" color="textSecondary">
+              Don't have an account?{' '}
+              <Link to="/register" style={{ color: '#667eea', textDecoration: 'none', fontWeight: 'bold' }}>
+                Sign Up
+              </Link>
+            </Typography>
+          </Box>
+
+          <Box sx={{ mt: 2, textAlign: 'center' }}>
+            <Typography variant="caption" color="textSecondary">
+              Demo: admin / admin123
             </Typography>
           </Box>
         </CardContent>

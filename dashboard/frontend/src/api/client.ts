@@ -44,7 +44,30 @@ export const authAPI = {
   login: (username: string, password: string) =>
     apiClient.post('/auth/login', { username, password }),
   
+  register: (data: {
+    username: string
+    email: string
+    password: string
+    firstName?: string
+    lastName?: string
+  }) => apiClient.post('/users', data),
+  
   getMe: () => apiClient.get('/me'),
+  
+  forgotPassword: (email: string) =>
+    apiClient.post('/auth/forgot-password', { email }),
+  
+  resetPassword: (token: string, password: string) =>
+    apiClient.post('/auth/reset-password', { token, password }),
+  
+  verifyEmail: (email: string, code: string) =>
+    apiClient.post('/auth/verify-email', { email, code }),
+  
+  updateProfile: (data: any) =>
+    apiClient.put('/me', data),
+  
+  changePassword: (oldPassword: string, newPassword: string) =>
+    apiClient.post('/auth/change-password', { oldPassword, newPassword }),
 }
 
 export const suitesAPI = {
