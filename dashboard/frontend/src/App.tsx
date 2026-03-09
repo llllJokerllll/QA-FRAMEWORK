@@ -10,38 +10,74 @@ import Billing from './pages/Billing'
 import SelfHealing from './pages/SelfHealing'
 import Settings from './pages/Settings'
 import Login from './pages/Login'
+import Register from './pages/Register'
+import Landing from './pages/Landing'
+import ForgotPassword from './pages/ForgotPassword'
+import NotFound from './pages/NotFound'
 import useAuthStore from './stores/authStore'
 
 function App() {
   const { isAuthenticated } = useAuthStore()
   const [sidebarOpen, setSidebarOpen] = useState(true)
 
-  if (!isAuthenticated) {
-    return (
-      <Router>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="*" element={<Navigate to="/login" replace />} />
-        </Routes>
-      </Router>
-    )
-  }
-
   return (
     <Router>
-      <Layout sidebarOpen={sidebarOpen} onSidebarToggle={() => setSidebarOpen(!sidebarOpen)}>
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/suites" element={<TestSuites />} />
-          <Route path="/suites/:suiteId/cases" element={<TestCases />} />
-          <Route path="/executions" element={<Executions />} />
-          <Route path="/integrations" element={<Integrations />} />
-          <Route path="/billing" element={<Billing />} />
-          <Route path="/self-healing" element={<SelfHealing />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </Layout>
+      <Routes>
+        {/* Public routes */}
+        <Route path="/" element={<Landing />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        
+        {/* Protected routes */}
+        {isAuthenticated ? (
+          <>
+            <Route path="/dashboard" element={
+              <Layout sidebarOpen={sidebarOpen} onSidebarToggle={() => setSidebarOpen(!sidebarOpen)}>
+                <Dashboard />
+              </Layout>
+            } />
+            <Route path="/suites" element={
+              <Layout sidebarOpen={sidebarOpen} onSidebarToggle={() => setSidebarOpen(!sidebarOpen)}>
+                <TestSuites />
+              </Layout>
+            } />
+            <Route path="/suites/:suiteId/cases" element={
+              <Layout sidebarOpen={sidebarOpen} onSidebarToggle={() => setSidebarOpen(!sidebarOpen)}>
+                <TestCases />
+              </Layout>
+            } />
+            <Route path="/executions" element={
+              <Layout sidebarOpen={sidebarOpen} onSidebarToggle={() => setSidebarOpen(!sidebarOpen)}>
+                <Executions />
+              </Layout>
+            } />
+            <Route path="/integrations" element={
+              <Layout sidebarOpen={sidebarOpen} onSidebarToggle={() => setSidebarOpen(!sidebarOpen)}>
+                <Integrations />
+              </Layout>
+            } />
+            <Route path="/billing" element={
+              <Layout sidebarOpen={sidebarOpen} onSidebarToggle={() => setSidebarOpen(!sidebarOpen)}>
+                <Billing />
+              </Layout>
+            } />
+            <Route path="/self-healing" element={
+              <Layout sidebarOpen={sidebarOpen} onSidebarToggle={() => setSidebarOpen(!sidebarOpen)}>
+                <SelfHealing />
+              </Layout>
+            } />
+            <Route path="/settings" element={
+              <Layout sidebarOpen={sidebarOpen} onSidebarToggle={() => setSidebarOpen(!sidebarOpen)}>
+                <Settings />
+              </Layout>
+            } />
+          </>
+        ) : (
+          <Route path="*" element={<Navigate to="/login" replace />} />
+        )}
+        <Route path="*" element={<NotFound />} />
+      </Routes>
     </Router>
   )
 }
