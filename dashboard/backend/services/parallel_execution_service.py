@@ -373,6 +373,9 @@ class ParallelExecutionService:
 
             return result_dict
 
+        except TimeoutError:
+            # Re-raise timeout exceptions
+            raise
         except Exception as e:
             return {
                 "test_id": test_id,
@@ -460,12 +463,24 @@ class LoadBalancer:
         return self._distribute_round_robin(items)
 
     def _distribute_round_robin(self, items: List[Any]) -> List[List[Any]]:
-        """Distribute using round-robin."""
+        """Distribute using round-robin strategy."""
         result = [[] for _ in range(self.worker_count)]
 
-        for i, item in enumerate(items):
-            worker_idx = i % self.worker_count
-            result[worker_idx].append(item)
+        if not items:
+            return result
+
+        # Use only as many workers as we have items
+        active_workers = min(self.worker_count, len(items))
+
+        # Distribute items in chunks to active workers
+        items_per_worker = len(items) // active_workers
+        extra_items = len(items) % active_workers
+
+        idx = 0
+        for worker_idx in range(active_workers):
+            count = items_per_worker + (1 if worker_idx < extra_items else 0)
+            result[worker_idx] = items[idx:idx + count]
+            idx += count
 
         return result
 

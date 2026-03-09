@@ -236,6 +236,9 @@ class BatchExecutionService:
                     elif result["status"] == "skipped":
                         results["stats"]["skipped"] += 1
 
+                except TimeoutError as e:
+                    # Re-raise timeout exceptions to fail the entire batch
+                    raise
                 except Exception as e:
                     results["results"][test_id] = {
                         "status": "error",
@@ -294,6 +297,9 @@ class BatchExecutionService:
                         elif result["status"] == "skipped":
                             results["stats"]["skipped"] += 1
 
+                    except TimeoutError as e:
+                        # Re-raise timeout exceptions to fail the entire batch
+                        raise
                     except Exception as e:
                         results["results"][test_id] = {
                             "status": "error",
@@ -385,6 +391,9 @@ class BatchExecutionService:
 
             return result_dict
 
+        except TimeoutError:
+            # Re-raise timeout exceptions
+            raise
         except Exception as e:
             return {
                 "test_id": test_id,
