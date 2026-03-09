@@ -365,10 +365,10 @@ class BatchExecutionService:
             if isinstance(result, dict):
                 if result.get("error"):
                     status = "error"
+                elif result.get("skipped"):
+                    status = "skipped"
                 elif result.get("passed") is False:
                     status = "failed"
-                elif result.get("status") == "skipped":
-                    status = "skipped"
                 elif result.get("passed") is True:
                     status = "passed"
 
