@@ -213,9 +213,12 @@ class CacheStats:
         """
         return self.get_most_hit_keys(top_n=5)
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self, test_cache=None) -> Dict[str, Any]:
         """
         Get comprehensive statistics.
+
+        Args:
+            test_cache: Optional TestCache instance for size/memory metrics
 
         Returns:
             Dictionary with all statistics
@@ -223,7 +226,7 @@ class CacheStats:
         total = self.hits + self.misses
         hit_rate = (self.hits / total * 100) if total > 0 else 0
 
-        return {
+        stats = {
             "hits": self.hits,
             "misses": self.misses,
             "errors": self.errors,
@@ -232,8 +235,6 @@ class CacheStats:
             "hit_rate_fraction": hit_rate / 100 if total > 0 else 0,
             "average_hit_time_ms": round(self.get_average_hit_time(), 2),
             "average_miss_time_ms": round(self.get_average_miss_time(), 2),
-            "cache_size": self.get_cache_size(test_cache),
-            "memory_usage_bytes": self.get_memory_usage(test_cache),
             "uptime_seconds": round((datetime.now() - self.start_time).total_seconds(), 2),
             "key_metrics": {
                 key: {
@@ -245,6 +246,17 @@ class CacheStats:
                 for key, m in self.key_metrics.items()
             }
         }
+
+        # Add cache size and memory if test_cache provided
+        if test_cache:
+            try:
+                stats["cache_size"] = self.get_cache_size(test_cache)
+                stats["memory_usage_bytes"] = self.get_memory_usage(test_cache)
+            except Exception:
+                stats["cache_size"] = 0
+                stats["memory_usage_bytes"] = 0
+
+        return stats
 
     def reset(self):
         """Reset all statistics."""

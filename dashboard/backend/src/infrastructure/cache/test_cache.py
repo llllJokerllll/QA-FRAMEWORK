@@ -11,6 +11,8 @@ Features:
 - Performance metrics
 """
 
+import os
+import json
 import logging
 import re
 from typing import Any, Optional, List, Dict
@@ -35,15 +37,18 @@ class TestCache:
         Initialize test cache.
 
         Args:
-            redis_url: Redis connection URL (defaults to env var)
+            redis_url: Redis connection URL (defaults to REDIS_URL env var)
         """
         try:
             import redis
         except ImportError:
             raise ImportError("Redis is required. Install with: pip install redis")
 
+        # Use provided URL, then env var, then default
+        final_url = redis_url or os.getenv("REDIS_URL") or "redis://localhost:6379/0"
+
         self.redis = redis.from_url(
-            redis_url or "redis://localhost:6379/0",
+            final_url,
             decode_responses=True,
             socket_connect_timeout=5,
             socket_timeout=5
@@ -224,6 +229,8 @@ class TestCache:
             ttl = self.redis.ttl(key)
             if ttl == -1:  # Key exists but has no expiry
                 return None
+            if ttl == -2:  # Key doesn't exist
+                return None
             return ttl
         except Exception as e:
             logger.error(f"Test cache: Failed to get age for key {key}: {e}")
@@ -262,24 +269,32 @@ class TestCache:
             Number of entries
         """
         try:
-            return len(self.redis.dbsize())
+            return self.redis.dbsize()
         except Exception as e:
             logger.error(f"Test cache: Failed to get cache size: {e}")
             return 0
 
-    def get_memory_usage(self) -> int:
+    def get_memory_usage(self) -> Dict[str, Any]:
         """
-        Get memory usage in bytes.
+        Get memory usage info.
 
         Returns:
-            Memory usage in bytes
+            Dictionary with memory information
         """
         try:
             info = self.redis.info("memory")
-            return info.get("used_memory", 0)
+            return {
+                "used_memory": info.get("used_memory", 0),
+                "used_memory_human": info.get("used_memory_human", "0B"),
+                "used_memory_peak": info.get("used_memory_peak", 0),
+            }
         except Exception as e:
             logger.error(f"Test cache: Failed to get memory usage: {e}")
-            return 0
+            return {
+                "used_memory": 0,
+                "used_memory_human": "0B",
+                "used_memory_peak": 0,
+            }
 
     def get_all_keys(self) -> List[str]:
         """
@@ -354,24 +369,33 @@ class InMemoryCache:
 
     def __init__(self):
         self._cache = {}
+        self._ttl = {}  # Store TTL for each key
         self._timestamps = {}
 
     def get(self, key: str):
         """Get value from cache."""
         if key in self._cache:
             # Check if expired
-            if key in self._timestamps:
-                if (datetime.now() - self._timestamps[key]).total_seconds() > 3600:
-                    del self._cache[key]
-                    del self._timestamps[key]
+            if key in self._timestamps and key in self._ttl:
+                ttl = self._ttl[key]
+                elapsed = (datetime.now() - self._timestamps[key]).total_seconds()
+                if elapsed > ttl:
+                    # Expired - delete and return None
+                    if key in self._cache:
+                        del self._cache[key]
+                    if key in self._timestamps:
+                        del self._timestamps[key]
+                    if key in self._ttl:
+                        del self._ttl[key]
                     return None
             return self._cache[key]
         return None
 
     def set(self, key: str, value: Any, ttl: int = 3600):
-        """Set value in cache."""
+        """Set value in cache with TTL."""
         self._cache[key] = value
         self._timestamps[key] = datetime.now()
+        self._ttl[key] = ttl
 
     def delete(self, key: str):
         """Delete key from cache."""
@@ -379,11 +403,14 @@ class InMemoryCache:
             del self._cache[key]
         if key in self._timestamps:
             del self._timestamps[key]
+        if key in self._ttl:
+            del self._ttl[key]
 
     def clear_all(self):
         """Clear all cache."""
         self._cache = {}
         self._timestamps = {}
+        self._ttl = {}
 
     def get_keys_by_suite(self, test_suite_id: int) -> List[str]:
         """Get all keys for a suite."""
@@ -421,15 +448,20 @@ class InMemoryCache:
     def cleanup_expired(self) -> int:
         """Remove expired entries."""
         now = datetime.now()
-        expired = [
-            k for k, t in self._timestamps.items()
-            if (now - t).total_seconds() > 3600
-        ]
+        expired = []
+
+        for key, timestamp in self._timestamps.items():
+            ttl = self._ttl.get(key, 3600)  # Default 1 hour
+            elapsed = (now - timestamp).total_seconds()
+            if elapsed > ttl:
+                expired.append(key)
 
         for key in expired:
             if key in self._cache:
                 del self._cache[key]
             if key in self._timestamps:
                 del self._timestamps[key]
+            if key in self._ttl:
+                del self._ttl[key]
 
         return len(expired)
