@@ -205,4 +205,4 @@ Los servicios estarán disponibles en:
 2. Crear una rama (`git checkout -b feature/nueva-caracteristica`)
 3. Hacer commit (`git commit -am 'Añadir nueva característica'`)
 4. Hacer push (`git push origin feature/nueva-caracteristica`)
-5. Crear un Pull Request
+5. Crear un Pull Request# Trigger deploy manual
