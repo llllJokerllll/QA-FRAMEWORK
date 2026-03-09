@@ -14,6 +14,8 @@ from services.auth_service import get_current_user
 from core.logging_config import configure_logging, get_logger
 from models import User
 from integration.qa_framework_client import get_qa_test_suites
+from middleware.apm import APMMiddleware, init_app_info
+from prometheus_client import make_asgi_app
 
 # Configure structured logging
 log_level = os.getenv("LOG_LEVEL", "INFO")
@@ -46,12 +48,19 @@ app.add_middleware(
     # expose_headers=["Access-Control-Allow-Origin"]
 )
 
+# Add APM middleware
+app.add_middleware(APMMiddleware)
+
 # Include API routers
 app.include_router(api_router, prefix="/api/v1")
 app.include_router(health_router, prefix="/api/v1")
 
 # Include integration router
 include_integrations_router(app)
+
+# Add Prometheus metrics endpoint
+metrics_app = make_asgi_app()
+app.mount("/metrics", metrics_app)
 
 
 @app.on_event("startup")
@@ -60,6 +69,13 @@ async def startup_event():
     logger.info("Initializing QA-Framework Dashboard...")
     await init_db()
     set_startup_complete()
+    
+    # Initialize APM
+    init_app_info(
+        version="0.1.0",
+        environment=settings.ENVIRONMENT
+    )
+    
     logger.info("QA-Framework Dashboard initialized successfully")
 
 
