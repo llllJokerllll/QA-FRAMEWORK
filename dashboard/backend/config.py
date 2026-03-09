@@ -41,7 +41,7 @@ class Settings(BaseSettings):
     # Feature Flags
     ENABLE_BILLING: bool = os.getenv("ENABLE_BILLING", "false").lower() == "true"
 
-    model_config = SettingsConfigDict(env_file=".env")
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
     
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
