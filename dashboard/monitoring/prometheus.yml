@@ -14,14 +14,38 @@ scrape_configs:
     metrics_path: '/metrics'
     scheme: https
     
+  # PostgreSQL metrics (via postgres_exporter)
+  - job_name: 'postgresql'
+    static_configs:
+      - targets: ['postgres-exporter:9187']
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: 'qa-framework-db'
+
+  # Redis metrics (via redis_exporter)
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis-exporter:9121']
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: 'qa-framework-redis'
+
   # Prometheus self-monitoring
   - job_name: 'prometheus'
     static_configs:
       - targets: ['localhost:9090']
 
+  # Node exporter (system metrics)
+  - job_name: 'node'
+    static_configs:
+      - targets: ['node-exporter:9100']
+
 alerting:
   alertmanagers:
     - static_configs:
-        - targets: []
+        - targets: ['localhost:9093']
 
-rule_files: []
+rule_files:
+  - './prometheus/alerts/qa-framework-alerts.yml'

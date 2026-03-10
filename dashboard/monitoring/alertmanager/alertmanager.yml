@@ -34,6 +34,21 @@ receivers:
           *Severity:* {{ .Labels.severity }}
           *Instance:* {{ .Labels.instance }}
           {{ end }}
+    telegram_configs:
+      - bot_token: '${TELEGRAM_BOT_TOKEN:-}'
+        api_url: '${TELEGRAM_API_URL:-https://api.telegram.org}'
+        chat_id: '${TELEGRAM_CHAT_ID:-}'
+        parse_mode: 'HTML'
+        message: |
+          🚨 <b>QA-FRAMEWORK ALERT</b>
+
+          {{ range .Alerts }}
+          <b>Alert:</b> {{ .Annotations.summary }}
+          <b>Description:</b> {{ .Annotations.description }}
+          <b>Severity:</b> {{ .Labels.severity }}
+          <b>Instance:</b> {{ .Labels.instance }}
+          <b>Started:</b> {{ .StartsAt.Format "2006-01-02 15:04:05" }}
+          {{ end }}
 
   - name: 'critical-alerts'
     slack_configs:
@@ -64,6 +79,20 @@ receivers:
           <p><strong>Instance:</strong> {{ .Labels.instance }}</p>
           <hr>
           {{ end }}
+    telegram_configs:
+      - bot_token: '${TELEGRAM_BOT_TOKEN:-}'
+        api_url: '${TELEGRAM_API_URL:-https://api.telegram.org}'
+        chat_id: '${TELEGRAM_CHAT_ID:-}'
+        parse_mode: 'HTML'
+        message: |
+          🔴 <b>CRITICAL - QA-FRAMEWORK</b>
+
+          {{ range .Alerts }}
+          <b>{{ .Annotations.summary }}</b>
+          {{ .Annotations.description }}
+          <b>Instance:</b> {{ .Labels.instance }}
+          <b>Started:</b> {{ .StartsAt.Format "2006-01-02 15:04:05" }}
+          {{ end }}
 
   - name: 'warning-alerts'
     slack_configs:
@@ -74,6 +103,18 @@ receivers:
           {{ range .Alerts }}
           *Warning:* {{ .Annotations.summary }}
           *Description:* {{ .Annotations.description }}
+          {{ end }}
+    telegram_configs:
+      - bot_token: '${TELEGRAM_BOT_TOKEN:-}'
+        api_url: '${TELEGRAM_API_URL:-https://api.telegram.org}'
+        chat_id: '${TELEGRAM_CHAT_ID:-}'
+        parse_mode: 'HTML'
+        message: |
+          ⚠️ <b>WARNING - QA-FRAMEWORK</b>
+
+          {{ range .Alerts }}
+          <b>{{ .Annotations.summary }}</b>
+          {{ .Annotations.description }}
           {{ end }}
 
 inhibit_rules:
