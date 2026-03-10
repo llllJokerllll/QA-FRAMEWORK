@@ -1,5 +1,40 @@
-import { Box, Typography, Button } from '@mui/material';
+import { Box, Typography, Button, keyframes } from '@mui/material';
 import { Add as AddIcon } from '@mui/icons-material';
+import { ReactNode } from 'react';
+
+// Animation keyframes
+const fadeIn = keyframes`
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+`;
+
+const slideUp = keyframes`
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+`;
+
+const scaleIn = keyframes`
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+`;
 
 interface EmptyStateProps {
   illustration: string;
@@ -7,6 +42,8 @@ interface EmptyStateProps {
   description: string;
   actionLabel?: string;
   onAction?: () => void;
+  customIcon?: ReactNode;
+  variant?: 'default' | 'compact';
 }
 
 export default function EmptyState({
@@ -15,7 +52,11 @@ export default function EmptyState({
   description,
   actionLabel,
   onAction,
+  customIcon,
+  variant = 'default',
 }: EmptyStateProps) {
+  const isCompact = variant === 'compact';
+
   return (
     <Box
       sx={{
@@ -23,9 +64,10 @@ export default function EmptyState({
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        minHeight: '400px',
+        minHeight: isCompact ? '300px' : '400px',
         textAlign: 'center',
-        p: 4,
+        p: isCompact ? 2 : 4,
+        animation: `${fadeIn} 0.5s ease-out`,
       }}
     >
       {/* Illustration */}
@@ -35,10 +77,16 @@ export default function EmptyState({
         alt={title}
         sx={{
           width: '100%',
-          maxWidth: '300px',
+          maxWidth: isCompact ? '200px' : '300px',
           height: 'auto',
-          mb: 3,
-          opacity: 0.8,
+          mb: isCompact ? 2 : 3,
+          opacity: 0.9,
+          animation: `${scaleIn} 0.6s ease-out`,
+          filter: 'drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1))',
+          transition: 'transform 0.3s ease',
+          '&:hover': {
+            transform: 'scale(1.05)',
+          },
         }}
         onError={(e) => {
           // Fallback if image doesn't load
@@ -46,8 +94,32 @@ export default function EmptyState({
         }}
       />
 
+      {/* Custom Icon (alternative to illustration) */}
+      {customIcon && (
+        <Box
+          sx={{
+            mb: 3,
+            color: 'primary.main',
+            animation: `${scaleIn} 0.6s ease-out`,
+            '& svg': {
+              fontSize: 80,
+              opacity: 0.7,
+            },
+          }}
+        >
+          {customIcon}
+        </Box>
+      )}
+
       {/* Title */}
-      <Typography variant="h5" gutterBottom fontWeight="bold">
+      <Typography
+        variant={isCompact ? 'h6' : 'h5'}
+        gutterBottom
+        fontWeight="bold"
+        sx={{
+          animation: `${slideUp} 0.5s ease-out 0.1s both`,
+        }}
+      >
         {title}
       </Typography>
 
@@ -55,7 +127,11 @@ export default function EmptyState({
       <Typography
         variant="body1"
         color="textSecondary"
-        sx={{ maxWidth: '500px', mb: 3 }}
+        sx={{
+          maxWidth: '500px',
+          mb: isCompact ? 2 : 3,
+          animation: `${slideUp} 0.5s ease-out 0.2s both`,
+        }}
       >
         {description}
       </Typography>
@@ -68,7 +144,23 @@ export default function EmptyState({
           size="large"
           startIcon={<AddIcon />}
           onClick={onAction}
-          sx={{ mt: 2 }}
+          sx={{
+            mt: 2,
+            px: 4,
+            py: 1.5,
+            fontSize: '1rem',
+            fontWeight: 'bold',
+            boxShadow: 3,
+            animation: `${slideUp} 0.5s ease-out 0.3s both`,
+            transition: 'all 0.3s ease',
+            '&:hover': {
+              transform: 'translateY(-2px)',
+              boxShadow: 6,
+            },
+            '&:active': {
+              transform: 'translateY(0)',
+            },
+          }}
         >
           {actionLabel}
         </Button>

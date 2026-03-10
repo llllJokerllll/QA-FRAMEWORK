@@ -469,3 +469,15 @@ from schemas.cron import (
     CronExecutionStatus,
     CronStats
 )
+
+# Search Schemas
+from schemas.search import (
+    SearchQuery,
+    SearchResponse,
+    SearchResults,
+    SuiteSearchResult,
+    CaseSearchResult,
+    ExecutionSearchResult,
+    UserSearchResult,
+    SearchSuggestions
+)

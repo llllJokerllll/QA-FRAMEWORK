@@ -1,214 +1,211 @@
-"""
-Notification Service
-
-Handles notifications for:
-- Test completion
-- Flaky test detection
-- Subscription expiring
-- Weekly digest
-"""
-
+"""Notification service for QA-FRAMEWORK Dashboard."""
+from datetime import datetime
 from typing import List, Dict, Any, Optional
-from datetime import datetime, timedelta
-from sqlalchemy import select
+from sqlalchemy import select, and_, desc
 from sqlalchemy.ext.asyncio import AsyncSession
-import structlog
+from sqlalchemy.sql import func
 
-from models import User, TestExecution, TestSuite
-from services.email_service import send_email
-
-logger = structlog.get_logger()
+from models.notification import Notification
+from models.user import User
 
 
 class NotificationService:
-    """Service for managing notifications"""
-    
-    def __init__(self, db: AsyncSession):
-        self.db = db
-    
-    async def send_test_completion_notification(
-        self,
-        execution: TestExecution,
-        suite: TestSuite,
-        user: User
-    ):
-        """Send notification when test execution completes"""
-        
-        status_emoji = "✅" if execution.status == "passed" else "❌"
-        subject = f"{status_emoji} Test Suite Completed: {suite.name}"
-        
-        body = f"""
-Your test suite "{suite.name}" has completed.
+    """Service for managing notifications."""
 
-Status: {execution.status.upper()}
-Total Tests: {execution.total_tests}
-Passed: {execution.passed_tests}
-Failed: {execution.failed_tests}
-Duration: {execution.duration}s
-
-View results: https://qa-framework.io/executions/{execution.id}
-        """
-        
-        await send_email(
-            to=user.email,
-            subject=subject,
-            body=body
-        )
-        
-        logger.info(
-            "Test completion notification sent",
-            user_id=user.id,
-            execution_id=execution.id,
-            status=execution.status
-        )
-    
-    async def send_flaky_test_notification(
-        self,
-        test_name: str,
-        suite_name: str,
-        user: User
-    ):
-        """Send notification when flaky test is detected"""
-        
-        subject = f"⚠️ Flaky Test Detected: {test_name}"
-        
-        body = f"""
-A flaky test has been detected in your suite "{suite_name}".
-
-Test: {test_name}
-Detection Time: {datetime.utcnow().isoformat()}
-
-Flaky tests have inconsistent results and should be investigated.
-
-View details: https://qa-framework.io/tests/flaky
-        """
-        
-        await send_email(
-            to=user.email,
-            subject=subject,
-            body=body
-        )
-        
-        logger.info(
-            "Flaky test notification sent",
-            user_id=user.id,
-            test_name=test_name
-        )
-    
-    async def send_subscription_expiring_notification(
-        self,
-        user: User,
-        days_remaining: int
-    ):
-        """Send notification before subscription expires"""
-        
-        subject = f"⏰ Subscription Expiring in {days_remaining} Days"
-        
-        body = f"""
-Your QA-FRAMEWORK subscription will expire in {days_remaining} days.
-
-Current Plan: {user.subscription_plan.upper()}
-Expiry Date: {user.subscription_current_period_end}
-
-To avoid interruption, please renew your subscription:
-https://qa-framework.io/billing
-
-Thank you for using QA-FRAMEWORK!
-        """
-        
-        await send_email(
-            to=user.email,
-            subject=subject,
-            body=body
-        )
-        
-        logger.info(
-            "Subscription expiring notification sent",
-            user_id=user.id,
-            days_remaining=days_remaining
-        )
-    
-    async def send_weekly_digest(
-        self,
-        user: User
-    ):
-        """Send weekly summary of activity"""
-        
-        # Get last 7 days stats
-        start_date = datetime.utcnow() - timedelta(days=7)
-        
-        result = await self.db.execute(
-            select(
-                func.count(TestExecution.id).label('total'),
-                func.sum(
-                    func.case((TestExecution.status == 'passed', 1), else_=0)
-                ).label('passed')
-            )
-            .join(TestSuite)
-            .where(and_(
-                TestSuite.created_by == user.id,
-                TestExecution.started_at >= start_date
-            ))
-        )
-        
-        stats = result.first()
-        
-        total_executions = stats.total or 0
-        passed_executions = stats.passed or 0
-        success_rate = (passed_executions / total_executions * 100) if total_executions > 0 else 0
-        
-        subject = "📊 Your Weekly QA-FRAMEWORK Summary"
-        
-        body = f"""
-Here's your weekly summary for QA-FRAMEWORK:
-
-Total Test Executions: {total_executions}
-Success Rate: {success_rate:.1f}%
-Tests Passed: {passed_executions}
-Tests Failed: {total_executions - passed_executions}
-
-Time Saved: ~{(total_executions * 5) // 60} hours
-
-Keep up the great testing! 🚀
-
-View full report: https://qa-framework.io/analytics
-        """
-        
-        await send_email(
-            to=user.email,
-            subject=subject,
-            body=body
-        )
-        
-        logger.info(
-            "Weekly digest sent",
-            user_id=user.id,
-            total_executions=total_executions
-        )
-    
-    async def get_notification_preferences(
-        self,
-        user_id: int
-    ) -> Dict[str, bool]:
-        """Get user notification preferences"""
-        # Placeholder - would be stored in database
-        return {
-            "test_completion": True,
-            "flaky_test_detected": True,
-            "subscription_expiring": True,
-            "weekly_digest": False
-        }
-    
-    async def update_notification_preferences(
-        self,
+    @staticmethod
+    async def create_notification(
+        db: AsyncSession,
         user_id: int,
-        preferences: Dict[str, bool]
-    ):
-        """Update user notification preferences"""
-        # Placeholder - would update database
-        logger.info(
-            "Notification preferences updated",
+        type: str,
+        title: str,
+        message: str,
+        data: Optional[Dict[str, Any]] = None
+    ) -> Notification:
+        """Create a new notification."""
+        notification = Notification(
             user_id=user_id,
-            preferences=preferences
+            type=type,
+            title=title,
+            message=message,
+            data=data or {}
         )
-        return preferences
+        db.add(notification)
+        await db.commit()
+        await db.refresh(notification)
+        return notification
+
+    @staticmethod
+    async def get_user_notifications(
+        db: AsyncSession,
+        user_id: int,
+        unread_only: bool = False,
+        limit: int = 50,
+        offset: int = 0
+    ) -> tuple[List[Notification], int, int]:
+        """Get notifications for a user."""
+        # Base query
+        query = select(Notification).where(Notification.user_id == user_id)
+
+        # Filter unread only
+        if unread_only:
+            query = query.where(Notification.read == False)
+
+        # Order by created_at desc
+        query = query.order_by(desc(Notification.created_at))
+
+        # Get total count
+        count_query = select(func.count()).select_from(query.subquery())
+        total_result = await db.execute(count_query)
+        total = total_result.scalar()
+
+        # Get unread count
+        unread_query = select(func.count()).where(
+            and_(Notification.user_id == user_id, Notification.read == False)
+        )
+        unread_result = await db.execute(unread_query)
+        unread_count = unread_result.scalar()
+
+        # Apply pagination
+        query = query.offset(offset).limit(limit)
+
+        # Execute query
+        result = await db.execute(query)
+        notifications = result.scalars().all()
+
+        return notifications, total, unread_count
+
+    @staticmethod
+    async def mark_as_read(
+        db: AsyncSession,
+        notification_id: str,
+        user_id: int
+    ) -> bool:
+        """Mark a notification as read."""
+        result = await db.execute(
+            select(Notification).where(
+                and_(
+                    Notification.id == notification_id,
+                    Notification.user_id == user_id
+                )
+            )
+        )
+        notification = result.scalar_one_or_none()
+
+        if notification:
+            notification.read = True
+            await db.commit()
+            return True
+        return False
+
+    @staticmethod
+    async def mark_all_as_read(
+        db: AsyncSession,
+        user_id: int
+    ) -> int:
+        """Mark all notifications as read for a user."""
+        result = await db.execute(
+            select(Notification).where(
+                and_(
+                    Notification.user_id == user_id,
+                    Notification.read == False
+                )
+            )
+        )
+        notifications = result.scalars().all()
+
+        count = 0
+        for notification in notifications:
+            notification.read = True
+            count += 1
+
+        await db.commit()
+        return count
+
+    @staticmethod
+    async def delete_notification(
+        db: AsyncSession,
+        notification_id: str,
+        user_id: int
+    ) -> bool:
+        """Delete a notification."""
+        result = await db.execute(
+            select(Notification).where(
+                and_(
+                    Notification.id == notification_id,
+                    Notification.user_id == user_id
+                )
+            )
+        )
+        notification = result.scalar_one_or_none()
+
+        if notification:
+            await db.delete(notification)
+            await db.commit()
+            return True
+        return False
+
+    @staticmethod
+    async def create_test_completed_notification(
+        db: AsyncSession,
+        user_id: int,
+        suite_name: str,
+        suite_id: int,
+        execution_id: int,
+        pass_rate: float
+    ) -> Notification:
+        """Create notification for completed test."""
+        status = "passed" if pass_rate == 100 else "completed"
+        return await NotificationService.create_notification(
+            db=db,
+            user_id=user_id,
+            type="test_completed",
+            title=f"Test Suite {status.title()}",
+            message=f"{suite_name} completed with {pass_rate:.1f}% pass rate",
+            data={
+                "suite_id": suite_id,
+                "execution_id": execution_id,
+                "pass_rate": pass_rate
+            }
+        )
+
+    @staticmethod
+    async def create_test_failed_notification(
+        db: AsyncSession,
+        user_id: int,
+        suite_name: str,
+        suite_id: int,
+        execution_id: int,
+        failed_tests: int
+    ) -> Notification:
+        """Create notification for failed test."""
+        return await NotificationService.create_notification(
+            db=db,
+            user_id=user_id,
+            type="test_failed",
+            title="Test Suite Failed",
+            message=f"{suite_name} failed with {failed_tests} test(s) failing",
+            data={
+                "suite_id": suite_id,
+                "execution_id": execution_id,
+                "failed_tests": failed_tests
+            }
+        )
+
+    @staticmethod
+    async def create_suite_created_notification(
+        db: AsyncSession,
+        user_id: int,
+        suite_name: str,
+        suite_id: int
+    ) -> Notification:
+        """Create notification for new test suite."""
+        return await NotificationService.create_notification(
+            db=db,
+            user_id=user_id,
+            type="suite_created",
+            title="Test Suite Created",
+            message=f"New test suite '{suite_name}' has been created",
+            data={
+                "suite_id": suite_id
+            }
+        )

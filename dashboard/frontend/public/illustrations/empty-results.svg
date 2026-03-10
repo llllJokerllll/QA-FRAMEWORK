@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" fill="none">
+  <!-- Chart illustration for empty results -->
+  <defs>
+    <linearGradient id="chartGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#3B82F6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#60A5FA;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="400" height="300" fill="#F9FAFB"/>
+  
+  <!-- Chart container -->
+  <g transform="translate(50, 40)">
+    <!-- Grid lines -->
+    <line x1="0" y1="50" x2="300" y2="50" stroke="#E5E7EB" stroke-width="1"/>
+    <line x1="0" y1="100" x2="300" y2="100" stroke="#E5E7EB" stroke-width="1"/>
+    <line x1="0" y1="150" x2="300" y2="150" stroke="#E5E7EB" stroke-width="1"/>
+    <line x1="0" y1="200" x2="300" y2="200" stroke="#E5E7EB" stroke-width="1"/>
+    
+    <!-- Bars -->
+    <rect x="20" y="140" width="40" height="60" rx="4" fill="url(#chartGrad)" opacity="0.7"/>
+    <rect x="80" y="100" width="40" height="100" rx="4" fill="url(#chartGrad)" opacity="0.8"/>
+    <rect x="140" y="80" width="40" height="120" rx="4" fill="url(#chartGrad)" opacity="0.9"/>
+    <rect x="200" y="60" width="40" height="140" rx="4" fill="url(#chartGrad)"/>
+    <rect x="260" y="120" width="40" height="80" rx="4" fill="url(#chartGrad)" opacity="0.6"/>
+    
+    <!-- Trend line -->
+    <path d="M40 140 Q100 100 160 80 T280 70" stroke="#60A5FA" stroke-width="3" fill="none" stroke-dasharray="5,5">
+      <animate attributeName="stroke-dashoffset" from="100" to="0" dur="3s" repeatCount="indefinite"/>
+    </path>
+    
+    <!-- Dots on trend line -->
+    <circle cx="40" cy="140" r="4" fill="#3B82F6"/>
+    <circle cx="100" cy="100" r="4" fill="#3B82F6"/>
+    <circle cx="160" cy="80" r="4" fill="#3B82F6"/>
+    <circle cx="220" cy="70" r="4" fill="#3B82F6"/>
+    <circle cx="280" cy="75" r="4" fill="#3B82F6"/>
+  </g>
+  
+  <!-- Decorative elements -->
+  <circle cx="70" cy="60" r="15" fill="#3B82F6" opacity="0.1"/>
+  <circle cx="330" cy="80" r="12" fill="#60A5FA" opacity="0.15"/>
+  <circle cx="350" cy="220" r="10" fill="#3B82F6" opacity="0.1"/>
+  
+  <!-- Magnifying glass (suggesting "analyze") -->
+  <g transform="translate(300, 180)">
+    <circle cx="20" cy="20" r="18" stroke="#3B82F6" stroke-width="3" fill="none"/>
+    <line x1="34" y1="34" x2="48" y2="48" stroke="#3B82F6" stroke-width="3" stroke-linecap="round"/>
+  </g>
+</svg>

@@ -183,16 +183,114 @@ export default function Settings() {
           </Box>
           <Divider sx={{ mb: 2 }} />
           
-          <FormControlLabel
-            control={
-              <Switch
-                checked={darkMode}
-                onChange={(e) => setDarkMode(e.target.checked)}
-              />
-            }
-            label="Dark Mode"
-          />
-          <br />
+          <FormControl component="fieldset" sx={{ width: '100%' }}>
+            <FormLabel component="legend" sx={{ mb: 2 }}>
+              Theme Mode
+            </FormLabel>
+            <RadioGroup
+              value={themeMode}
+              onChange={handleThemeChange}
+              name="theme-mode-radio"
+            >
+              <Paper 
+                sx={{ 
+                  p: 2, 
+                  mb: 1, 
+                  cursor: 'pointer',
+                  border: themeMode === 'light' ? 2 : 0,
+                  borderColor: 'primary.main',
+                  '&:hover': { bgcolor: 'action.hover' },
+                }}
+                onClick={() => {
+                  setThemeMode('light')
+                  setMode('light')
+                  setSnackbar({ open: true, message: 'Theme changed to light mode', severity: 'success' })
+                }}
+              >
+                <FormControlLabel 
+                  value="light" 
+                  control={<Radio />} 
+                  label={
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                      <LightModeIcon sx={{ mr: 1, color: 'warning.main' }} />
+                      <Box>
+                        <Typography>Light</Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          Always use light theme
+                        </Typography>
+                      </Box>
+                    </Box>
+                  }
+                />
+              </Paper>
+              
+              <Paper 
+                sx={{ 
+                  p: 2, 
+                  mb: 1, 
+                  cursor: 'pointer',
+                  border: themeMode === 'dark' ? 2 : 0,
+                  borderColor: 'primary.main',
+                  '&:hover': { bgcolor: 'action.hover' },
+                }}
+                onClick={() => {
+                  setThemeMode('dark')
+                  setMode('dark')
+                  setSnackbar({ open: true, message: 'Theme changed to dark mode', severity: 'success' })
+                }}
+              >
+                <FormControlLabel 
+                  value="dark" 
+                  control={<Radio />} 
+                  label={
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                      <DarkModeIcon sx={{ mr: 1, color: 'info.main' }} />
+                      <Box>
+                        <Typography>Dark</Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          Always use dark theme
+                        </Typography>
+                      </Box>
+                    </Box>
+                  }
+                />
+              </Paper>
+              
+              <Paper 
+                sx={{ 
+                  p: 2, 
+                  cursor: 'pointer',
+                  border: themeMode === 'system' ? 2 : 0,
+                  borderColor: 'primary.main',
+                  '&:hover': { bgcolor: 'action.hover' },
+                }}
+                onClick={() => {
+                  setThemeMode('system')
+                  setMode('system')
+                  setSnackbar({ open: true, message: 'Theme set to follow system preference', severity: 'success' })
+                }}
+              >
+                <FormControlLabel 
+                  value="system" 
+                  control={<Radio />} 
+                  label={
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                      <SystemModeIcon sx={{ mr: 1, color: 'success.main' }} />
+                      <Box>
+                        <Typography>System</Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          Follow system preference (currently: {actualMode})
+                        </Typography>
+                      </Box>
+                    </Box>
+                  }
+                />
+              </Paper>
+            </RadioGroup>
+          </FormControl>
+          
+          <Divider sx={{ my: 2 }} />
+          
           <FormControlLabel
             control={
               <Switch

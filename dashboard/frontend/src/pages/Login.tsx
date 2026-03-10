@@ -7,6 +7,8 @@ import {
   TextField,
   Typography,
   Alert,
+  useTheme,
+  alpha,
 } from '@mui/material'
 import { useMutation } from 'react-query'
 import { authAPI } from '../api/client'
@@ -19,6 +21,7 @@ export default function Login() {
   const [password, setPassword] = useState('')
   const navigate = useNavigate()
   const { login } = useAuthStore()
+  const theme = useTheme()
 
   const loginMutation = useMutation(
     () => authAPI.login(username, password),
@@ -61,7 +64,7 @@ export default function Login() {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        background: `linear-gradient(135deg, ${theme.palette.primary.dark} 0%, ${theme.palette.secondary.dark} 100%)`,
         p: 2,
       }}
     >
@@ -120,7 +123,7 @@ export default function Login() {
 
           <Box sx={{ mt: 3, textAlign: 'center' }}>
             <Typography variant="body2" color="textSecondary">
-              <Link to="/forgot-password" style={{ color: '#667eea', textDecoration: 'none' }}>
+              <Link to="/forgot-password" style={{ color: theme.palette.primary.main, textDecoration: 'none' }}>
                 Forgot password?
               </Link>
             </Typography>
@@ -129,7 +132,7 @@ export default function Login() {
           <Box sx={{ mt: 2, textAlign: 'center' }}>
             <Typography variant="body2" color="textSecondary">
               Don't have an account?{' '}
-              <Link to="/register" style={{ color: '#667eea', textDecoration: 'none', fontWeight: 'bold' }}>
+              <Link to="/register" style={{ color: theme.palette.primary.main, textDecoration: 'none', fontWeight: 'bold' }}>
                 Sign Up
               </Link>
             </Typography>
