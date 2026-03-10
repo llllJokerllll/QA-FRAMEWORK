@@ -1,106 +1,76 @@
 import confetti from 'canvas-confetti';
 
-/**
- * Celebration utilities for test milestones
- * Limits celebrations to 1 per session to avoid spam
- */
-
-const SESSION_KEY_PREFIX = 'qa_framework_celebrated_';
+// Session storage to prevent spam
+let hasCelebratedFirstSuccess = false;
+let hasCelebratedPerfectScore = false;
 
 /**
- * Check if a celebration has already happened this session
- */
-function hasCelebrated(type: string): boolean {
-  return sessionStorage.getItem(SESSION_KEY_PREFIX + type) === 'true';
-}
-
-/**
- * Mark a celebration as done for this session
- */
-function markCelebrated(type: string): void {
-  sessionStorage.setItem(SESSION_KEY_PREFIX + type, 'true');
-}
-
-/**
- * Celebrate first successful test
- * Small, subtle confetti burst
+ * Trigger celebration for first successful test
  */
 export function celebrateFirstSuccess(): void {
-  if (hasCelebrated('first_success')) return;
-
-  confetti({
-    particleCount: 50,
-    spread: 60,
-    origin: { y: 0.7 },
-    colors: ['#10B981', '#34D399', '#6EE7B7'], // Green tones
-  });
-
-  markCelebrated('first_success');
-}
-
-/**
- * Celebrate 100% pass rate
- * Big celebration with multiple bursts
- */
-export function celebratePerfectRun(): void {
-  if (hasCelebrated('perfect_run')) return;
-
-  // First burst - center
+  if (hasCelebratedFirstSuccess) return;
+  
+  hasCelebratedFirstSuccess = true;
+  
   confetti({
     particleCount: 100,
     spread: 70,
     origin: { y: 0.6 },
-    colors: ['#F59E0B', '#FBBF24', '#FCD34D'], // Gold/yellow tones
+    colors: ['#10B981', '#34D399', '#6EE7B7'],
   });
+}
 
-  // Second burst - left side
-  setTimeout(() => {
+/**
+ * Trigger celebration for 100% pass rate
+ */
+export function celebratePerfectScore(): void {
+  if (hasCelebratedPerfectScore) return;
+  
+  hasCelebratedPerfectScore = true;
+  
+  // Multiple bursts for more impact
+  const duration = 3 * 1000;
+  const animationEnd = Date.now() + duration;
+  const colors = ['#10B981', '#3B82F6', '#F59E0B', '#EF4444'];
+
+  (function frame() {
     confetti({
-      particleCount: 50,
+      particleCount: 4,
       angle: 60,
       spread: 55,
-      origin: { x: 0, y: 0.7 },
-      colors: ['#10B981', '#34D399'],
+      origin: { x: 0 },
+      colors: colors,
     });
-  }, 200);
-
-  // Third burst - right side
-  setTimeout(() => {
     confetti({
-      particleCount: 50,
+      particleCount: 4,
       angle: 120,
       spread: 55,
-      origin: { x: 1, y: 0.7 },
-      colors: ['#3B82F6', '#60A5FA'],
+      origin: { x: 1 },
+      colors: colors,
     });
-  }, 400);
 
-  markCelebrated('perfect_run');
+    if (Date.now() < animationEnd) {
+      requestAnimationFrame(frame);
+    }
+  })();
 }
 
 /**
- * Celebrate milestone (10 tests, 50 tests, etc.)
- * Moderate celebration
+ * Trigger celebration for general test success
  */
-export function celebrateMilestone(milestone: number): void {
-  const key = `milestone_${milestone}`;
-  if (hasCelebrated(key)) return;
-
+export function celebrateTestSuccess(): void {
   confetti({
-    particleCount: 80,
-    spread: 100,
-    origin: { y: 0.5 },
-    colors: ['#8B5CF6', '#A78BFA', '#C4B5FD'], // Purple tones
+    particleCount: 50,
+    spread: 60,
+    origin: { y: 0.7 },
+    colors: ['#10B981', '#34D399'],
   });
-
-  markCelebrated(key);
 }
 
 /**
- * Reset all celebration states (for testing)
+ * Reset celebration flags (for new session)
  */
 export function resetCelebrations(): void {
-  Object.keys(sessionStorage)
-    .filter(key => key.startsWith(SESSION_KEY_PREFIX))
-    .forEach(key => sessionStorage.removeItem(key));
+  hasCelebratedFirstSuccess = false;
+  hasCelebratedPerfectScore = false;
 }
