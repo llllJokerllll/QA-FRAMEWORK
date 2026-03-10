@@ -13,6 +13,7 @@ class SearchQuery(BaseModel):
         description="Filter by entity types (suites, cases, executions, users)"
     )
     limit: int = Field(default=10, ge=1, le=50, description="Max results per type")
+    offset: int = Field(default=0, ge=0, description="Number of results to skip for pagination")
 
 
 class SuiteSearchResult(BaseModel):
@@ -85,6 +86,7 @@ class SearchResponse(BaseModel):
     query: str
     types: Optional[List[str]] = None
     limit: int
+    offset: int = 0
 
 
 class SearchSuggestions(BaseModel):

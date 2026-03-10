@@ -481,3 +481,53 @@ from schemas.search import (
     UserSearchResult,
     SearchSuggestions
 )
+
+
+# Bulk Operation Schemas
+class BulkOperationBase(BaseModel):
+    """Base schema for bulk operations."""
+    suite_ids: List[int] = Field(..., min_items=1, max_items=100)
+
+
+class BulkDeleteRequest(BulkOperationBase):
+    """Request schema for bulk delete operation."""
+    pass
+
+
+class BulkExecuteRequest(BaseModel):
+    """Request schema for bulk execute operation."""
+    suite_ids: List[int] = Field(..., min_items=1, max_items=50)
+    execution_type: str = Field(default="manual", pattern="^(manual|scheduled|ci)$")
+    environment: str = Field(default="production", pattern="^(dev|staging|production)$")
+
+
+class BulkArchiveRequest(BulkOperationBase):
+    """Request schema for bulk archive operation."""
+    pass
+
+
+class BulkOperationResult(BaseModel):
+    """Response schema for bulk operations."""
+    total_requested: int
+    successful: List[Dict[str, Any]]
+    failed: List[Dict[str, Any]]
+    not_found: List[Dict[str, Any]]
+
+
+class BulkDeleteResponse(BulkOperationResult):
+    """Response schema for bulk delete operation."""
+    pass
+
+
+class BulkExecuteResponse(BulkOperationResult):
+    """Response schema for bulk execute operation."""
+    pass
+
+
+class BulkArchiveResponse(BaseModel):
+    """Response schema for bulk archive operation."""
+    total_requested: int
+    successful: List[Dict[str, Any]]
+    failed: List[Dict[str, Any]]
+    not_found: List[Dict[str, Any]]
+    already_archived: List[Dict[str, Any]]

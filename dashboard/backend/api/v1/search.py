@@ -34,6 +34,7 @@ async def global_search(
         description="Comma-separated list of entity types (suites,cases,executions,users)"
     ),
     limit: int = Query(10, ge=1, le=50, description="Max results per type"),
+    offset: int = Query(0, ge=0, description="Number of results to skip for pagination"),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -89,6 +90,7 @@ async def global_search(
         query=q,
         types=types,
         limit=limit,
+        offset=offset,
         user_id=current_user.id,
     )
 
@@ -99,7 +101,7 @@ async def global_search(
             type_list = [t.strip().lower() for t in types.split(",")]
 
         # Create search query
-        search_query = SearchQuery(q=q, types=type_list, limit=limit)
+        search_query = SearchQuery(q=q, types=type_list, limit=limit, offset=offset)
 
         # Perform search
         search_service = SearchService(db)

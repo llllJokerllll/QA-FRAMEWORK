@@ -49,6 +49,7 @@ class SearchService:
             query=query.q,
             types=query.types,
             limit=query.limit,
+            offset=query.offset,
             user_id=user_id,
         )
 
@@ -68,22 +69,22 @@ class SearchService:
 
         # Search each entity type
         if "suites" in search_types:
-            suites = await self._search_suites(query.q, query.limit, user_id)
+            suites = await self._search_suites(query.q, query.limit, query.offset, user_id)
             results.suites = suites
             total += len(suites)
 
         if "cases" in search_types:
-            cases = await self._search_cases(query.q, query.limit, user_id)
+            cases = await self._search_cases(query.q, query.limit, query.offset, user_id)
             results.cases = cases
             total += len(cases)
 
         if "executions" in search_types:
-            executions = await self._search_executions(query.q, query.limit, user_id)
+            executions = await self._search_executions(query.q, query.limit, query.offset, user_id)
             results.executions = executions
             total += len(executions)
 
         if "users" in search_types:
-            users = await self._search_users(query.q, query.limit, user_id)
+            users = await self._search_users(query.q, query.limit, query.offset, user_id)
             results.users = users
             total += len(users)
 
@@ -103,44 +104,46 @@ class SearchService:
             query=query.q,
             types=query.types,
             limit=query.limit,
+            offset=query.offset,
         )
 
     async def _search_suites(
-        self, query: str, limit: int, user_id: int
+        self, query: str, limit: int, offset: int, user_id: int
     ) -> List[SuiteSearchResult]:
         """
         Search test suites using PostgreSQL full-text search.
 
         Uses tsvector for fast text search and pg_trgm for fuzzy matching.
         """
-        logger.debug("Searching test suites", query=query, limit=limit)
+        logger.debug("Searching test suites", query=query, limit=limit, offset=offset)
 
         # Try full-text search first
         search_query = text(
             """
-            SELECT 
-                id, 
-                name, 
-                description, 
-                framework_type, 
-                is_active, 
+            SELECT
+                id,
+                name,
+                description,
+                framework_type,
+                is_active,
                 created_at,
                 ts_rank(
                     to_tsvector('english', name || ' ' || COALESCE(description, '')),
                     plainto_tsquery('english', :query)
                 ) as relevance_score
             FROM test_suites
-            WHERE 
+            WHERE
                 is_active = true
-                AND to_tsvector('english', name || ' ' || COALESCE(description, '')) 
+                AND to_tsvector('english', name || ' ' || COALESCE(description, ''))
                     @@ plainto_tsquery('english', :query)
             ORDER BY relevance_score DESC
             LIMIT :limit
+            OFFSET :offset
             """
         )
 
         result = await self.db.execute(
-            search_query, {"query": query, "limit": limit}
+            search_query, {"query": query, "limit": limit, "offset": offset}
         )
         rows = result.fetchall()
 
@@ -149,23 +152,24 @@ class SearchService:
             logger.debug("No full-text results, trying fuzzy search")
             fuzzy_query = text(
                 """
-                SELECT 
-                    id, 
-                    name, 
-                    description, 
-                    framework_type, 
-                    is_active, 
+                SELECT
+                    id,
+                    name,
+                    description,
+                    framework_type,
+                    is_active,
                     created_at,
                     similarity(name, :query) as relevance_score
                 FROM test_suites
-                WHERE 
+                WHERE
                     is_active = true
                     AND similarity(name, :query) > 0.1
                 ORDER BY relevance_score DESC
                 LIMIT :limit
+                OFFSET :offset
                 """
             )
-            result = await self.db.execute(fuzzy_query, {"query": query, "limit": limit})
+            result = await self.db.execute(fuzzy_query, {"query": query, "limit": limit, "offset": offset})
             rows = result.fetchall()
 
         # Convert to response models
@@ -187,21 +191,21 @@ class SearchService:
         return suites
 
     async def _search_cases(
-        self, query: str, limit: int, user_id: int
+        self, query: str, limit: int, offset: int, user_id: int
     ) -> List[CaseSearchResult]:
         """
         Search test cases using PostgreSQL full-text search.
         """
-        logger.debug("Searching test cases", query=query, limit=limit)
+        logger.debug("Searching test cases", query=query, limit=limit, offset=offset)
 
         # Full-text search on name and description
         search_query = text(
             """
-            SELECT 
-                tc.id, 
-                tc.suite_id, 
-                tc.name, 
-                tc.description, 
+            SELECT
+                tc.id,
+                tc.suite_id,
+                tc.name,
+                tc.description,
                 tc.test_type,
                 tc.is_active,
                 ts_rank(
@@ -210,17 +214,18 @@ class SearchService:
                 ) as relevance_score
             FROM test_cases tc
             INNER JOIN test_suites ts ON tc.suite_id = ts.id
-            WHERE 
+            WHERE
                 tc.is_active = true
                 AND ts.is_active = true
-                AND to_tsvector('english', tc.name || ' ' || COALESCE(tc.description, '')) 
+                AND to_tsvector('english', tc.name || ' ' || COALESCE(tc.description, ''))
                     @@ plainto_tsquery('english', :query)
             ORDER BY relevance_score DESC
             LIMIT :limit
+            OFFSET :offset
             """
         )
 
-        result = await self.db.execute(search_query, {"query": query, "limit": limit})
+        result = await self.db.execute(search_query, {"query": query, "limit": limit, "offset": offset})
         rows = result.fetchall()
 
         # Fuzzy search fallback
@@ -228,25 +233,26 @@ class SearchService:
             logger.debug("No full-text results for cases, trying fuzzy search")
             fuzzy_query = text(
                 """
-                SELECT 
-                    tc.id, 
-                    tc.suite_id, 
-                    tc.name, 
-                    tc.description, 
+                SELECT
+                    tc.id,
+                    tc.suite_id,
+                    tc.name,
+                    tc.description,
                     tc.test_type,
                     tc.is_active,
                     similarity(tc.name, :query) as relevance_score
                 FROM test_cases tc
                 INNER JOIN test_suites ts ON tc.suite_id = ts.id
-                WHERE 
+                WHERE
                     tc.is_active = true
                     AND ts.is_active = true
                     AND similarity(tc.name, :query) > 0.1
                 ORDER BY relevance_score DESC
                 LIMIT :limit
+                OFFSET :offset
                 """
             )
-            result = await self.db.execute(fuzzy_query, {"query": query, "limit": limit})
+            result = await self.db.execute(fuzzy_query, {"query": query, "limit": limit, "offset": offset})
             rows = result.fetchall()
 
         # Convert to response models
@@ -268,27 +274,27 @@ class SearchService:
         return cases
 
     async def _search_executions(
-        self, query: str, limit: int, user_id: int
+        self, query: str, limit: int, offset: int, user_id: int
     ) -> List[ExecutionSearchResult]:
         """
         Search test executions by suite name or environment.
         """
-        logger.debug("Searching test executions", query=query, limit=limit)
+        logger.debug("Searching test executions", query=query, limit=limit, offset=offset)
 
         # Search by suite name or environment
         search_query = text(
             """
-            SELECT 
-                te.id, 
-                te.suite_id, 
-                ts.name as suite_name, 
+            SELECT
+                te.id,
+                te.suite_id,
+                ts.name as suite_name,
                 te.status,
                 te.environment,
                 te.created_at,
-                CASE 
-                    WHEN te.total_tests > 0 
+                CASE
+                    WHEN te.total_tests > 0
                     THEN (te.passed_tests::float / te.total_tests::float * 100)
-                    ELSE 0 
+                    ELSE 0
                 END as pass_rate,
                 ts_rank(
                     to_tsvector('english', ts.name || ' ' || te.environment),
@@ -296,15 +302,16 @@ class SearchService:
                 ) as relevance_score
             FROM test_executions te
             INNER JOIN test_suites ts ON te.suite_id = ts.id
-            WHERE 
-                to_tsvector('english', ts.name || ' ' || te.environment) 
+            WHERE
+                to_tsvector('english', ts.name || ' ' || te.environment)
                     @@ plainto_tsquery('english', :query)
             ORDER BY te.created_at DESC, relevance_score DESC
             LIMIT :limit
+            OFFSET :offset
             """
         )
 
-        result = await self.db.execute(search_query, {"query": query, "limit": limit})
+        result = await self.db.execute(search_query, {"query": query, "limit": limit, "offset": offset})
         rows = result.fetchall()
 
         # Fuzzy search fallback
@@ -312,17 +319,17 @@ class SearchService:
             logger.debug("No full-text results for executions, trying fuzzy search")
             fuzzy_query = text(
                 """
-                SELECT 
-                    te.id, 
-                    te.suite_id, 
-                    ts.name as suite_name, 
+                SELECT
+                    te.id,
+                    te.suite_id,
+                    ts.name as suite_name,
                     te.status,
                     te.environment,
                     te.created_at,
-                    CASE 
-                        WHEN te.total_tests > 0 
+                    CASE
+                        WHEN te.total_tests > 0
                         THEN (te.passed_tests::float / te.total_tests::float * 100)
-                        ELSE 0 
+                        ELSE 0
                     END as pass_rate,
                     similarity(ts.name, :query) as relevance_score
                 FROM test_executions te
@@ -330,9 +337,10 @@ class SearchService:
                 WHERE similarity(ts.name, :query) > 0.1
                 ORDER BY te.created_at DESC, relevance_score DESC
                 LIMIT :limit
+                OFFSET :offset
                 """
             )
-            result = await self.db.execute(fuzzy_query, {"query": query, "limit": limit})
+            result = await self.db.execute(fuzzy_query, {"query": query, "limit": limit, "offset": offset})
             rows = result.fetchall()
 
         # Convert to response models
@@ -355,36 +363,37 @@ class SearchService:
         return executions
 
     async def _search_users(
-        self, query: str, limit: int, user_id: int
+        self, query: str, limit: int, offset: int, user_id: int
     ) -> List[UserSearchResult]:
         """
         Search users by username or email.
         """
-        logger.debug("Searching users", query=query, limit=limit)
+        logger.debug("Searching users", query=query, limit=limit, offset=offset)
 
         # Search by username or email
         search_query = text(
             """
-            SELECT 
-                id, 
-                username, 
-                email, 
+            SELECT
+                id,
+                username,
+                email,
                 is_active,
                 ts_rank(
                     to_tsvector('english', username || ' ' || email),
                     plainto_tsquery('english', :query)
                 ) as relevance_score
             FROM users
-            WHERE 
+            WHERE
                 is_active = true
-                AND to_tsvector('english', username || ' ' || email) 
+                AND to_tsvector('english', username || ' ' || email)
                     @@ plainto_tsquery('english', :query)
             ORDER BY relevance_score DESC
             LIMIT :limit
+            OFFSET :offset
             """
         )
 
-        result = await self.db.execute(search_query, {"query": query, "limit": limit})
+        result = await self.db.execute(search_query, {"query": query, "limit": limit, "offset": offset})
         rows = result.fetchall()
 
         # Fuzzy search fallback
@@ -392,17 +401,17 @@ class SearchService:
             logger.debug("No full-text results for users, trying fuzzy search")
             fuzzy_query = text(
                 """
-                SELECT 
-                    id, 
-                    username, 
-                    email, 
+                SELECT
+                    id,
+                    username,
+                    email,
                     is_active,
                     GREATEST(
                         similarity(username, :query),
                         similarity(email, :query)
                     ) as relevance_score
                 FROM users
-                WHERE 
+                WHERE
                     is_active = true
                     AND (
                         similarity(username, :query) > 0.1
@@ -410,9 +419,10 @@ class SearchService:
                     )
                 ORDER BY relevance_score DESC
                 LIMIT :limit
+                OFFSET :offset
                 """
             )
-            result = await self.db.execute(fuzzy_query, {"query": query, "limit": limit})
+            result = await self.db.execute(fuzzy_query, {"query": query, "limit": limit, "offset": offset})
             rows = result.fetchall()
 
         # Convert to response models

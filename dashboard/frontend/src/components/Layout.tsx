@@ -30,6 +30,7 @@ import useAuthStore from '../stores/authStore'
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts'
 import KeyboardShortcutsDialog from './common/KeyboardShortcutsDialog'
 import DynamicBreadcrumb from './common/Breadcrumb'
+import NotificationDropdown from './notifications/NotificationDropdown'
 
 const drawerWidth = 240
 
@@ -116,6 +117,7 @@ export default function Layout({ children, sidebarOpen, onSidebarToggle }: Layou
           <Typography variant="body2" sx={{ mr: 2 }}>
             {user?.username}
           </Typography>
+          <NotificationDropdown />
           <IconButton
             color="inherit"
             onClick={toggleHelp}
