@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Box,
   Typography,
@@ -12,17 +12,27 @@ import {
   Alert,
   Snackbar,
   Grid,
+  Radio,
+  RadioGroup,
+  FormControl,
+  FormLabel,
+  Paper,
 } from '@mui/material'
 import {
   Person as PersonIcon,
   Notifications as NotificationsIcon,
   Security as SecurityIcon,
   Palette as PaletteIcon,
+  LightMode as LightModeIcon,
+  DarkMode as DarkModeIcon,
+  SettingsBrightness as SystemModeIcon,
 } from '@mui/icons-material'
 import useAuthStore from '../stores/authStore'
+import { useThemeContext, ThemeMode } from '../theme'
 
 export default function Settings() {
   const { user } = useAuthStore()
+  const { mode, actualMode, setMode } = useThemeContext()
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' })
   
   // Profile settings
@@ -35,8 +45,21 @@ export default function Settings() {
   const [weeklyReports, setWeeklyReports] = useState(false)
   
   // Appearance settings
-  const [darkMode, setDarkMode] = useState(false)
   const [compactMode, setCompactMode] = useState(false)
+
+  // Sync theme mode from context
+  const [themeMode, setThemeMode] = useState<ThemeMode>(mode)
+
+  useEffect(() => {
+    setThemeMode(mode)
+  }, [mode])
+
+  const handleThemeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const newMode = event.target.value as ThemeMode
+    setThemeMode(newMode)
+    setMode(newMode)
+    setSnackbar({ open: true, message: `Theme changed to ${newMode} mode`, severity: 'success' })
+  }
 
   const handleSaveProfile = () => {
     // TODO: Implement profile update API call
@@ -49,7 +72,7 @@ export default function Settings() {
   }
 
   const handleSaveAppearance = () => {
-    // TODO: Implement appearance settings update
+    // Theme is already saved via handleThemeChange
     setSnackbar({ open: true, message: 'Appearance settings saved!', severity: 'success' })
   }
 

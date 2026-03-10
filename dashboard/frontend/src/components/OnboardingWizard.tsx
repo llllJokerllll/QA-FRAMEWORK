@@ -1,13 +1,13 @@
-"""
-Onboarding Wizard - Multi-step onboarding flow
-
-Steps:
-1. Welcome + video demo
-2. Connect GitHub repo
-3. Create first test suite
-4. Run first test
-5. Setup notifications
-"""
+/**
+ * Onboarding Wizard - Multi-step onboarding flow
+ *
+ * Steps:
+ * 1. Welcome + video demo
+ * 2. Connect GitHub repo
+ * 3. Create first test suite
+ * 4. Run first test
+ * 5. Setup notifications
+ */
 
 import React, { useState } from 'react';
 import {

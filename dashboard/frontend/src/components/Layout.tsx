@@ -29,6 +29,7 @@ import { useNavigate } from 'react-router-dom'
 import useAuthStore from '../stores/authStore'
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts'
 import KeyboardShortcutsDialog from './common/KeyboardShortcutsDialog'
+import DynamicBreadcrumb from './common/Breadcrumb'
 
 const drawerWidth = 240
 
@@ -179,6 +180,7 @@ export default function Layout({ children, sidebarOpen, onSidebarToggle }: Layou
         }}
       >
         <Toolbar />
+        <DynamicBreadcrumb />
         {children}
       </Box>
 

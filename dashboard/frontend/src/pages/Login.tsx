@@ -5,7 +5,6 @@ import {
   Card,
   CardContent,
   TextField,
-  Button,
   Typography,
   Alert,
 } from '@mui/material'
@@ -13,6 +12,7 @@ import { useMutation } from 'react-query'
 import { authAPI } from '../api/client'
 import useAuthStore from '../stores/authStore'
 import toast from 'react-hot-toast'
+import LoadingButton from '../components/common/LoadingButton'
 
 export default function Login() {
   const [username, setUsername] = useState('')
@@ -89,6 +89,9 @@ export default function Login() {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               disabled={loginMutation.isLoading}
+              inputProps={{
+                'aria-label': 'Username',
+              }}
             />
             <TextField
               fullWidth
@@ -99,17 +102,20 @@ export default function Login() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               disabled={loginMutation.isLoading}
+              inputProps={{
+                'aria-label': 'Password',
+              }}
             />
-            <Button
+            <LoadingButton
               fullWidth
               type="submit"
               variant="contained"
               size="large"
               sx={{ mt: 3 }}
-              disabled={loginMutation.isLoading}
+              loading={loginMutation.isLoading}
             >
-              {loginMutation.isLoading ? 'Logging in...' : 'Login'}
-            </Button>
+              Login
+            </LoadingButton>
           </form>
 
           <Box sx={{ mt: 3, textAlign: 'center' }}>
