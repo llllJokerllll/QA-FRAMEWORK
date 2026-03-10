@@ -319,7 +319,7 @@ export default function Dashboard() {
           </Grid>
 
           <Grid item xs={12} sm={6} md={3}>
-            <TimeSavedCard executions={statsData?.total_executions || 0} />
+            <TimeSavedCard executions={recentData} totalTests={statsData?.total_tests} />
           </Grid>
         </Grid>
 

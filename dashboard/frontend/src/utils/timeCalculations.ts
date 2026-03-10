@@ -1,42 +1,27 @@
 /**
  * Time calculation utilities for QA-FRAMEWORK
- * Calculate time saved by test automation
  */
 
-/**
- * Average time for manual test execution (in minutes)
- * Industry standard: 15-30 minutes per test case
- */
-const MANUAL_TEST_TIME_MINUTES = 15;
-
-/**
- * Result of time saved calculation
- */
-export interface TimeSavedResult {
+export interface TimeSaved {
   hours: number;
   minutes: number;
   totalMinutes: number;
-  formatted: string;
 }
 
 /**
  * Calculate time saved by automation
- *
- * @param testCount - Number of tests automated
- * @param automatedTimeMinutes - Time taken to run automated tests (in minutes)
- * @returns TimeSavedResult with hours, minutes, and formatted string
- *
- * @example
- * calculateTimeSaved(50, 30)
- * // Returns: { hours: 12, minutes: 30, totalMinutes: 750, formatted: "12h 30m" }
- * // (50 tests * 15 min) - 30 min = 750 - 30 = 720 minutes = 12h
+ * @param numberOfTests Number of tests executed
+ * @param automatedTimeMinutes Actual automated execution time in minutes
+ * @param manualTestTimeMinutes Average manual test time (default: 15 minutes per test)
+ * @returns TimeSaved object with hours, minutes, and totalMinutes
  */
 export function calculateTimeSaved(
-  testCount: number,
-  automatedTimeMinutes: number
-): TimeSavedResult {
-  const manualTimeMinutes = testCount * MANUAL_TEST_TIME_MINUTES;
-  const savedMinutes = Math.max(0, manualTimeMinutes - automatedTimeMinutes);
+  numberOfTests: number,
+  automatedTimeMinutes: number,
+  manualTestTimeMinutes: number = 15
+): TimeSaved {
+  const manualTimeTotal = numberOfTests * manualTestTimeMinutes;
+  const savedMinutes = Math.max(0, manualTimeTotal - automatedTimeMinutes);
 
   const hours = Math.floor(savedMinutes / 60);
   const minutes = Math.round(savedMinutes % 60);
@@ -45,62 +30,75 @@ export function calculateTimeSaved(
     hours,
     minutes,
     totalMinutes: savedMinutes,
-    formatted: `${hours}h ${minutes}m`,
   };
 }
 
 /**
- * Calculate time saved percentage
- *
- * @param testCount - Number of tests automated
- * @param automatedTimeMinutes - Time taken to run automated tests (in minutes)
- * @returns Percentage of time saved (0-100)
- *
- * @example
- * calculateTimeSavedPercentage(50, 30)
- * // Returns: 96
- * // (750 - 30) / 750 * 100 = 96%
+ * Format time saved as human-readable string
+ * @param timeSaved TimeSaved object
+ * @returns Formatted string (e.g., "2h 30m")
+ */
+export function formatTimeSaved(timeSaved: TimeSaved): string {
+  if (timeSaved.hours === 0 && timeSaved.minutes === 0) {
+    return '0m';
+  }
+
+  const parts: string[] = [];
+  if (timeSaved.hours > 0) {
+    parts.push(`${timeSaved.hours}h`);
+  }
+  if (timeSaved.minutes > 0) {
+    parts.push(`${timeSaved.minutes}m`);
+  }
+
+  return parts.join(' ');
+}
+
+/**
+ * Calculate time saved from execution data
+ * @param executions Array of execution objects
+ * @returns TimeSaved object with cumulative time saved
+ */
+export function calculateCumulativeTimeSaved(executions: any[]): TimeSaved {
+  let totalManualMinutes = 0;
+  let totalAutomatedMinutes = 0;
+
+  executions.forEach((execution) => {
+    if (execution.status === 'completed') {
+      const testCount = execution.total_tests || 0;
+      const durationMinutes = execution.duration ? execution.duration / 60 : 0;
+
+      totalManualMinutes += testCount * 15; // 15 min per test average
+      totalAutomatedMinutes += durationMinutes;
+    }
+  });
+
+  const savedMinutes = Math.max(0, totalManualMinutes - totalAutomatedMinutes);
+  const hours = Math.floor(savedMinutes / 60);
+  const minutes = Math.round(savedMinutes % 60);
+
+  return {
+    hours,
+    minutes,
+    totalMinutes: savedMinutes,
+  };
+}
+
+/**
+ * Calculate percentage of time saved
+ * @param timeSaved TimeSaved object
+ * @param totalTests Total number of tests
+ * @param manualTestTimeMinutes Manual test time per test
+ * @returns Percentage (0-100)
  */
 export function calculateTimeSavedPercentage(
-  testCount: number,
-  automatedTimeMinutes: number
+  timeSaved: TimeSaved,
+  totalTests: number,
+  manualTestTimeMinutes: number = 15
 ): number {
-  const manualTimeMinutes = testCount * MANUAL_TEST_TIME_MINUTES;
-  if (manualTimeMinutes === 0) return 0;
+  const totalManualMinutes = totalTests * manualTestTimeMinutes;
+  if (totalManualMinutes === 0) return 0;
 
-  const savedMinutes = manualTimeMinutes - automatedTimeMinutes;
-  const percentage = (savedMinutes / manualTimeMinutes) * 100;
-
-  return Math.min(100, Math.max(0, Math.round(percentage)));
-}
-
-/**
- * Format minutes into human-readable string
- *
- * @param totalMinutes - Total minutes to format
- * @returns Formatted string (e.g., "2h 30m" or "45m")
- */
-export function formatTime(totalMinutes: number): string {
-  if (totalMinutes < 60) {
-    return `${Math.round(totalMinutes)}m`;
-  }
-
-  const hours = Math.floor(totalMinutes / 60);
-  const minutes = Math.round(totalMinutes % 60);
-
-  if (minutes === 0) {
-    return `${hours}h`;
-  }
-
-  return `${hours}h ${minutes}m`;
-}
-
-/**
- * Estimate manual test time for a given number of tests
- *
- * @param testCount - Number of tests
- * @returns Estimated time in minutes
- */
-export function estimateManualTestTime(testCount: number): number {
-  return testCount * MANUAL_TEST_TIME_MINUTES;
+  const savedPercentage = (timeSaved.totalMinutes / totalManualMinutes) * 100;
+  return Math.min(100, Math.round(savedPercentage));
 }

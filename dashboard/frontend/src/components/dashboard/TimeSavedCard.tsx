@@ -1,66 +1,109 @@
-import { Card, CardContent, Typography, Box } from '@mui/material';
-import { Schedule as ScheduleIcon } from '@mui/icons-material';
-import { calculateTimeSaved, TimeSavedResult } from '../../utils/timeCalculations';
+import { Card, CardContent, Typography, Box, LinearProgress } from '@mui/material';
+import { AccessTime as TimeIcon, TrendingUp as TrendingUpIcon } from '@mui/icons-material';
+import { useMemo } from 'react';
+import {
+  calculateCumulativeTimeSaved,
+  formatTimeSaved,
+  calculateTimeSavedPercentage,
+} from '../../utils/timeCalculations';
 
 interface TimeSavedCardProps {
-  executions: number;
-  testCount?: number; // Optional: if not provided, uses executions
-  automatedTimeMinutes?: number; // Optional: defaults to 2 min per execution
+  executions: any[];
+  totalTests?: number;
 }
 
-export default function TimeSavedCard({
-  executions,
-  testCount,
-  automatedTimeMinutes
-}: TimeSavedCardProps) {
-  // Use testCount if provided, otherwise estimate from executions
-  const actualTestCount = testCount || executions * 5; // Assume 5 tests per execution
+export default function TimeSavedCard({ executions, totalTests }: TimeSavedCardProps) {
+  const timeSaved = useMemo(() => {
+    return calculateCumulativeTimeSaved(executions || []);
+  }, [executions]);
 
-  // Use automatedTimeMinutes if provided, otherwise estimate
-  const actualAutomatedTime = automatedTimeMinutes || executions * 2; // Assume 2 min per execution
+  const formattedTime = formatTimeSaved(timeSaved);
 
-  const timeSaved: TimeSavedResult = calculateTimeSaved(actualTestCount, actualAutomatedTime);
+  const percentage = useMemo(() => {
+    const tests = totalTests || executions?.length || 0;
+    return calculateTimeSavedPercentage(timeSaved, tests);
+  }, [timeSaved, totalTests, executions]);
 
   return (
-    <Card sx={{ height: '100%' }}>
+    <Card
+      sx={{
+        height: '100%',
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        color: 'white',
+        position: 'relative',
+        overflow: 'hidden',
+      }}
+    >
       <CardContent>
         <Box display="flex" alignItems="center" mb={2}>
-          <ScheduleIcon sx={{ fontSize: 40, color: 'primary.main', mr: 2 }} />
-          <Typography variant="h6" component="div">
-            Time Saved
-          </Typography>
+          <TimeIcon sx={{ fontSize: 40, mr: 2, opacity: 0.9 }} />
+          <Box>
+            <Typography variant="h6" gutterBottom fontWeight="bold">
+              Time Saved
+            </Typography>
+            <Typography variant="body2" sx={{ opacity: 0.9 }}>
+              By automating tests
+            </Typography>
+          </Box>
         </Box>
 
-        <Box mb={2}>
-          <Typography variant="h3" component="div" color="primary" fontWeight="bold">
-            {timeSaved.formatted}
+        <Box mb={3}>
+          <Typography variant="h3" fontWeight="bold" gutterBottom>
+            {formattedTime}
           </Typography>
-          <Typography variant="body2" color="text.secondary">
-            by automating {actualTestCount} tests
-          </Typography>
+          <Box display="flex" alignItems="center">
+            <TrendingUpIcon sx={{ fontSize: 20, mr: 1 }} />
+            <Typography variant="body2">
+              {percentage}% faster than manual testing
+            </Typography>
+          </Box>
         </Box>
 
+        <Box>
+          <Box display="flex" justifyContent="space-between" mb={1}>
+            <Typography variant="body2">Efficiency</Typography>
+            <Typography variant="body2" fontWeight="bold">
+              {percentage}%
+            </Typography>
+          </Box>
+          <LinearProgress
+            variant="determinate"
+            value={percentage}
+            sx={{
+              height: 8,
+              borderRadius: 4,
+              backgroundColor: 'rgba(255, 255, 255, 0.3)',
+              '& .MuiLinearProgress-bar': {
+                backgroundColor: 'white',
+                borderRadius: 4,
+              },
+            }}
+          />
+        </Box>
+
+        {/* Decorative elements */}
         <Box
           sx={{
-            backgroundColor: 'success.light',
-            borderRadius: 1,
-            p: 1.5,
-            mt: 2,
+            position: 'absolute',
+            top: -20,
+            right: -20,
+            width: 120,
+            height: 120,
+            borderRadius: '50%',
+            backgroundColor: 'rgba(255, 255, 255, 0.1)',
           }}
-        >
-          <Typography variant="body2" color="success.contrastText">
-            <strong>Calculation:</strong>
-          </Typography>
-          <Typography variant="body2" color="success.contrastText">
-            • Manual: {actualTestCount} × 15min = {(actualTestCount * 15).toFixed(0)}min
-          </Typography>
-          <Typography variant="body2" color="success.contrastText">
-            • Automated: {actualAutomatedTime}min
-          </Typography>
-          <Typography variant="body2" color="success.contrastText" fontWeight="bold">
-            • Saved: {timeSaved.totalMinutes}min
-          </Typography>
-        </Box>
+        />
+        <Box
+          sx={{
+            position: 'absolute',
+            bottom: -30,
+            left: -30,
+            width: 100,
+            height: 100,
+            borderRadius: '50%',
+            backgroundColor: 'rgba(255, 255, 255, 0.05)',
+          }}
+        />
       </CardContent>
     </Card>
   );
