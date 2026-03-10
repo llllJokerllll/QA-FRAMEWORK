@@ -1,74 +1,78 @@
-import { Grid, Box, Typography, ToggleButtonGroup, ToggleButton } from '@mui/material';
+import { Box, Typography, Grid, Tabs, Tab, Chip } from '@mui/material';
 import { useState } from 'react';
 import AchievementBadge from './AchievementBadge';
+import { ACHIEVEMENTS } from '../../data/achievements';
 import { useAchievementsStore } from '../../stores/achievementsStore';
+import { AchievementCategory } from '../../types/achievements';
 
-type FilterType = 'all' | 'unlocked' | 'locked';
+const CATEGORIES: { value: AchievementCategory | 'all'; label: string }[] = [
+  { value: 'all', label: 'All' },
+  { value: 'testing', label: 'Testing' },
+  { value: 'automation', label: 'Automation' },
+  { value: 'quality', label: 'Quality' },
+  { value: 'speed', label: 'Speed' },
+  { value: 'dedication', label: 'Dedication' },
+  { value: 'special', label: 'Special' },
+];
 
 export default function AchievementsList() {
-  const [filter, setFilter] = useState<FilterType>('all');
-  const { achievements } = useAchievementsStore();
+  const [category, setCategory] = useState<AchievementCategory | 'all'>('all');
+  const { getStats } = useAchievementsStore();
+  const stats = getStats();
 
-  const filteredAchievements = achievements.filter((a) => {
-    if (filter === 'unlocked') return a.unlocked;
-    if (filter === 'locked') return !a.unlocked;
-    return true;
-  });
-
-  const handleFilterChange = (_: React.MouseEvent<HTMLElement>, newFilter: FilterType | null) => {
-    if (newFilter !== null) {
-      setFilter(newFilter);
-    }
-  };
-
-  const unlockedCount = achievements.filter((a) => a.unlocked).length;
-  const totalCount = achievements.length;
+  const filteredAchievements =
+    category === 'all'
+      ? ACHIEVEMENTS
+      : ACHIEVEMENTS.filter((a) => a.category === category);
 
   return (
     <Box>
-      {/* Header with Stats */}
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Box>
-          <Typography variant="h5" gutterBottom fontWeight="bold">
-            Achievements
-          </Typography>
-          <Typography variant="body2" color="textSecondary">
-            {unlockedCount} of {totalCount} unlocked
-          </Typography>
+      {/* Stats Header */}
+      <Box mb={3}>
+        <Typography variant="h6" gutterBottom fontWeight="bold">
+          Your Achievements
+        </Typography>
+        <Box display="flex" gap={2} alignItems="center">
+          <Chip
+            label={`${stats.unlockedCount}/${stats.totalCount} Unlocked`}
+            color="primary"
+            variant="outlined"
+          />
+          <Chip
+            label={`${stats.totalPoints} Points`}
+            color="secondary"
+            variant="outlined"
+          />
         </Box>
-
-        {/* Filter Toggle */}
-        <ToggleButtonGroup
-          value={filter}
-          exclusive
-          onChange={handleFilterChange}
-          size="small"
-        >
-          <ToggleButton value="all">All</ToggleButton>
-          <ToggleButton value="unlocked">Unlocked</ToggleButton>
-          <ToggleButton value="locked">Locked</ToggleButton>
-        </ToggleButtonGroup>
       </Box>
 
+      {/* Category Tabs */}
+      <Tabs
+        value={category}
+        onChange={(e, newValue) => setCategory(newValue)}
+        variant="scrollable"
+        scrollButtons="auto"
+        sx={{ mb: 3, borderBottom: 1, borderColor: 'divider' }}
+      >
+        {CATEGORIES.map((cat) => (
+          <Tab key={cat.value} label={cat.label} value={cat.value} />
+        ))}
+      </Tabs>
+
       {/* Achievements Grid */}
-      <Grid container spacing={3}>
+      <Grid container spacing={2}>
         {filteredAchievements.map((achievement) => (
-          <Grid item xs={12} sm={6} md={4} lg={3} key={achievement.id}>
-            <AchievementBadge achievement={achievement} />
+          <Grid item key={achievement.id}>
+            <AchievementBadge achievement={achievement} size="medium" />
           </Grid>
         ))}
       </Grid>
 
       {/* Empty State */}
       {filteredAchievements.length === 0 && (
-        <Box py={8} textAlign="center">
-          <Typography variant="h6" color="textSecondary" gutterBottom>
-            No achievements found
-          </Typography>
-          <Typography variant="body2" color="textSecondary">
-            {filter === 'unlocked'
-              ? "You haven't unlocked any achievements yet. Keep testing!"
-              : 'All achievements have been unlocked! 🎉'}
+        <Box py={4} textAlign="center">
+          <Typography color="textSecondary">
+            No achievements in this category yet
           </Typography>
         </Box>
       )}

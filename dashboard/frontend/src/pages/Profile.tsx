@@ -1,127 +1,113 @@
-import { Box, Typography, Card, CardContent, Avatar, Grid, Chip } from '@mui/material';
-import { Person as PersonIcon, EmojiEvents as EmojiEventsIcon } from '@mui/icons-material';
+import {
+  Box,
+  Card,
+  CardContent,
+  Typography,
+  Avatar,
+  Grid,
+  Chip,
+  Divider,
+  LinearProgress,
+} from '@mui/material';
+import {
+  Person as PersonIcon,
+  EmojiEvents as TrophyIcon,
+  Stars as StarsIcon,
+} from '@mui/icons-material';
 import AchievementsList from '../components/achievements/AchievementsList';
 import { useAchievementsStore } from '../stores/achievementsStore';
+import useAuthStore from '../stores/authStore';
 
 export default function Profile() {
-  const { totalPoints, unlockedCount, achievements } = useAchievementsStore();
+  const { user } = useAuthStore();
+  const { getStats } = useAchievementsStore();
+  const stats = getStats();
 
-  // Mock user data (in production, this would come from auth/API)
-  const user = {
-    name: 'Joker',
-    email: 'joker@qaframework.io',
-    avatar: null,
-    joinDate: new Date('2026-02-01'),
-  };
-
-  // Calculate stats
-  const totalCount = achievements.length;
-  const completionPercentage = Math.round((unlockedCount / totalCount) * 100);
+  const completionPercentage = (stats.unlockedCount / stats.totalCount) * 100;
 
   return (
     <Box>
       {/* Header */}
-      <Typography variant="h4" fontWeight="bold" gutterBottom>
-        Profile
+      <Typography variant="h4" gutterBottom fontWeight="bold">
+        Profile & Achievements
       </Typography>
 
       {/* User Info Card */}
-      <Card sx={{ mb: 4 }}>
+      <Card sx={{ mb: 4, boxShadow: 3 }}>
         <CardContent>
           <Grid container spacing={3} alignItems="center">
-            {/* Avatar */}
             <Grid item>
               <Avatar
                 sx={{
-                  width: 80,
-                  height: 80,
+                  width: 100,
+                  height: 100,
                   bgcolor: 'primary.main',
-                  fontSize: '2rem',
+                  fontSize: 48,
                 }}
               >
-                {user.avatar ? (
-                  <img src={user.avatar} alt={user.name} />
-                ) : (
-                  <PersonIcon sx={{ fontSize: 40 }} />
-                )}
+                <PersonIcon sx={{ fontSize: 60 }} />
               </Avatar>
             </Grid>
-
-            {/* User Details */}
             <Grid item xs>
-              <Typography variant="h5" fontWeight="bold">
-                {user.name}
+              <Typography variant="h5" fontWeight="bold" gutterBottom>
+                {user?.username || 'QA Tester'}
               </Typography>
-              <Typography variant="body2" color="textSecondary">
-                {user.email}
+              <Typography variant="body2" color="textSecondary" gutterBottom>
+                {user?.email || 'qa@example.com'}
               </Typography>
-              <Typography variant="caption" color="textSecondary">
-                Member since {user.joinDate.toLocaleDateString()}
-              </Typography>
-            </Grid>
-
-            {/* Stats */}
-            <Grid item>
-              <Box textAlign="right">
-                <Box display="flex" alignItems="center" gap={1} mb={1}>
-                  <EmojiEventsIcon color="primary" />
-                  <Typography variant="h4" fontWeight="bold" color="primary">
-                    {totalPoints}
-                  </Typography>
-                </Box>
-                <Typography variant="body2" color="textSecondary">
-                  Total Points
-                </Typography>
+              <Box display="flex" gap={1} mt={1}>
+                <Chip
+                  icon={<TrophyIcon />}
+                  label={`${stats.unlockedCount} Achievements`}
+                  color="primary"
+                  size="small"
+                />
+                <Chip
+                  icon={<StarsIcon />}
+                  label={`${stats.totalPoints} Points`}
+                  color="secondary"
+                  size="small"
+                />
               </Box>
             </Grid>
           </Grid>
+
+          <Divider sx={{ my: 3 }} />
+
+          {/* Progress */}
+          <Box>
+            <Box display="flex" justifyContent="space-between" mb={1}>
+              <Typography variant="body2" fontWeight="bold">
+                Completion Progress
+              </Typography>
+              <Typography variant="body2" color="textSecondary">
+                {stats.unlockedCount}/{stats.totalCount} (
+                {Math.round(completionPercentage)}%)
+              </Typography>
+            </Box>
+            <LinearProgress
+              variant="determinate"
+              value={completionPercentage}
+              sx={{
+                height: 10,
+                borderRadius: 5,
+                backgroundColor: '#E0E0E0',
+                '& .MuiLinearProgress-bar': {
+                  borderRadius: 5,
+                  background: 'linear-gradient(90deg, #667eea 0%, #764ba2 100%)',
+                },
+              }}
+            />
+          </Box>
         </CardContent>
       </Card>
 
-      {/* Stats Cards */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} sm={4}>
-          <Card>
-            <CardContent>
-              <Typography variant="h3" fontWeight="bold" color="primary">
-                {unlockedCount}
-              </Typography>
-              <Typography variant="body2" color="textSecondary">
-                Achievements Unlocked
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        <Grid item xs={12} sm={4}>
-          <Card>
-            <CardContent>
-              <Typography variant="h3" fontWeight="bold" color="secondary">
-                {totalCount - unlockedCount}
-              </Typography>
-              <Typography variant="body2" color="textSecondary">
-                Achievements Locked
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        <Grid item xs={12} sm={4}>
-          <Card>
-            <CardContent>
-              <Typography variant="h3" fontWeight="bold">
-                {completionPercentage}%
-              </Typography>
-              <Typography variant="body2" color="textSecondary">
-                Completion Rate
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
-
-      {/* Achievements List */}
-      <AchievementsList />
+      {/* Achievements Section */}
+      <Card sx={{ boxShadow: 3 }}>
+        <CardContent>
+          <AchievementsList />
+        </CardContent>
+      </Card>
     </Box>
   );
 }

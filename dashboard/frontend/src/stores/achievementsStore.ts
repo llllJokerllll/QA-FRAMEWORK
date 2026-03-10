@@ -1,93 +1,131 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { Achievement } from '../types/achievements';
-import { achievements as initialAchievements } from '../data/achievements';
+import { Achievement, UserAchievement, AchievementStats } from '../types/achievements';
+import { ACHIEVEMENTS } from '../data/achievements';
 
 interface AchievementsState {
-  achievements: Achievement[];
-  totalPoints: number;
-  unlockedCount: number;
-
-  // Actions
-  unlockAchievement: (id: string) => void;
-  updateProgress: (id: string, progress: number) => void;
-  resetAchievements: () => void;
-  getAchievement: (id: string) => Achievement | undefined;
+  userAchievements: UserAchievement[];
+  unlockAchievement: (achievementId: string) => void;
+  updateProgress: (achievementId: string, progress: number) => void;
+  getStats: () => AchievementStats;
+  isUnlocked: (achievementId: string) => boolean;
+  getProgress: (achievementId: string) => number;
+  reset: () => void;
 }
 
 export const useAchievementsStore = create<AchievementsState>()(
   persist(
     (set, get) => ({
-      achievements: initialAchievements,
-      totalPoints: 0,
-      unlockedCount: 0,
+      userAchievements: [],
 
-      unlockAchievement: (id: string) => {
-        set((state) => {
-          const achievement = state.achievements.find((a) => a.id === id);
-          if (!achievement || achievement.unlocked) return state;
+      unlockAchievement: (achievementId: string) => {
+        const { userAchievements } = get();
 
-          const updatedAchievements = state.achievements.map((a) =>
-            a.id === id
-              ? { ...a, unlocked: true, unlockedAt: new Date(), progress: a.total }
-              : a
-          );
+        // Check if already unlocked
+        if (userAchievements.some((ua) => ua.achievementId === achievementId)) {
+          return;
+        }
 
-          const newUnlockedCount = updatedAchievements.filter((a) => a.unlocked).length;
-          const newTotalPoints = updatedAchievements
-            .filter((a) => a.unlocked)
-            .reduce((sum, a) => sum + a.points, 0);
+        const newAchievement: UserAchievement = {
+          achievementId,
+          unlockedAt: new Date(),
+          progress: 100,
+        };
 
-          return {
-            achievements: updatedAchievements,
-            unlockedCount: newUnlockedCount,
-            totalPoints: newTotalPoints,
-          };
-        });
-      },
-
-      updateProgress: (id: string, progress: number) => {
-        set((state) => {
-          const achievement = state.achievements.find((a) => a.id === id);
-          if (!achievement || achievement.unlocked) return state;
-
-          const updatedAchievements = state.achievements.map((a) => {
-            if (a.id !== id) return a;
-
-            const newProgress = Math.min(progress, a.total || 0);
-            const shouldUnlock = newProgress >= (a.total || 0);
-
-            return {
-              ...a,
-              progress: newProgress,
-              unlocked: shouldUnlock,
-              unlockedAt: shouldUnlock ? new Date() : undefined,
-            };
-          });
-
-          const newUnlockedCount = updatedAchievements.filter((a) => a.unlocked).length;
-          const newTotalPoints = updatedAchievements
-            .filter((a) => a.unlocked)
-            .reduce((sum, a) => sum + a.points, 0);
-
-          return {
-            achievements: updatedAchievements,
-            unlockedCount: newUnlockedCount,
-            totalPoints: newTotalPoints,
-          };
-        });
-      },
-
-      resetAchievements: () => {
         set({
-          achievements: initialAchievements,
-          totalPoints: 0,
-          unlockedCount: 0,
+          userAchievements: [...userAchievements, newAchievement],
         });
+
+        // Show notification (you can integrate with toast here)
+        const achievement = ACHIEVEMENTS.find((a) => a.id === achievementId);
+        if (achievement) {
+          console.log(`🎉 Achievement Unlocked: ${achievement.name}!`);
+          // TODO: Show toast notification
+        }
       },
 
-      getAchievement: (id: string) => {
-        return get().achievements.find((a) => a.id === id);
+      updateProgress: (achievementId: string, progress: number) => {
+        const { userAchievements } = get();
+
+        const existingIndex = userAchievements.findIndex(
+          (ua) => ua.achievementId === achievementId
+        );
+
+        if (existingIndex >= 0) {
+          // Update existing progress
+          const updated = [...userAchievements];
+          updated[existingIndex] = {
+            ...updated[existingIndex],
+            progress: Math.min(100, progress),
+          };
+          set({ userAchievements: updated });
+        } else {
+          // Add new progress entry
+          set({
+            userAchievements: [
+              ...userAchievements,
+              {
+                achievementId,
+                unlockedAt: new Date(),
+                progress: Math.min(100, progress),
+              },
+            ],
+          });
+        }
+
+        // Auto-unlock if progress reaches 100%
+        if (progress >= 100) {
+          get().unlockAchievement(achievementId);
+        }
+      },
+
+      getStats: (): AchievementStats => {
+        const { userAchievements } = get();
+
+        const unlockedIds = userAchievements
+          .filter((ua) => ua.progress >= 100)
+          .map((ua) => ua.achievementId);
+
+        const unlockedAchievements = ACHIEVEMENTS.filter((a) =>
+          unlockedIds.includes(a.id)
+        );
+
+        const totalPoints = unlockedAchievements.reduce(
+          (sum, a) => sum + a.points,
+          0
+        );
+
+        const byCategory = {} as Record<string, number>;
+        const byRarity = {} as Record<string, number>;
+
+        unlockedAchievements.forEach((a) => {
+          byCategory[a.category] = (byCategory[a.category] || 0) + 1;
+          byRarity[a.rarity] = (byRarity[a.rarity] || 0) + 1;
+        });
+
+        return {
+          totalPoints,
+          unlockedCount: unlockedAchievements.length,
+          totalCount: ACHIEVEMENTS.length,
+          byCategory: byCategory as any,
+          byRarity: byRarity as any,
+        };
+      },
+
+      isUnlocked: (achievementId: string): boolean => {
+        const { userAchievements } = get();
+        const ua = userAchievements.find((ua) => ua.achievementId === achievementId);
+        return ua !== undefined && ua.progress >= 100;
+      },
+
+      getProgress: (achievementId: string): number => {
+        const { userAchievements } = get();
+        const ua = userAchievements.find((ua) => ua.achievementId === achievementId);
+        return ua?.progress || 0;
+      },
+
+      reset: () => {
+        set({ userAchievements: [] });
       },
     }),
     {

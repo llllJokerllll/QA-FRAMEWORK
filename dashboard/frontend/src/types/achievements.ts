@@ -3,40 +3,42 @@
  */
 
 export type AchievementCategory =
-  | 'tests'
-  | 'execution'
-  | 'streak'
-  | 'feature'
+  | 'testing'
+  | 'automation'
+  | 'quality'
+  | 'speed'
+  | 'dedication'
   | 'special';
 
-export type AchievementIcon =
-  | 'emoji_events'
-  | 'star'
-  | 'military_tech'
-  | 'workspace_premium'
-  | 'local_fire_department'
-  | 'auto_fix_high'
-  | 'science'
-  | 'bolt';
+export type AchievementRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
 
 export interface Achievement {
   id: string;
   name: string;
   description: string;
-  icon: AchievementIcon;
+  icon: string; // Emoji or icon identifier
   category: AchievementCategory;
-  unlocked: boolean;
+  rarity: AchievementRarity;
+  points: number;
+  requirement: {
+    type: 'test_count' | 'execution_count' | 'pass_rate' | 'time_based' | 'streak';
+    value: number;
+    metadata?: Record<string, any>;
+  };
   unlockedAt?: Date;
-  progress?: number; // Current progress (e.g., 7 for "7-Day Streak")
-  total?: number; // Total needed (e.g., 7 for "7-Day Streak")
-  points: number; // Gamification points
-  rarity: 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
+  progress?: number; // 0-100
 }
 
-export interface UserAchievements {
-  userId: string;
+export interface UserAchievement {
+  achievementId: string;
+  unlockedAt: Date;
+  progress: number;
+}
+
+export interface AchievementStats {
   totalPoints: number;
-  achievements: Achievement[];
   unlockedCount: number;
   totalCount: number;
+  byCategory: Record<AchievementCategory, number>;
+  byRarity: Record<AchievementRarity, number>;
 }
