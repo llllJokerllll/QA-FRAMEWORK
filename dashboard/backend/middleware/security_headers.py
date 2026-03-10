@@ -1,83 +1,107 @@
 """
-Security Headers Middleware
+Security Headers Middleware for QA-FRAMEWORK.
 
-Adds security headers to all responses:
-- X-Content-Type-Options: nosniff
-- X-Frame-Options: DENY
-- X-XSS-Protection: 1; mode=block
-- Content-Security-Policy: default-src 'self'
-- Strict-Transport-Security: max-age=31536000; includeSubDomains
-- Referrer-Policy: strict-origin-when-cross-origin
-- Permissions-Policy: restrictive defaults
+Adds essential security headers to all responses to protect against
+common web vulnerabilities (XSS, clickjacking, MIME sniffing, etc.)
 """
 
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
-from typing import Callable
 
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     """
-    Security headers middleware for FastAPI
+    Middleware that adds security headers to all HTTP responses.
     
-    Adds security headers to all responses to protect against:
-    - MIME type sniffing
-    - Clickjacking
-    - XSS attacks
-    - Man-in-the-middle attacks
-    - Information leakage
-    
-    Usage:
-        app.add_middleware(SecurityHeadersMiddleware)
+    Headers added:
+    - X-Frame-Options: Prevents clickjacking
+    - X-Content-Type-Options: Prevents MIME sniffing
+    - Strict-Transport-Security: Forces HTTPS
+    - X-XSS-Protection: XSS filter (legacy but still useful)
+    - Content-Security-Policy: Prevents XSS and injection attacks
+    - Referrer-Policy: Controls referrer information
+    - Permissions-Policy: Restricts browser features
     """
     
-    async def dispatch(self, request: Request, call_next: Callable) -> Response:
-        """Add security headers to response"""
-        
-        # Process request
-        response = await call_next(request)
+    async def dispatch(self, request: Request, call_next):
+        # Call next middleware/route handler
+        response: Response = await call_next(request)
         
         # Add security headers
-        response.headers["X-Content-Type-Options"] = "nosniff"
-        response.headers["X-Frame-Options"] = "DENY"
-        response.headers["X-XSS-Protection"] = "1; mode=block"
-        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
-        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-        response.headers["Permissions-Policy"] = (
-            "accelerometer=(), camera=(), geolocation=(), gyroscope=(), "
-            "magnetometer=(), microphone=(), payment=(), usb=()"
-        )
+        headers = {
+            # Prevent clickjacking
+            "X-Frame-Options": "DENY",
+            
+            # Prevent MIME type sniffing
+            "X-Content-Type-Options": "nosniff",
+            
+            # Force HTTPS (1 year, include subdomains)
+            "Strict-Transport-Security": "max-age=31536000; includeSubDomains; preload",
+            
+            # XSS Protection (legacy but still useful for older browsers)
+            "X-XSS-Protection": "1; mode=block",
+            
+            # Control referrer information
+            "Referrer-Policy": "strict-origin-when-cross-origin",
+            
+            # Restrict browser features
+            "Permissions-Policy": (
+                "accelerometer=(), "
+                "camera=(), "
+                "geolocation=(), "
+                "gyroscope=(), "
+                "magnetometer=(), "
+                "microphone=(), "
+                "payment=(), "
+                "usb=()"
+            ),
+            
+            # Content Security Policy (restrictive but functional)
+            # Note: Adjust as needed for your application
+            "Content-Security-Policy": (
+                "default-src 'self'; "
+                "script-src 'self' 'unsafe-inline' 'unsafe-eval'; "  # unsafe-inline needed for inline scripts
+                "style-src 'self' 'unsafe-inline'; "  # unsafe-inline needed for inline styles
+                "img-src 'self' data: https:; "
+                "font-src 'self' data:; "
+                "connect-src 'self' https:; "  # Allow HTTPS API calls
+                "frame-ancestors 'none'; "  # Equivalent to X-Frame-Options: DENY
+                "base-uri 'self'; "
+                "form-action 'self'"
+            ),
+        }
         
-        # Content Security Policy (adjust based on your needs)
-        # For API-only services, use restrictive CSP
-        response.headers["Content-Security-Policy"] = (
-            "default-src 'self'; "
-            "script-src 'self'; "
-            "style-src 'self' 'unsafe-inline'; "
-            "img-src 'self' data: https:; "
-            "font-src 'self'; "
-            "connect-src 'self'; "
-            "frame-ancestors 'none'"
-        )
-        
-        # Remove server information
-        if "Server" in response.headers:
-            del response.headers["Server"]
+        # Add headers to response
+        for header_name, header_value in headers.items():
+            response.headers[header_name] = header_value
         
         return response
 
 
-def get_security_headers() -> dict:
-    """Get all security headers as dict"""
-    return {
-        "X-Content-Type-Options": "nosniff",
-        "X-Frame-Options": "DENY",
-        "X-XSS-Protection": "1; mode=block",
-        "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
-        "Referrer-Policy": "strict-origin-when-cross-origin",
-        "Content-Security-Policy": "default-src 'self'",
-        "Permissions-Policy": (
-            "accelerometer=(), camera=(), geolocation=(), gyroscope=(), "
-            "magnetometer=(), microphone=(), payment=(), usb=()"
-        )
-    }
+# Alternative: Function to add headers manually if middleware is not desired
+def add_security_headers(response: Response) -> Response:
+    """
+    Manually add security headers to a response.
+    Use this if you can't use middleware for some reason.
+    """
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains; preload"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Permissions-Policy"] = (
+        "accelerometer=(), camera=(), geolocation=(), gyroscope=(), "
+        "magnetometer=(), microphone=(), payment=(), usb=()"
+    )
+    response.headers["Content-Security-Policy"] = (
+        "default-src 'self'; "
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval'; "
+        "style-src 'self' 'unsafe-inline'; "
+        "img-src 'self' data: https:; "
+        "font-src 'self' data:; "
+        "connect-src 'self' https:; "
+        "frame-ancestors 'none'; "
+        "base-uri 'self'; "
+        "form-action 'self'"
+    )
+    return response

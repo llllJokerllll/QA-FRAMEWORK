@@ -15,6 +15,8 @@ from core.logging_config import configure_logging, get_logger
 from models import User
 from integration.qa_framework_client import get_qa_test_suites
 from middleware.apm import APMMiddleware, init_app_info
+from middleware.security_headers import SecurityHeadersMiddleware
+from middleware.security_headers import SecurityHeadersMiddleware
 from prometheus_client import make_asgi_app
 
 # Configure structured logging
@@ -48,8 +50,14 @@ app.add_middleware(
     # expose_headers=["Access-Control-Allow-Origin"]
 )
 
+# Add Security Headers middleware (before other middleware)
+app.add_middleware(SecurityHeadersMiddleware)
+
 # Add APM middleware
 app.add_middleware(APMMiddleware)
+
+# Add Security Headers middleware
+app.add_middleware(SecurityHeadersMiddleware)
 
 # Include API routers
 app.include_router(api_router, prefix="/api/v1")
