@@ -6,6 +6,11 @@ on:
     - cron: '0 3 * * *'
   workflow_dispatch:  # Allow manual trigger
 
+permissions:
+  contents: read
+  issues: write
+  actions: read
+
 env:
   PYTHON_VERSION: "3.12"
   POETRY_VERSION: "1.7.1"

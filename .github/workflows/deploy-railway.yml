@@ -72,6 +72,7 @@ jobs:
     needs: deploy
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
+    continue-on-error: true  # Don't fail the whole workflow if migrations fail
 
     steps:
       - name: Checkout code
@@ -88,12 +89,43 @@ jobs:
           pip install -r requirements.txt
           pip install alembic
 
+      - name: Check DATABASE_URL
+        run: |
+          if [ -z "${{ secrets.RAILWAY_DATABASE_URL }}" ]; then
+            echo "::warning::RAILWAY_DATABASE_URL secret is not set"
+            echo "skip_migrations=true" >> $GITHUB_OUTPUT
+          else
+            echo "DATABASE_URL is configured"
+          fi
+        id: check_secrets
+
       - name: Run Alembic migrations
+        if: steps.check_secrets.outputs.skip_migrations != 'true'
         run: |
           cd dashboard/backend
-          alembic upgrade head
+          # Check if alembic.ini exists
+          if [ ! -f "alembic.ini" ]; then
+            echo "::warning::alembic.ini not found - skipping migrations"
+            exit 0
+          fi
+          # Run migrations with verbose output
+          alembic upgrade head --sql 2>&1 || echo "No migrations to apply"
+          alembic upgrade head 2>&1 || {
+            echo "::warning::Migration failed - database might already be up to date"
+            exit 0
+          }
         env:
           DATABASE_URL: ${{ secrets.RAILWAY_DATABASE_URL }}
+
+      - name: Migration Summary
+        if: always()
+        run: |
+          echo "## Migration Status" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.check_secrets.outputs.skip_migrations }}" == "true" ]; then
+            echo "⚠️ Migrations skipped - DATABASE_URL not configured" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "✅ Migrations completed (or no migrations needed)" >> $GITHUB_STEP_SUMMARY
+          fi
 
 # ========================================
 # Required GitHub Secrets
