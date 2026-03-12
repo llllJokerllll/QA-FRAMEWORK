@@ -16,6 +16,7 @@ import {
   Paper,
   useTheme,
   alpha,
+  Tooltip,
 } from '@mui/material'
 import {
   TrendingUp,
@@ -33,13 +34,14 @@ import {
   LineElement,
   BarElement,
   Title,
-  Tooltip,
+  Tooltip as ChartTooltip,
   Legend,
   ArcElement,
   Filler,
 } from 'chart.js'
 import { Line, Bar, Doughnut } from 'react-chartjs-2'
 import { analyticsAPI } from '../api/client'
+import SkeletonLoader, { CardSkeleton, ChartSkeleton } from '../components/common/SkeletonLoader'
 
 ChartJS.register(
   CategoryScale,
@@ -48,7 +50,7 @@ ChartJS.register(
   LineElement,
   BarElement,
   Title,
-  Tooltip,
+  ChartTooltip,
   Legend,
   ArcElement,
   Filler
@@ -139,8 +141,25 @@ export default function Analytics() {
 
   if (dashboardLoading || usersLoading || testsLoading || revenueLoading || featuresLoading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
-        <CircularProgress />
+      <Box>
+        <Typography variant="h4" gutterBottom>
+          Analytics Dashboard
+        </Typography>
+        <Grid container spacing={3} sx={{ mb: 3 }}>
+          {[1, 2, 3, 4].map((i) => (
+            <Grid item xs={12} sm={6} md={3} key={i}>
+              <CardSkeleton />
+            </Grid>
+          ))}
+        </Grid>
+        <Grid container spacing={3}>
+          <Grid item xs={12} md={8}>
+            <ChartSkeleton height={350} />
+          </Grid>
+          <Grid item xs={12} md={4}>
+            <ChartSkeleton height={350} />
+          </Grid>
+        </Grid>
       </Box>
     )
   }
