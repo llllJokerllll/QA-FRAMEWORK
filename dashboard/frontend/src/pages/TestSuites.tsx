@@ -20,6 +20,8 @@ import {
   DialogContent,
   DialogActions,
   TextField,
+  Tooltip,
+  CircularProgress,
 } from '@mui/material'
 import {
   Add as AddIcon,
@@ -31,6 +33,8 @@ import { useNavigate } from 'react-router-dom'
 import { suitesAPI, executionsAPI } from '../api/client'
 import toast from 'react-hot-toast'
 import EmptyState from '../components/common/EmptyState'
+import LoadingButton from '../components/common/LoadingButton'
+import SkeletonLoader, { TableSkeleton } from '../components/common/SkeletonLoader'
 
 export default function TestSuites() {
   const navigate = useNavigate()
@@ -108,7 +112,17 @@ export default function TestSuites() {
   }
 
   if (isLoading) {
-    return <Typography>Loading...</Typography>
+    return (
+      <Box>
+        <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+          <Typography variant="h4">Test Suites</Typography>
+          <Button variant="contained" disabled>
+            New Suite
+          </Button>
+        </Box>
+        <TableSkeleton rows={5} />
+      </Box>
+    )
   }
 
   // Show empty state if no suites
@@ -178,32 +192,46 @@ export default function TestSuites() {
                   />
                 </TableCell>
                 <TableCell>
-                  <IconButton
-                    size="small"
-                    onClick={() => navigate(`/suites/${suite.id}/cases`)}
-                  >
-                    <AddIcon />
-                  </IconButton>
-                  <IconButton
-                    size="small"
-                    color="primary"
-                    onClick={() => executeMutation.mutate(suite.id)}
-                  >
-                    <PlayArrowIcon />
-                  </IconButton>
-                  <IconButton
-                    size="small"
-                    onClick={() => handleOpenDialog(suite)}
-                  >
-                    <EditIcon />
-                  </IconButton>
-                  <IconButton
-                    size="small"
-                    color="error"
-                    onClick={() => deleteMutation.mutate(suite.id)}
-                  >
-                    <DeleteIcon />
-                  </IconButton>
+                  <Tooltip title="Add Test Cases">
+                    <IconButton
+                      size="small"
+                      onClick={() => navigate(`/suites/${suite.id}/cases`)}
+                      aria-label="Add test cases to suite"
+                    >
+                      <AddIcon />
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title="Run Suite">
+                    <IconButton
+                      size="small"
+                      color="primary"
+                      onClick={() => executeMutation.mutate(suite.id)}
+                      disabled={executeMutation.isLoading}
+                      aria-label="Execute test suite"
+                    >
+                      {executeMutation.isLoading ? <CircularProgress size={20} /> : <PlayArrowIcon />}
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title="Edit Suite">
+                    <IconButton
+                      size="small"
+                      onClick={() => handleOpenDialog(suite)}
+                      aria-label="Edit test suite"
+                    >
+                      <EditIcon />
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title="Delete Suite">
+                    <IconButton
+                      size="small"
+                      color="error"
+                      onClick={() => deleteMutation.mutate(suite.id)}
+                      disabled={deleteMutation.isLoading}
+                      aria-label="Delete test suite"
+                    >
+                      {deleteMutation.isLoading ? <CircularProgress size={20} /> : <DeleteIcon />}
+                    </IconButton>
+                  </Tooltip>
                 </TableCell>
               </TableRow>
             ))}
@@ -251,9 +279,13 @@ export default function TestSuites() {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseDialog}>Cancel</Button>
-          <Button onClick={handleSubmit} variant="contained">
+          <LoadingButton
+            loading={createMutation.isLoading}
+            onClick={handleSubmit}
+            variant="contained"
+          >
             {editingSuite ? 'Update' : 'Create'}
-          </Button>
+          </LoadingButton>
         </DialogActions>
       </Dialog>
     </Box>

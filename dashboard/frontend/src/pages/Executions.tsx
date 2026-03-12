@@ -14,6 +14,7 @@ import {
   Chip,
   IconButton,
   CircularProgress,
+  Tooltip,
 } from '@mui/material'
 import {
   PlayArrow as PlayArrowIcon,
@@ -24,6 +25,7 @@ import { executionsAPI } from '../api/client'
 import { celebrateFirstSuccess, celebratePerfectScore } from '../utils/celebrations'
 import toast from 'react-hot-toast'
 import EmptyState from '../components/common/EmptyState'
+import SkeletonLoader, { TableSkeleton } from '../components/common/SkeletonLoader'
 
 export default function Executions() {
   const { data: executions, isLoading, refetch } = useQuery('executions', () =>
@@ -67,8 +69,11 @@ export default function Executions() {
 
   if (isLoading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
-        <CircularProgress />
+      <Box>
+        <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+          <Typography variant="h4">Test Executions</Typography>
+        </Box>
+        <TableSkeleton rows={5} />
       </Box>
     )
   }
@@ -160,25 +165,33 @@ export default function Executions() {
                 </TableCell>
                 <TableCell>
                   {execution.status === 'running' ? (
-                    <IconButton
-                      size="small"
-                      color="error"
-                      onClick={() => stopExecution(execution.id)}
-                    >
-                      <StopIcon />
-                    </IconButton>
+                    <Tooltip title="Stop Execution">
+                      <IconButton
+                        size="small"
+                        color="error"
+                        onClick={() => stopExecution(execution.id)}
+                        aria-label="Stop running execution"
+                      >
+                        <StopIcon />
+                      </IconButton>
+                    </Tooltip>
                   ) : (
-                    <IconButton
-                      size="small"
-                      color="primary"
-                      onClick={() => startExecution(execution.id)}
-                    >
-                      <PlayArrowIcon />
-                    </IconButton>
+                    <Tooltip title="Run Again">
+                      <IconButton
+                        size="small"
+                        color="primary"
+                        onClick={() => startExecution(execution.id)}
+                        aria-label="Start execution"
+                      >
+                        <PlayArrowIcon />
+                      </IconButton>
+                    </Tooltip>
                   )}
-                  <IconButton size="small">
-                    <VisibilityIcon />
-                  </IconButton>
+                  <Tooltip title="View Details">
+                    <IconButton size="small" aria-label="View execution details">
+                      <VisibilityIcon />
+                    </IconButton>
+                  </Tooltip>
                 </TableCell>
               </TableRow>
             ))}

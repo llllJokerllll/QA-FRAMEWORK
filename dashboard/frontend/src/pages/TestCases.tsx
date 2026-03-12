@@ -25,6 +25,8 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
+  Tooltip,
+  CircularProgress,
 } from '@mui/material'
 import {
   Add as AddIcon,
@@ -34,6 +36,8 @@ import {
 } from '@mui/icons-material'
 import { casesAPI } from '../api/client'
 import toast from 'react-hot-toast'
+import LoadingButton from '../components/common/LoadingButton'
+import SkeletonLoader, { TableSkeleton } from '../components/common/SkeletonLoader'
 
 export default function TestCases() {
   const { suiteId } = useParams<{ suiteId: string }>()
@@ -122,22 +126,43 @@ export default function TestCases() {
   }
 
   if (isLoading) {
-    return <Typography>Loading...</Typography>
+    return (
+      <Box>
+        <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+          <Box display="flex" alignItems="center" gap={2}>
+            <IconButton disabled>
+              <ArrowBackIcon />
+            </IconButton>
+            <Typography variant="h4">Test Cases</Typography>
+          </Box>
+          <Button variant="contained" disabled>
+            New Test Case
+          </Button>
+        </Box>
+        <TableSkeleton rows={5} />
+      </Box>
+    )
   }
 
   return (
     <Box>
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
         <Box display="flex" alignItems="center" gap={2}>
-          <IconButton onClick={() => navigate('/suites')}>
-            <ArrowBackIcon />
-          </IconButton>
+          <Tooltip title="Back to Suites">
+            <IconButton 
+              onClick={() => navigate('/suites')}
+              aria-label="Go back to test suites"
+            >
+              <ArrowBackIcon />
+            </IconButton>
+          </Tooltip>
           <Typography variant="h4">Test Cases</Typography>
         </Box>
         <Button
           variant="contained"
           startIcon={<AddIcon />}
           onClick={() => handleOpenDialog()}
+          aria-label="Create new test case"
         >
           New Test Case
         </Button>
@@ -188,19 +213,26 @@ export default function TestCases() {
                   />
                 </TableCell>
                 <TableCell>
-                  <IconButton
-                    size="small"
-                    onClick={() => handleOpenDialog(testCase)}
-                  >
-                    <EditIcon />
-                  </IconButton>
-                  <IconButton
-                    size="small"
-                    color="error"
-                    onClick={() => deleteMutation.mutate(testCase.id)}
-                  >
-                    <DeleteIcon />
-                  </IconButton>
+                  <Tooltip title="Edit Test Case">
+                    <IconButton
+                      size="small"
+                      onClick={() => handleOpenDialog(testCase)}
+                      aria-label="Edit test case"
+                    >
+                      <EditIcon />
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title="Delete Test Case">
+                    <IconButton
+                      size="small"
+                      color="error"
+                      onClick={() => deleteMutation.mutate(testCase.id)}
+                      disabled={deleteMutation.isLoading}
+                      aria-label="Delete test case"
+                    >
+                      {deleteMutation.isLoading ? <CircularProgress size={20} /> : <DeleteIcon />}
+                    </IconButton>
+                  </Tooltip>
                 </TableCell>
               </TableRow>
             ))}
@@ -279,9 +311,13 @@ export default function TestCases() {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseDialog}>Cancel</Button>
-          <Button onClick={handleSubmit} variant="contained">
+          <LoadingButton
+            loading={createMutation.isLoading}
+            onClick={handleSubmit}
+            variant="contained"
+          >
             {editingCase ? 'Update' : 'Create'}
-          </Button>
+          </LoadingButton>
         </DialogActions>
       </Dialog>
     </Box>
