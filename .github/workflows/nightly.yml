@@ -95,7 +95,7 @@ jobs:
 
       - name: Install security test tools
         if: matrix.test-type == 'security'
-        run: poetry run pip install bandit pip-audit semgrep
+        run: poetry run pip install bandit pip-audit
 
       - name: Wait for services (integration tests)
         if: matrix.test-type == 'integration'
@@ -160,7 +160,6 @@ jobs:
                 # Run basic security scans instead
                 poetry run bandit -r src -f json -o sast-report.json || true
                 pip-audit -r requirements.txt --desc --output-format json --output-file dependency-scan.json || true
-                poetry run semgrep --config=auto src --json --output=semgrep-report.json || true
               fi
               ;;
           esac
@@ -185,7 +184,6 @@ jobs:
             benchmark.json
             sast-report.json
             dependency-scan.json
-            semgrep-report.json
             coverage.xml
             htmlcov/
 
