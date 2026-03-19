@@ -230,12 +230,12 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const repo = github.context.repo;
+            const { owner, repo } = github.context.repo;
             github.rest.issues.create({
-              owner: repo.owner,
-              repo: repo.repo,
+              owner,
+              repo,
               title: `🚨 Nightly Tests Failed - ${(new Date()).toISOString().split('T')[0]}`,
-              body: `The nightly test run had significant failures. Please check the [Actions tab](https://github.com/${repo.owner}/${repo.repo}/actions) for details.\n\n**Note:** Some test types may have been skipped if not implemented yet.`,
+              body: `The nightly test run had significant failures. Please check the [Actions tab](https://github.com/${owner}/${repo}/actions) for details.\n\n**Note:** Some test types may have been skipped if not implemented yet.`,
               labels: ['bug', 'nightly-tests']
             });
 
