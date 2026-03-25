@@ -60,8 +60,8 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             # Note: Adjust as needed for your application
             "Content-Security-Policy": (
                 "default-src 'self'; "
-                "script-src 'self' 'unsafe-inline' 'unsafe-eval'; "  # unsafe-inline needed for inline scripts
-                "style-src 'self' 'unsafe-inline'; "  # unsafe-inline needed for inline styles
+                "script-src 'self'; "  # Removed unsafe-inline and unsafe-eval
+                "style-src 'self'; "  # Removed unsafe-inline
                 "img-src 'self' data: https:; "
                 "font-src 'self' data:; "
                 "connect-src 'self' https:; "  # Allow HTTPS API calls

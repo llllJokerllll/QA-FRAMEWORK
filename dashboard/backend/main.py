@@ -42,7 +42,6 @@ app.add_middleware(
         "http://localhost:3000",
         "http://localhost:8080",
         "https://frontend-phi-three-52.vercel.app",  # Production frontend
-        "https://frontend-*.vercel.app",  # Vercel preview deployments
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -55,9 +54,6 @@ app.add_middleware(SecurityHeadersMiddleware)
 
 # Add APM middleware
 app.add_middleware(APMMiddleware)
-
-# Add Security Headers middleware
-app.add_middleware(SecurityHeadersMiddleware)
 
 # Include API routers
 app.include_router(api_router, prefix="/api/v1")
