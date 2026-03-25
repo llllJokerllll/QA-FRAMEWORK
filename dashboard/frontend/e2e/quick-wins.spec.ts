@@ -2,8 +2,8 @@ import { test, expect } from '@playwright/test'
 
 test.describe('Quick Wins - Celebrations & Time Saved', () => {
   test.beforeEach(async ({ page }) => {
-    // Navigate to the application
-    await page.goto('http://localhost:5173')
+    // Navigate to the application using baseURL from config
+    await page.goto('/')
   })
 
   test('Empty State - Test Suites page shows empty state when no suites', async ({ page }) => {

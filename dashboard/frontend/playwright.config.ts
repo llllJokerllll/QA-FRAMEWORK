@@ -10,6 +10,8 @@ export default defineConfig({
   use: {
     baseURL: 'https://frontend-phi-three-52.vercel.app',
     trace: 'on-first-retry',
+    screenshot: 'only-on-failure',
+    video: 'retain-on-failure',
   },
   projects: [
     {
