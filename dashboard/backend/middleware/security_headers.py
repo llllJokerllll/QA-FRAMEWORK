@@ -95,8 +95,8 @@ def add_security_headers(response: Response) -> Response:
     )
     response.headers["Content-Security-Policy"] = (
         "default-src 'self'; "
-        "script-src 'self' 'unsafe-inline' 'unsafe-eval'; "
-        "style-src 'self' 'unsafe-inline'; "
+        "script-src 'self'; "  # Removed unsafe-inline and unsafe-eval
+        "style-src 'self'; "  # Removed unsafe-inline
         "img-src 'self' data: https:; "
         "font-src 'self' data:; "
         "connect-src 'self' https:; "
