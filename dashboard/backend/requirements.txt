@@ -34,3 +34,5 @@ prometheus-client==0.20.0
 pyotp==2.9.0
 qrcode[pil]==7.4.2
 aiohttp==3.9.1
+browser-use>=0.1.0
+langchain-groq>=0.1.0

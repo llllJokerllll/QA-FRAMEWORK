@@ -305,3 +305,7 @@ class UsageRecord(Base):
     extra_data = Column(JSON, nullable=True)  # Changed from 'metadata' (reserved word)
     
     created_at = Column(DateTime, default=func.now())
+
+
+# Browser-Use Task Model
+from models.browser_use_task import BrowserUseTask, TaskStatus

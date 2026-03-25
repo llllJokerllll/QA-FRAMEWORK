@@ -40,6 +40,15 @@ class Settings(BaseSettings):
 
     # Feature Flags
     ENABLE_BILLING: bool = os.getenv("ENABLE_BILLING", "false").lower() == "true"
+    
+    # Browser-Use AI-Powered Test Automation
+    BROWSER_USE_LLM_PROVIDER: str = os.getenv("BROWSER_USE_LLM_PROVIDER", "groq")
+    BROWSER_USE_MODEL: str = os.getenv("BROWSER_USE_MODEL", "llama-3.3-70b-versatile")
+    
+    # Browser-Use AI-Powered Test Automation
+    BROWSER_USE_LLM_PROVIDER: str = os.getenv("BROWSER_USE_LLM_PROVIDER", "groq")
+    GROQ_API_KEY: Optional[str] = os.getenv("GROQ_API_KEY")
+    BROWSER_USE_MODEL: str = os.getenv("BROWSER_USE_MODEL", "llama-3.3-70b-versatile")
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
     

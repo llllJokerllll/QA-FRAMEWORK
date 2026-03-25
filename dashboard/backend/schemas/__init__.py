@@ -531,3 +531,14 @@ class BulkArchiveResponse(BaseModel):
     failed: List[Dict[str, Any]]
     not_found: List[Dict[str, Any]]
     already_archived: List[Dict[str, Any]]
+
+
+# Browser-Use Schemas
+from schemas.browser_use import (
+    BrowserUseOptions,
+    BrowserUseExecuteRequest,
+    BrowserUseExecuteResponse,
+    BrowserUseStep,
+    BrowserUseStatusResponse,
+    BrowserUseResultsResponse,
+)
