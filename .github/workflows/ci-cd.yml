@@ -264,6 +264,40 @@ jobs:
             -m e2e \
             --junitxml=junit-e2e.xml
 
+      - name: Set up Node.js for Playwright TypeScript tests
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install frontend dependencies
+        run: |
+          cd dashboard/frontend
+          npm ci
+
+      - name: Install Playwright browsers
+        run: |
+          cd dashboard/frontend
+          npx playwright install --with-deps chromium
+
+      - name: Run Playwright TypeScript E2E tests
+        continue-on-error: true
+        run: |
+          cd dashboard/frontend
+          npx playwright test --reporter=list
+        env:
+          CI: true
+
+      - name: Upload Playwright test results
+        uses: actions/upload-artifact@v5
+        if: always()
+        with:
+          name: playwright-test-results
+          path: |
+            dashboard/frontend/test-results/
+            dashboard/frontend/playwright-report/
+            dashboard/frontend/blob-report/
+          retention-days: 7
+
       - name: Upload E2E test results
         uses: actions/upload-artifact@v5
         if: always()
