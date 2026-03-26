@@ -183,7 +183,10 @@ async def login(login_request: LoginRequest, db: AsyncSession = Depends(get_db))
 
 
 @router.get("/dashboard/stats", response_model=DashboardStats)
-async def get_dashboard_stats(db: AsyncSession = Depends(get_db)):
+async def get_dashboard_stats(
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
     """
     Get dashboard statistics.
 
@@ -232,7 +235,11 @@ async def get_dashboard_stats(db: AsyncSession = Depends(get_db)):
 
 
 @router.get("/dashboard/trends")
-async def get_trends(days: int = 30, db: AsyncSession = Depends(get_db)):
+async def get_trends(
+    days: int = 30, 
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
     """
     Get execution trends over time.
 
@@ -358,7 +365,10 @@ async def create_suite(
 
 @router.get("/suites", response_model=List[TestSuiteResponse])
 async def list_suites(
-    skip: int = 0, limit: int = 100, db: AsyncSession = Depends(get_db)
+    skip: int = 0,
+    limit: int = 100,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_user)
 ):
     """
     List all test suites with pagination.
@@ -402,7 +412,11 @@ async def list_suites(
 
 
 @router.get("/suites/{suite_id}", response_model=TestSuiteResponse)
-async def get_suite(suite_id: int, db: AsyncSession = Depends(get_db)):
+async def get_suite(
+    suite_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
     """
     Get a test suite by ID.
 
@@ -628,6 +642,7 @@ async def list_cases(
     skip: int = 0,
     limit: int = 100,
     db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_user)
 ):
     """
     List test cases with optional filtering.
@@ -674,7 +689,11 @@ async def list_cases(
 
 
 @router.get("/cases/{case_id}", response_model=TestCaseResponse)
-async def get_case(case_id: int, db: AsyncSession = Depends(get_db)):
+async def get_case(
+    case_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
     """
     Get a test case by ID.
 
@@ -906,6 +925,7 @@ async def list_executions(
     skip: int = 0,
     limit: int = 100,
     db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_user)
 ):
     """
     List test executions with optional filtering.
@@ -968,7 +988,11 @@ async def list_executions(
 
 
 @router.get("/executions/{execution_id}", response_model=TestExecutionResponse)
-async def get_execution(execution_id: int, db: AsyncSession = Depends(get_db)):
+async def get_execution(
+    execution_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
     """
     Get a test execution by ID.
 
