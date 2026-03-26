@@ -224,7 +224,7 @@ async def get_dashboard_stats(
     """
     logger.info("Getting dashboard stats")
     try:
-        from services.dashboard_service import get_stats
+        from services.dashboard_service import get_stats_service as get_stats
 
         stats = await get_stats(db)
         logger.info("Dashboard stats retrieved successfully")
@@ -274,7 +274,7 @@ async def get_trends(
     """
     logger.info("Getting execution trends", days=days)
     try:
-        from services.dashboard_service import get_trends
+        from services.dashboard_service import get_trends_service as get_trends
 
         trends = await get_trends(db, days)
         logger.info(
