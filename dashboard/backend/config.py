@@ -37,6 +37,16 @@ class Settings(BaseSettings):
     # Stripe - REQUIRED for billing
     STRIPE_API_KEY: Optional[str] = os.getenv("STRIPE_API_KEY")
     STRIPE_WEBHOOK_SECRET: Optional[str] = os.getenv("STRIPE_WEBHOOK_SECRET")
+    
+    # Stripe Price IDs (LIVE)
+    STRIPE_PRICE_FREE: str = os.getenv("STRIPE_PRICE_FREE", "price_1TEvdOI1MtlKoNQt5aepkf0d")
+    STRIPE_PRICE_PRO: str = os.getenv("STRIPE_PRICE_PRO", "price_1TEvdOI1MtlKoNQtonZGU7S7")
+    STRIPE_PRICE_ENTERPRISE: str = os.getenv("STRIPE_PRICE_ENTERPRISE", "price_1TEvdPI1MtlKoNQtdRE8CP5m")
+    
+    # Stripe Product IDs (LIVE)
+    STRIPE_PRODUCT_FREE: str = os.getenv("STRIPE_PRODUCT_FREE", "prod_UDMMUYX064DjtC")
+    STRIPE_PRODUCT_PRO: str = os.getenv("STRIPE_PRODUCT_PRO", "prod_UDMMlPYySnUofh")
+    STRIPE_PRODUCT_ENTERPRISE: str = os.getenv("STRIPE_PRODUCT_ENTERPRISE", "prod_UDMM2Yuc2VJAK3")
 
     # Feature Flags
     ENABLE_BILLING: bool = os.getenv("ENABLE_BILLING", "false").lower() == "true"

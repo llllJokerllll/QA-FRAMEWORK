@@ -23,12 +23,13 @@ logger = get_logger(__name__)
 stripe.api_key = settings.STRIPE_API_KEY
 
 
-# Pricing Plans
+# Pricing Plans - Uses Stripe Price IDs from config
 PRICING_PLANS = {
     "free": {
         "name": "Free",
         "price": 0,
-        "price_id": None,  # No Stripe price for free tier
+        "price_id": settings.STRIPE_PRICE_FREE,
+        "product_id": settings.STRIPE_PRODUCT_FREE,
         "features": {
             "max_suites": 3,
             "max_cases_per_suite": 10,
@@ -40,8 +41,9 @@ PRICING_PLANS = {
     },
     "pro": {
         "name": "Pro",
-        "price": 99,
-        "price_id": "price_pro_monthly",  # Will be created in Stripe
+        "price": 29,
+        "price_id": settings.STRIPE_PRICE_PRO,
+        "product_id": settings.STRIPE_PRODUCT_PRO,
         "features": {
             "max_suites": 50,
             "max_cases_per_suite": 100,
@@ -53,8 +55,9 @@ PRICING_PLANS = {
     },
     "enterprise": {
         "name": "Enterprise",
-        "price": 499,
-        "price_id": "price_enterprise_monthly",  # Will be created in Stripe
+        "price": 99,
+        "price_id": settings.STRIPE_PRICE_ENTERPRISE,
+        "product_id": settings.STRIPE_PRODUCT_ENTERPRISE,
         "features": {
             "max_suites": -1,  # Unlimited
             "max_cases_per_suite": -1,  # Unlimited
