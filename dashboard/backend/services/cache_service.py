@@ -19,6 +19,7 @@ Usage:
 
 import json
 import logging
+import os
 from typing import Any, Callable, Optional, Dict
 from datetime import datetime, timedelta
 
@@ -26,6 +27,22 @@ from src.infrastructure.cache.test_cache import TestCache
 from src.infrastructure.cache.cache_stats import CacheStats
 
 logger = logging.getLogger(__name__)
+
+# Singleton async Redis client for rate limiting and other async consumers
+_async_redis_client = None
+
+
+def get_redis_client():
+    """
+    Get or create a singleton async Redis client.
+    Used by RateLimitMiddleware and other async components.
+    """
+    global _async_redis_client
+    if _async_redis_client is None:
+        import redis.asyncio as aioredis
+        redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+        _async_redis_client = aioredis.from_url(redis_url, decode_responses=True)
+    return _async_redis_client
 
 
 class CacheService:

@@ -57,6 +57,10 @@ def app():
     async def login():
         return {"token": "test"}
     
+    @app.get("/health")
+    async def health():
+        return {"status": "ok"}
+    
     return app
 
 
@@ -202,20 +206,20 @@ class TestRateLimitMiddleware:
         assert response.status_code == 200
         # Note: Would check headers in real test with proper middleware setup
     
-    def test_rate_limit_exceeded(self, app, mock_redis):
-        """Should return 429 when rate limit exceeded"""
-        # Set count to exceed limit
+    def test_rate_limit_exceeded(self, mock_redis):
+        """Should return 429 when rate limit exceeded via direct limiter check"""
         mock_redis.zcard = AsyncMock(return_value=10000)
         
-        # Override rate limiter in middleware
         limiter = RateLimiter(redis_client=mock_redis)
-        app.middleware("http")(RateLimitMiddleware(app, rate_limiter=limiter))
         
-        client = TestClient(app)
-        response = client.get("/test")
+        # Use direct limiter check (middleware integration requires async ASGI)
+        import asyncio
+        is_allowed, info = asyncio.run(
+            limiter.is_allowed("user:123", "free", "/api/v1/test")
+        )
         
-        # Note: Would check for 429 in real test
-        assert response.status_code in [200, 429]
+        assert is_allowed is False
+        assert info["remaining"] == 0
 
 
 class TestSlidingWindow:
