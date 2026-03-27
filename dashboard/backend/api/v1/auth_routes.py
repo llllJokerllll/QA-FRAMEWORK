@@ -1,5 +1,6 @@
 """
 Authentication Routes - OAuth, API Keys, Login
+SECURITY FIX: Fixed API key circular dependency - BETA LAUNCH PREP 2026-03-27
 """
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -69,36 +70,34 @@ async def oauth_callback(oauth_request: OAuthLoginRequest, db: AsyncSession = De
 
 
 # API Keys
+# SECURITY FIX: Changed from get_user_from_api_key to get_current_user to fix circular dependency
+# Users must authenticate with JWT (login/OAuth) first, then can manage API keys
 @router.post("/api-keys", response_model=ApiKeyResponse)
 async def create_api_key(
     key_request: ApiKeyCreate,
-    current_user: User = Depends(get_user_from_api_key),
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db_session)
 ):
-    if not current_user:
-        raise HTTPException(status_code=401, detail="Authentication required")
+    """Create API key for current user (REQUIRES JWT authentication)"""
     return await api_key_service.create_api_key(db, current_user.id, key_request)
 
 
 @router.get("/api-keys", response_model=List[ApiKeyResponse])
 async def list_api_keys(
-    current_user: User = Depends(get_user_from_api_key),
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db_session)
 ):
-    if not current_user:
-        raise HTTPException(status_code=401, detail="Authentication required")
+    """List API keys for current user (REQUIRES JWT authentication)"""
     return await api_key_service.list_api_keys(db, current_user.id)
 
 
 @router.delete("/api-keys/{key_id}")
 async def revoke_api_key(
     key_id: str,
-    current_user: User = Depends(get_user_from_api_key),
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db_session)
 ):
-    if not current_user:
-        raise HTTPException(status_code=401, detail="Authentication required")
-    
+    """Revoke API key for current user (REQUIRES JWT authentication)"""
     success = await api_key_service.revoke_api_key(db, current_user.id, key_id)
     if not success:
         raise HTTPException(status_code=404, detail="API key not found")

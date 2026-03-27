@@ -2,6 +2,7 @@
 API Endpoints for Integration Hub
 
 Provides REST API endpoints for managing and using integrations.
+SECURITY FIX: Added authentication to all endpoints - BETA LAUNCH PREP 2026-03-27
 """
 from fastapi import APIRouter, HTTPException, Depends, Body
 from typing import Dict, List, Optional, Any
@@ -9,7 +10,11 @@ from pydantic import BaseModel
 
 from integrations.manager import integration_manager
 from integrations.base import TestResult, SyncResult
-from integrations.base import IntegrationConfig  # Import the base config
+from integrations.base import IntegrationConfig  # Import base config
+from services.auth_service import get_current_user
+from models import User
+from database import get_db_session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 router = APIRouter(prefix="/integrations", tags=["integrations"])
 
@@ -57,10 +62,13 @@ class BugRequest(BaseModel):
 
 
 @router.get("/providers")
-async def get_available_providers():
+async def get_available_providers(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db_session)
+):
     """
-    Get list of all available integration providers.
-    
+    Get list of all available integration providers (AUTH REQUIRED).
+
     Returns:
         List of provider information including configuration schema
     """
@@ -72,10 +80,13 @@ async def get_available_providers():
 
 
 @router.get("/configured")
-async def get_configured_providers():
+async def get_configured_providers(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db_session)
+):
     """
-    Get list of currently configured integrations.
-    
+    Get list of currently configured integrations (AUTH REQUIRED).
+
     Returns:
         List of configured provider status
     """
@@ -87,13 +98,17 @@ async def get_configured_providers():
 
 
 @router.post("/configure")
-async def configure_integration(request: IntegrationConfigRequest):
+async def configure_integration(
+    request: IntegrationConfigRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db_session)
+):
     """
-    Configure an integration provider.
-    
+    Configure an integration provider (AUTH REQUIRED).
+
     Args:
         request: Configuration request with provider name and config
-    
+
     Returns:
         Success confirmation
     """
@@ -102,7 +117,7 @@ async def configure_integration(request: IntegrationConfigRequest):
             provider=request.provider,
             config=request.config
         )
-        
+
         if success:
             return {
                 "status": "success",
@@ -111,7 +126,7 @@ async def configure_integration(request: IntegrationConfigRequest):
             }
         else:
             raise HTTPException(status_code=500, detail="Failed to configure integration")
-            
+
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -119,19 +134,23 @@ async def configure_integration(request: IntegrationConfigRequest):
 
 
 @router.delete("/configure/{provider}")
-async def remove_integration(provider: str):
+async def remove_integration(
+    provider: str,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db_session)
+):
     """
-    Remove/unregister an integration.
-    
+    Remove/unregister an integration (AUTH REQUIRED).
+
     Args:
         provider: Provider name to remove
-    
+
     Returns:
         Success confirmation
     """
     try:
         success = integration_manager.unregister_integration(provider)
-        
+
         if success:
             return {
                 "status": "success",
@@ -140,25 +159,29 @@ async def remove_integration(provider: str):
             }
         else:
             raise HTTPException(status_code=500, detail="Failed to remove integration")
-            
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error removing integration: {str(e)}")
 
 
 @router.post("/{provider}/connect")
-async def connect_integration(provider: str):
+async def connect_integration(
+    provider: str,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db_session)
+):
     """
-    Connect to an integration provider.
-    
+    Connect to an integration provider (AUTH REQUIRED).
+
     Args:
         provider: Provider name to connect to
-    
+
     Returns:
         Connection status
     """
     try:
         success = await integration_manager.connect_integration(provider)
-        
+
         return {
             "provider": provider,
             "connected": success
@@ -170,19 +193,23 @@ async def connect_integration(provider: str):
 
 
 @router.post("/{provider}/disconnect")
-async def disconnect_integration(provider: str):
+async def disconnect_integration(
+    provider: str,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db_session)
+):
     """
-    Disconnect from an integration provider.
-    
+    Disconnect from an integration provider (AUTH REQUIRED).
+
     Args:
         provider: Provider name to disconnect from
-    
+
     Returns:
         Disconnection status
     """
     try:
         success = await integration_manager.disconnect_integration(provider)
-        
+
         return {
             "provider": provider,
             "disconnected": success
@@ -192,13 +219,17 @@ async def disconnect_integration(provider: str):
 
 
 @router.get("/{provider}/health")
-async def check_integration_health(provider: str):
+async def check_integration_health(
+    provider: str,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db_session)
+):
     """
-    Check health status of an integration.
-    
+    Check health status of an integration (AUTH REQUIRED).
+
     Args:
         provider: Provider name to check
-    
+
     Returns:
         Health status information
     """
@@ -215,10 +246,13 @@ async def check_integration_health(provider: str):
 
 
 @router.get("/health/all")
-async def check_all_integrations_health():
+async def check_all_integrations_health(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db_session)
+):
     """
-    Check health status of all configured integrations.
-    
+    Check health status of all configured integrations (AUTH REQUIRED).
+
     Returns:
         Health status for all integrations
     """
@@ -230,13 +264,17 @@ async def check_all_integrations_health():
 
 
 @router.post("/sync")
-async def sync_results(request: SyncRequest):
+async def sync_results(
+    request: SyncRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db_session)
+):
     """
-    Synchronize test results to one or more integration providers.
-    
+    Synchronize test results to one or more integration providers (AUTH REQUIRED).
+
     Args:
         request: Sync request with results and target providers
-    
+
     Returns:
         Synchronization results per provider
     """
@@ -247,7 +285,7 @@ async def sync_results(request: SyncRequest):
             project_key=request.project_key,
             cycle_name=request.cycle_name
         )
-        
+
         # Convert SyncResult objects to dictionaries
         result_dict = {}
         for provider, sync_result in results.items():
@@ -260,20 +298,24 @@ async def sync_results(request: SyncRequest):
                 "details": sync_result.details,
                 "timestamp": sync_result.timestamp.isoformat()
             }
-        
+
         return {"sync_results": result_dict}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error syncing results: {str(e)}")
 
 
 @router.post("/sync/bulk")
-async def bulk_sync(request: BulkSyncRequest):
+async def bulk_sync(
+    request: BulkSyncRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db_session)
+):
     """
-    Perform bulk synchronization with different configurations per provider.
-    
+    Perform bulk synchronization with different configurations per provider (AUTH REQUIRED).
+
     Args:
         request: Bulk sync request with results and provider mappings
-    
+
     Returns:
         Bulk synchronization results
     """
@@ -282,21 +324,26 @@ async def bulk_sync(request: BulkSyncRequest):
             results=request.results,
             mappings=request.mappings
         )
-        
+
         return {"bulk_sync_results": results}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error performing bulk sync: {str(e)}")
 
 
 @router.post("/{provider}/test-cases")
-async def create_test_case(provider: str, request: TestCaseRequest):
+async def create_test_case(
+    provider: str,
+    request: TestCaseRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db_session)
+):
     """
-    Create a test case in the specified provider.
-    
+    Create a test case in specified provider (AUTH REQUIRED).
+
     Args:
         provider: Provider name
         request: Test case creation request
-    
+
     Returns:
         Created test case information
     """
@@ -310,7 +357,7 @@ async def create_test_case(provider: str, request: TestCaseRequest):
             labels=request.labels,
             **(request.additional_data or {})
         )
-        
+
         return {"test_case": result}
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
@@ -323,17 +370,19 @@ async def get_test_cases(
     provider: str,
     project_key: str,
     folder: Optional[str] = None,
-    status: Optional[str] = None
+    status: Optional[str] = None,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db_session)
 ):
     """
-    Get test cases from the specified provider.
-    
+    Get test cases from specified provider (AUTH REQUIRED).
+
     Args:
         provider: Provider name
         project_key: Project key to query
         folder: Optional folder/filter
         status: Optional status filter
-    
+
     Returns:
         List of test cases
     """
@@ -341,14 +390,14 @@ async def get_test_cases(
         filters = {}
         if status:
             filters["status"] = status
-        
+
         results = await integration_manager.get_test_cases(
             provider=provider,
             project_key=project_key,
             folder=folder,
             filters=filters
         )
-        
+
         return {"test_cases": results}
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
@@ -357,14 +406,19 @@ async def get_test_cases(
 
 
 @router.post("/{provider}/bugs")
-async def create_bug(provider: str, request: BugRequest):
+async def create_bug(
+    provider: str,
+    request: BugRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db_session)
+):
     """
-    Create a bug in the specified provider.
-    
+    Create a bug in specified provider (AUTH REQUIRED).
+
     Args:
         provider: Provider name
         request: Bug creation request
-    
+
     Returns:
         Created bug information
     """
@@ -380,7 +434,7 @@ async def create_bug(provider: str, request: BugRequest):
             labels=request.labels,
             **(request.additional_data or {})
         )
-        
+
         return {"bug": result}
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
@@ -393,17 +447,19 @@ async def get_bugs(
     provider: str,
     project_key: str,
     status: Optional[str] = None,
-    assigned_to: Optional[str] = None
+    assigned_to: Optional[str] = None,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db_session)
 ):
     """
-    Get bugs from the specified provider.
-    
+    Get bugs from specified provider (AUTH REQUIRED).
+
     Args:
         provider: Provider name
         project_key: Project key to query
         status: Optional status filter
         assigned_to: Optional assignee filter
-    
+
     Returns:
         List of bugs
     """
@@ -413,14 +469,14 @@ async def get_bugs(
             filters["status"] = status
         if assigned_to:
             filters["assigned_to"] = assigned_to
-        
+
         results = await integration_manager.get_bugs(
             provider=provider,
             project_key=project_key,
             status=status,
             filters=filters
         )
-        
+
         return {"bugs": results}
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
@@ -429,13 +485,17 @@ async def get_bugs(
 
 
 @router.get("/{provider}/projects")
-async def get_projects(provider: str):
+async def get_projects(
+    provider: str,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db_session)
+):
     """
-    Get projects from the specified provider.
-    
+    Get projects from specified provider (AUTH REQUIRED).
+
     Args:
         provider: Provider name
-    
+
     Returns:
         List of projects
     """
