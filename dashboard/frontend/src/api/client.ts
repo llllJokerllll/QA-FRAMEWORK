@@ -261,3 +261,17 @@ export const analyticsAPI = {
   getFeatures: () =>
     apiClient.get('/analytics/features'),
 }
+
+export const onboardingAPI = {
+  getState: () =>
+    apiClient.get('/onboarding'),
+
+  updateStep: (stepName: string, completed: boolean = true) =>
+    apiClient.patch('/onboarding/step', { step_name: stepName, completed }),
+
+  complete: () =>
+    apiClient.post('/onboarding/complete'),
+
+  skip: () =>
+    apiClient.post('/onboarding/skip'),
+}

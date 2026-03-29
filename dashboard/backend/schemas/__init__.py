@@ -30,10 +30,27 @@ class UserResponse(UserBase):
     id: int
     is_active: bool
     is_superuser: bool
+    onboarding_completed: bool = False
+    onboarding_state: Optional[Dict[str, Any]] = None
     created_at: datetime
     updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class OnboardingStateUpdate(BaseModel):
+    """Schema for updating onboarding progress"""
+    current_step: Optional[int] = None
+    steps: Optional[Dict[str, bool]] = None
+    completed: Optional[bool] = None
+
+
+class OnboardingStateResponse(BaseModel):
+    """Schema for reading onboarding progress"""
+    completed: bool
+    current_step: int
+    steps: Dict[str, bool]
+    completed_at: Optional[datetime] = None
 
 
 class TestSuiteBase(BaseModel):

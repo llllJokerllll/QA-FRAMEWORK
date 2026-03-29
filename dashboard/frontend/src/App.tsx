@@ -13,12 +13,34 @@ import Login from './pages/Login'
 import Register from './pages/Register'
 import Landing from './pages/Landing'
 import ForgotPassword from './pages/ForgotPassword'
+import Onboarding from './pages/Onboarding'
 import NotFound from './pages/NotFound'
 import useAuthStore from './stores/authStore'
 
 function App() {
-  const { isAuthenticated } = useAuthStore()
+  const { isAuthenticated, needsOnboarding } = useAuthStore()
   const [sidebarOpen, setSidebarOpen] = useState(true)
+
+  // Redirect authenticated users who need onboarding
+  const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+    if (!isAuthenticated) {
+      return <Navigate to="/login" replace />
+    }
+    if (needsOnboarding) {
+      return <Navigate to="/onboarding" replace />
+    }
+    return <>{children}</>
+  }
+
+  const OnboardingRoute = () => {
+    if (!isAuthenticated) {
+      return <Navigate to="/login" replace />
+    }
+    if (!needsOnboarding) {
+      return <Navigate to="/dashboard" replace />
+    }
+    return <Onboarding />
+  }
 
   return (
     <Router>
@@ -29,78 +51,65 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
 
-        {/* Protected routes - Require authentication */}
+        {/* Onboarding route - for new users */}
+        <Route path="/onboarding" element={<OnboardingRoute />} />
+
+        {/* Protected routes - Require authentication + completed onboarding */}
         <Route path="/dashboard" element={
-          isAuthenticated ? (
+          <ProtectedRoute>
             <Layout sidebarOpen={sidebarOpen} onSidebarToggle={() => setSidebarOpen(!sidebarOpen)}>
               <Dashboard />
             </Layout>
-          ) : (
-            <Navigate to="/login" replace />
-          )
+          </ProtectedRoute>
         } />
         <Route path="/suites" element={
-          isAuthenticated ? (
+          <ProtectedRoute>
             <Layout sidebarOpen={sidebarOpen} onSidebarToggle={() => setSidebarOpen(!sidebarOpen)}>
               <TestSuites />
             </Layout>
-          ) : (
-            <Navigate to="/login" replace />
-          )
+          </ProtectedRoute>
         } />
         <Route path="/suites/:suiteId/cases" element={
-          isAuthenticated ? (
+          <ProtectedRoute>
             <Layout sidebarOpen={sidebarOpen} onSidebarToggle={() => setSidebarOpen(!sidebarOpen)}>
               <TestCases />
             </Layout>
-          ) : (
-            <Navigate to="/login" replace />
-          )
+          </ProtectedRoute>
         } />
         <Route path="/executions" element={
-          isAuthenticated ? (
+          <ProtectedRoute>
             <Layout sidebarOpen={sidebarOpen} onSidebarToggle={() => setSidebarOpen(!sidebarOpen)}>
               <Executions />
             </Layout>
-          ) : (
-            <Navigate to="/login" replace />
-          )
+          </ProtectedRoute>
         } />
         <Route path="/integrations" element={
-          isAuthenticated ? (
+          <ProtectedRoute>
             <Layout sidebarOpen={sidebarOpen} onSidebarToggle={() => setSidebarOpen(!sidebarOpen)}>
               <Integrations />
             </Layout>
-          ) : (
-            <Navigate to="/login" replace />
-          )
+          </ProtectedRoute>
         } />
         <Route path="/billing" element={
-          isAuthenticated ? (
+          <ProtectedRoute>
             <Layout sidebarOpen={sidebarOpen} onSidebarToggle={() => setSidebarOpen(!sidebarOpen)}>
               <Billing />
             </Layout>
-          ) : (
-            <Navigate to="/login" replace />
-          )
+          </ProtectedRoute>
         } />
         <Route path="/self-healing" element={
-          isAuthenticated ? (
+          <ProtectedRoute>
             <Layout sidebarOpen={sidebarOpen} onSidebarToggle={() => setSidebarOpen(!sidebarOpen)}>
               <SelfHealing />
             </Layout>
-          ) : (
-            <Navigate to="/login" replace />
-          )
+          </ProtectedRoute>
         } />
         <Route path="/settings" element={
-          isAuthenticated ? (
+          <ProtectedRoute>
             <Layout sidebarOpen={sidebarOpen} onSidebarToggle={() => setSidebarOpen(!sidebarOpen)}>
               <Settings />
             </Layout>
-          ) : (
-            <Navigate to="/login" replace />
-          )
+          </ProtectedRoute>
         } />
 
         {/* Catch-all route - 404 */}

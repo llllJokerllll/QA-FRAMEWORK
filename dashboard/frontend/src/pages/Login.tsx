@@ -36,7 +36,13 @@ export default function Login() {
           const userResponse = await authAPI.getMe()
           login(access_token, userResponse.data)
           toast.success('Login successful!')
-          navigate('/')
+          
+          // Redirect to onboarding or dashboard based on user state
+          if (!userResponse.data.onboarding_completed) {
+            navigate('/onboarding', { replace: true })
+          } else {
+            navigate('/dashboard', { replace: true })
+          }
         } catch (error) {
           toast.error('Failed to get user info')
           useAuthStore.getState().logout()

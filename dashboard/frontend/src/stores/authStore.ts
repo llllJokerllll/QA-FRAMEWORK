@@ -7,16 +7,23 @@ interface User {
   email: string
   is_active: boolean
   is_superuser: boolean
+  onboarding_completed?: boolean
+  onboarding_state?: {
+    current_step: number
+    steps: Record<string, boolean>
+  }
 }
 
 interface AuthState {
   user: User | null
   token: string | null
   isAuthenticated: boolean
+  needsOnboarding: boolean
   login: (token: string, user: User) => void
   logout: () => void
   updateUser: (user: User) => void
   setToken: (token: string) => void
+  setNeedsOnboarding: (value: boolean) => void
 }
 
 const useAuthStore = create<AuthState>()(
@@ -25,10 +32,17 @@ const useAuthStore = create<AuthState>()(
       user: null,
       token: null,
       isAuthenticated: false,
-      login: (token, user) => set({ token, user, isAuthenticated: true }),
-      logout: () => set({ token: null, user: null, isAuthenticated: false }),
-      updateUser: (user) => set({ user }),
+      needsOnboarding: false,
+      login: (token, user) => set({
+        token,
+        user,
+        isAuthenticated: true,
+        needsOnboarding: !user.onboarding_completed,
+      }),
+      logout: () => set({ token: null, user: null, isAuthenticated: false, needsOnboarding: false }),
+      updateUser: (user) => set({ user, needsOnboarding: !user.onboarding_completed }),
       setToken: (token) => set({ token }),
+      setNeedsOnboarding: (value) => set({ needsOnboarding: value }),
     }),
     {
       name: 'auth-storage',

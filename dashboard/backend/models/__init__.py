@@ -44,6 +44,11 @@ class User(Base):
     subscription_current_period_start = Column(DateTime, nullable=True)
     subscription_current_period_end = Column(DateTime, nullable=True)
     
+    # Onboarding
+    onboarding_completed = Column(Boolean, default=False)
+    onboarding_state = Column(JSON, default=dict)  # {"current_step": 0, "steps": {"welcome": true, ...}}
+    onboarding_completed_at = Column(DateTime, nullable=True)
+    
     created_at = Column(DateTime, default=func.now())
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
 
