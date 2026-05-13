@@ -40,7 +40,15 @@ def get_redis_client():
     global _async_redis_client
     if _async_redis_client is None:
         import redis.asyncio as aioredis
-        redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+        redis_url = os.getenv("REDIS_URL")
+        if not redis_url:
+            redis_host = os.getenv("REDIS_HOST", "localhost")
+            redis_port = os.getenv("REDIS_PORT", "6379")
+            redis_password = os.getenv("REDIS_PASSWORD")
+            if redis_password:
+                redis_url = f"redis://:{redis_password}@{redis_host}:{redis_port}/0"
+            else:
+                redis_url = f"redis://{redis_host}:{redis_port}/0"
         _async_redis_client = aioredis.from_url(redis_url, decode_responses=True)
     return _async_redis_client
 
